@@ -1,0 +1,108 @@
+enum TimerPhase {
+  idle,
+  preparation,
+  active,
+  ended;
+
+  bool get isRunningPhase => this == preparation || this == active;
+  bool get isFinishedPhase => this == ended;
+}
+
+enum TimerMode {
+  standard,
+  short,
+  custom,
+  alternating,
+  trafficLight;
+
+  Duration get defaultPrepTime {
+    switch (this) {
+      case standard:
+        return const Duration(seconds: 10);
+      case short:
+        return const Duration(seconds: 5);
+      case custom:
+        return const Duration(seconds: 10);
+      case alternating:
+        return const Duration(seconds: 5);
+      case trafficLight:
+        return Duration.zero;
+    }
+  }
+
+  Duration get defaultMainTime {
+    switch (this) {
+      case standard:
+        return const Duration(seconds: 120);
+      case short:
+        return const Duration(seconds: 60);
+      case custom:
+        return const Duration(seconds: 120);
+      case alternating:
+        return const Duration(seconds: 20);
+      case trafficLight:
+        return Duration.zero;
+    }
+  }
+}
+
+class TimerState {
+  final Duration remainingTime;
+  final TimerPhase phase;
+  final TimerMode mode;
+  final bool isRunning;
+  final bool isPaused;
+  final Duration totalTime;
+  final Duration preparationTime;
+  final Duration mainTime;
+  final Duration warningThreshold;
+
+  const TimerState({
+    required this.remainingTime,
+    required this.phase,
+    required this.mode,
+    this.isRunning = false,
+    this.isPaused = false,
+    required this.totalTime,
+    required this.preparationTime,
+    required this.mainTime,
+    this.warningThreshold = const Duration(seconds: 30),
+  });
+
+  bool get isInWarningPeriod =>
+      phase == TimerPhase.active && remainingTime <= warningThreshold;
+
+  double get progress {
+    if (totalTime.inMilliseconds == 0) return 0.0;
+    return 1.0 - (remainingTime.inMilliseconds / totalTime.inMilliseconds);
+  }
+
+  bool get canStart => phase == TimerPhase.idle;
+  bool get canPause => isRunning && !isPaused;
+  bool get canResume => isPaused;
+  bool get canReset => phase != TimerPhase.idle;
+
+  TimerState copyWith({
+    Duration? remainingTime,
+    TimerPhase? phase,
+    TimerMode? mode,
+    bool? isRunning,
+    bool? isPaused,
+    Duration? totalTime,
+    Duration? preparationTime,
+    Duration? mainTime,
+    Duration? warningThreshold,
+  }) {
+    return TimerState(
+      remainingTime: remainingTime ?? this.remainingTime,
+      phase: phase ?? this.phase,
+      mode: mode ?? this.mode,
+      isRunning: isRunning ?? this.isRunning,
+      isPaused: isPaused ?? this.isPaused,
+      totalTime: totalTime ?? this.totalTime,
+      preparationTime: preparationTime ?? this.preparationTime,
+      mainTime: mainTime ?? this.mainTime,
+      warningThreshold: warningThreshold ?? this.warningThreshold,
+    );
+  }
+}
