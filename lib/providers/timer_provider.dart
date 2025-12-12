@@ -9,7 +9,7 @@ class TimerNotifier extends StateNotifier<TimerState> {
   TimerNotifier() : super(_initialState());
 
   static TimerState _initialState() {
-    const mode = TimerMode.standard;
+    const mode = TimerMode.indoor;
     return TimerState(
       remainingTime: mode.defaultPrepTime + mode.defaultMainTime,
       phase: TimerPhase.idle,

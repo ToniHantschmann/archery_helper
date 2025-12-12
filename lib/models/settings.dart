@@ -12,7 +12,7 @@ class Settings {
   const Settings({
     this.soundEnabled = true,
     this.volume = 0.8,
-    this.defaultMode = TimerMode.standard,
+    this.defaultMode = TimerMode.indoor,
     this.customPrepTime = const Duration(seconds: 10),
     this.customMainTime = const Duration(seconds: 120),
     this.autoStart = false,

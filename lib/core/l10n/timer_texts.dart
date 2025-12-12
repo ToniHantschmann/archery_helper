@@ -11,8 +11,8 @@ class TimerTexts {
 
   // Timer-Mode Texte
   static const Map<TimerMode, String> _modeTexts = {
-    TimerMode.standard: 'Standard Timer',
-    TimerMode.short: 'Kurzer Timer',
+    TimerMode.indoor: 'Indoor Timer',
+    TimerMode.outdoor: 'Outdoor Timer',
     TimerMode.custom: 'Benutzerdefiniert',
     TimerMode.alternating: '20s Wechsel-Timer',
     TimerMode.trafficLight: 'Reine Ampel',

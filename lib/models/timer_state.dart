@@ -9,33 +9,27 @@ enum TimerPhase {
 }
 
 enum TimerMode {
-  standard,
-  short,
+  indoor,
+  outdoor,
   custom,
   alternating,
   trafficLight;
 
   Duration get defaultPrepTime {
     switch (this) {
-      case standard:
-        return const Duration(seconds: 10);
-      case short:
-        return const Duration(seconds: 5);
-      case custom:
-        return const Duration(seconds: 10);
-      case alternating:
-        return const Duration(seconds: 5);
       case trafficLight:
         return Duration.zero;
+      default:
+        return Duration(seconds: 10);
     }
   }
 
   Duration get defaultMainTime {
     switch (this) {
-      case standard:
+      case indoor:
         return const Duration(seconds: 120);
-      case short:
-        return const Duration(seconds: 60);
+      case outdoor:
+        return const Duration(seconds: 240);
       case custom:
         return const Duration(seconds: 120);
       case alternating:
