@@ -34,7 +34,6 @@ class DebugPanel extends ConsumerWidget {
           _buildDebugRow('Paused', '${timerState.isPaused}'),
           _buildDebugRow('Warning', '${timerState.isInWarningPeriod}'),
           _buildDebugRow('Remaining', '${timerState.remainingTime.inSeconds}s'),
-          _buildDebugRow('Progress', '${(timerState.progress * 100).toInt()}%'),
         ],
       ),
     );

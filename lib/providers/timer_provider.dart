@@ -14,7 +14,6 @@ class TimerNotifier extends StateNotifier<TimerState> {
       remainingTime: mode.defaultPrepTime + mode.defaultMainTime,
       phase: TimerPhase.idle,
       mode: mode,
-      totalTime: mode.defaultPrepTime + mode.defaultMainTime,
       preparationTime: mode.defaultPrepTime,
       mainTime: mode.defaultMainTime,
     );
@@ -44,7 +43,6 @@ class TimerNotifier extends StateNotifier<TimerState> {
       remainingTime: mode.defaultPrepTime + mode.defaultMainTime,
       phase: TimerPhase.idle,
       mode: mode,
-      totalTime: mode.defaultPrepTime + mode.defaultMainTime,
       preparationTime: mode.defaultPrepTime,
       mainTime: mode.defaultMainTime,
     );

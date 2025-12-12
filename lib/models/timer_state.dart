@@ -52,7 +52,6 @@ class TimerState {
   final TimerMode mode;
   final bool isRunning;
   final bool isPaused;
-  final Duration totalTime;
   final Duration preparationTime;
   final Duration mainTime;
   final Duration warningThreshold;
@@ -63,7 +62,6 @@ class TimerState {
     required this.mode,
     this.isRunning = false,
     this.isPaused = false,
-    required this.totalTime,
     required this.preparationTime,
     required this.mainTime,
     this.warningThreshold = const Duration(seconds: 30),
@@ -71,11 +69,6 @@ class TimerState {
 
   bool get isInWarningPeriod =>
       phase == TimerPhase.active && remainingTime <= warningThreshold;
-
-  double get progress {
-    if (totalTime.inMilliseconds == 0) return 0.0;
-    return 1.0 - (remainingTime.inMilliseconds / totalTime.inMilliseconds);
-  }
 
   bool get canStart => phase == TimerPhase.idle;
   bool get canPause => isRunning && !isPaused;
@@ -99,7 +92,6 @@ class TimerState {
       mode: mode ?? this.mode,
       isRunning: isRunning ?? this.isRunning,
       isPaused: isPaused ?? this.isPaused,
-      totalTime: totalTime ?? this.totalTime,
       preparationTime: preparationTime ?? this.preparationTime,
       mainTime: mainTime ?? this.mainTime,
       warningThreshold: warningThreshold ?? this.warningThreshold,
