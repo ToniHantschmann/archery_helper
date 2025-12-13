@@ -24,6 +24,9 @@ class TimerNotifier extends StateNotifier<TimerState> {
       _startPreparationPhase();
     } else if (state.isPaused) {
       _resumeTimer();
+    } else if (state.isFinished) {
+      resetTimer();
+      _startPreparationPhase();
     }
   }
 

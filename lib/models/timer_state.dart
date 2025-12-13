@@ -68,6 +68,7 @@ class TimerState {
   bool get canPause => isRunning && !isPaused;
   bool get canResume => isPaused;
   bool get canReset => phase != TimerPhase.idle;
+  bool get isFinished => phase == TimerPhase.ended;
 
   TimerState copyWith({
     Duration? remainingTime,
