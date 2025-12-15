@@ -65,8 +65,8 @@ class AppActionsNotifier {
   AppActionsNotifier(this.ref);
 
   KeyEventResult handleKeyPress(LogicalKeyboardKey key) {
-    final KeyboardConfig = ref.read(keyboardConfigProvider);
-    final action = KeyboardConfig.getAction(key);
+    final keyboardConfig = ref.read(keyboardConfigProvider);
+    final action = keyboardConfig.getAction(key);
 
     if (action == null) {
       return KeyEventResult.ignored;

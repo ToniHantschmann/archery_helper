@@ -11,7 +11,7 @@ class TimerNotifier extends StateNotifier<TimerState> {
   static TimerState _initialState() {
     const mode = TimerMode.indoor;
     return TimerState(
-      remainingTime: mode.defaultMainTime,
+      remainingTime: mode.defaultPrepTime + mode.defaultMainTime,
       phase: TimerPhase.idle,
       mode: mode,
       preparationTime: mode.defaultPrepTime,
@@ -131,6 +131,7 @@ final currentPhaseProvider = Provider<TimerPhase>((ref) {
 });
 
 final remainingTimeProvider = Provider<Duration>((ref) {
+  //TODO: when in idle mode: show only main time remaining
   return ref.watch(timerProvider).remainingTime;
 });
 
