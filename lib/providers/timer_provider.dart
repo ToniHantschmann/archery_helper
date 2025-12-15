@@ -131,8 +131,13 @@ final currentPhaseProvider = Provider<TimerPhase>((ref) {
 });
 
 final remainingTimeProvider = Provider<Duration>((ref) {
-  //TODO: when in idle mode: show only main time remaining
-  return ref.watch(timerProvider).remainingTime;
+  final timerState = ref.watch(timerProvider);
+
+  if (timerState.phase == TimerPhase.idle) {
+    return timerState.mainTime;
+  }
+
+  return timerState.remainingTime;
 });
 
 final isTimerRunningProvider = Provider<bool>((ref) {
