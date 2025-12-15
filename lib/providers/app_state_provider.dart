@@ -1,4 +1,9 @@
+import 'package:archery_helper/providers/keyboard_config_provider.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart';
+import '../models/timer_state.dart';
 import '../providers/timer_provider.dart';
+import '../models/keyboard_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum AppScreen { timer, menu, settings, idle }
@@ -59,8 +64,59 @@ class AppActionsNotifier {
 
   AppActionsNotifier(this.ref);
 
-  // Keyboard Shortcuts
-  void handleSpacePress() {
+  KeyEventResult handleKeyPress(LogicalKeyboardKey key) {
+    final KeyboardConfig = ref.read(keyboardConfigProvider);
+    final action = KeyboardConfig.getAction(key);
+
+    if (action == null) {
+      return KeyEventResult.ignored;
+    }
+
+    return handleAction(action);
+  }
+
+  KeyEventResult handleAction(AppAction action) {
+    switch (action) {
+      case AppAction.toggleTimer:
+        _handleToggleTimer();
+        return KeyEventResult.handled;
+
+      case AppAction.resetTimer:
+        _handleResetTimer();
+        return KeyEventResult.handled;
+
+      case AppAction.nextMode:
+        _handleNextMode();
+        return KeyEventResult.handled;
+
+      case AppAction.previousMode:
+        _handlePreviousMode();
+        return KeyEventResult.handled;
+
+      case AppAction.toggleMenu:
+        _handleToggleMenu();
+        return KeyEventResult.handled;
+
+      case AppAction.toggleSettings:
+        _handleToggleSettings();
+        return KeyEventResult.handled;
+
+      case AppAction.back:
+        _handleBack();
+        return KeyEventResult.handled;
+
+      case AppAction.confirm:
+        _handleConfirm();
+        return KeyEventResult.handled;
+
+      case AppAction.toggleFullscreen:
+        _handleToggleFullscreen();
+        return KeyEventResult.handled;
+    }
+  }
+
+  // private implementations
+  void _handleToggleTimer() {
     final timerState = ref.read(timerProvider);
     final timerNotifier = ref.read(timerProvider.notifier);
 
@@ -71,7 +127,7 @@ class AppActionsNotifier {
     }
   }
 
-  void handleEnterPress() {
+  void _handleResetTimer() {
     final currentScreen = ref.read(currentScreenProvider);
 
     switch (currentScreen) {
@@ -79,31 +135,95 @@ class AppActionsNotifier {
         final timerNotifier = ref.read(timerProvider.notifier);
         timerNotifier.resetTimer();
         break;
+
       case AppScreen.menu:
-        // Enter in Menu = Select item
+        //TODO what to do here?
         break;
       default:
-        // Navigate to timer
         ref.read(appStateProvider.notifier).navigateToScreen(AppScreen.timer);
     }
   }
 
-  void handleEscapePress() {
+  void _handleNextMode() {
+    final currentMode = ref.read(timerProvider).mode;
+    final modes = TimerMode.values;
+    final currentIndex = modes.indexOf(currentMode);
+    final nextIndex = (currentIndex + 1) % modes.length;
+
+    ref.read(timerProvider.notifier).setMode(modes[nextIndex]);
+  }
+
+  void _handlePreviousMode() {
+    final currentMode = ref.read(timerProvider).mode;
+    final modes = TimerMode.values;
+    final currentIndex = modes.indexOf(currentMode);
+    final nextIndex = (currentIndex - 1 + modes.length) % modes.length;
+
+    ref.read(timerProvider.notifier).setMode(modes[nextIndex]);
+  }
+
+  void _handleToggleMenu() {
+    final currenScreen = ref.read(currentScreenProvider);
+
+    if (currenScreen == AppScreen.menu) {
+      // if in menu go to timer
+      ref.read(appStateProvider.notifier).navigateToScreen(AppScreen.timer);
+    } else {
+      ref.read(appStateProvider.notifier).navigateToScreen(AppScreen.menu);
+    }
+  }
+
+  void _handleToggleSettings() {
+    final currenScreen = ref.read(currentScreenProvider);
+
+    if (currenScreen == AppScreen.settings) {
+      // if in settings go to timer
+      ref.read(appStateProvider.notifier).navigateToScreen(AppScreen.timer);
+    } else {
+      ref.read(appStateProvider.notifier).navigateToScreen(AppScreen.settings);
+    }
+  }
+
+  void _handleBack() {
     final currentScreen = ref.read(currentScreenProvider);
 
     switch (currentScreen) {
       case AppScreen.timer:
         ref.read(appStateProvider.notifier).navigateToScreen(AppScreen.menu);
         break;
+
       case AppScreen.settings:
         ref.read(appStateProvider.notifier).navigateToScreen(AppScreen.menu);
         break;
+
       case AppScreen.menu:
-        ref.read(appStateProvider.notifier).navigateToScreen(AppScreen.timer);
+        // do nothing
         break;
       default:
         ref.read(appStateProvider.notifier).navigateToScreen(AppScreen.idle);
     }
+  }
+
+  void _handleConfirm() {
+    final currentScreen = ref.read(currentScreenProvider);
+
+    switch (currentScreen) {
+      case AppScreen.timer:
+        _handleToggleTimer();
+        break;
+
+      case AppScreen.menu:
+        // choose selected element in menu
+        //TODO: implement when we have a menu and navigation there
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _handleToggleFullscreen() {
+    ref.read(appStateProvider.notifier).toggleFullscreen();
+    //TODO: implement real full screen
   }
 }
 

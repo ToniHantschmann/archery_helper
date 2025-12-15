@@ -1,4 +1,5 @@
-import '../models/timer_state.dart';
+import 'package:archery_helper/models/keyboard_config.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -70,47 +71,14 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
     );
   }
 
+  /// Zentraler Keyboard-Handler - delegiert an AppActionsNotifier
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     // Nur auf Key-Down reagieren
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
+    // Delegiere an den zentralen Action-Handler
     final appActions = ref.read(appActionsProvider);
-
-    switch (event.logicalKey) {
-      case LogicalKeyboardKey.space:
-        appActions.handleSpacePress();
-        return KeyEventResult.handled;
-
-      case LogicalKeyboardKey.enter:
-        appActions.handleEnterPress();
-        return KeyEventResult.handled;
-
-      case LogicalKeyboardKey.escape:
-        appActions.handleEscapePress();
-        return KeyEventResult.handled;
-
-      // Zusätzliche Debug-Keys
-      case LogicalKeyboardKey.keyR:
-        ref.read(timerProvider.notifier).resetTimer();
-        return KeyEventResult.handled;
-
-      case LogicalKeyboardKey.keyN:
-        // Nächster Timer-Modus (zum Testen)
-        _switchToNextMode();
-        return KeyEventResult.handled;
-
-      default:
-        return KeyEventResult.ignored;
-    }
-  }
-
-  void _switchToNextMode() {
-    final currentMode = ref.read(timerProvider).mode;
-    final modes = TimerMode.values;
-    final currentIndex = modes.indexOf(currentMode);
-    final nextIndex = (currentIndex + 1) % modes.length;
-
-    ref.read(timerProvider.notifier).setMode(modes[nextIndex]);
+    return appActions.handleKeyPress(event.logicalKey);
   }
 
   Widget _buildControlButtons() {
@@ -153,7 +121,9 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                     timerState.canStart ||
                             timerState.canPause ||
                             timerState.canResume
-                        ? () => ref.read(appActionsProvider).handleSpacePress()
+                        ? () => ref
+                            .read(appActionsProvider)
+                            .handleAction(AppAction.toggleTimer)
                         : null,
                 isPrimary: true,
               ),
@@ -165,16 +135,33 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                 text: TimerTexts.resetButton,
                 onPressed:
                     timerState.canReset
-                        ? () => ref.read(timerProvider.notifier).resetTimer()
+                        ? () => ref
+                            .read(appActionsProvider)
+                            .handleAction(AppAction.resetTimer)
                         : null,
               ),
 
               const SizedBox(width: 20),
 
-              // Mode Switch Button (nur für Testing)
+              // Previous Mode Button
               _buildControlButton(
-                text: 'Nächster Modus',
-                onPressed: () => _switchToNextMode(),
+                text: '◀ Modus',
+                onPressed:
+                    () => ref
+                        .read(appActionsProvider)
+                        .handleAction(AppAction.previousMode),
+                isSecondary: true,
+              ),
+
+              const SizedBox(width: 10),
+
+              // Next Mode Button
+              _buildControlButton(
+                text: 'Modus ▶',
+                onPressed:
+                    () => ref
+                        .read(appActionsProvider)
+                        .handleAction(AppAction.nextMode),
                 isSecondary: true,
               ),
             ],
