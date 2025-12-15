@@ -40,6 +40,14 @@ class TimerNotifier extends StateNotifier<TimerState> {
     state = _initialState().copyWith(mode: state.mode);
   }
 
+  void skipTimerPhase() {
+    if (state.isRunning) {
+      _timer?.cancel();
+      _handlePhaseTransition();
+    }
+    
+  }
+
   void setMode(TimerMode mode) {
     resetTimer();
     state = TimerState(

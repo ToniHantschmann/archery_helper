@@ -112,6 +112,14 @@ class AppActionsNotifier {
       case AppAction.toggleFullscreen:
         _handleToggleFullscreen();
         return KeyEventResult.handled;
+
+      case AppAction.skipTimer:
+        _handleSkipTimer();
+        return KeyEventResult.handled;
+
+      case AppAction.next:
+        _handleNext();
+        return KeyEventResult.handled;
     }
   }
 
@@ -120,7 +128,7 @@ class AppActionsNotifier {
     final timerState = ref.read(timerProvider);
     final timerNotifier = ref.read(timerProvider.notifier);
 
-    if (timerState.canStart || timerState.isPaused || timerState.isFinished) {
+    if (timerState.isPaused) {
       timerNotifier.startTimer();
     } else if (timerState.isRunning) {
       timerNotifier.pauseTimer();
@@ -224,6 +232,21 @@ class AppActionsNotifier {
   void _handleToggleFullscreen() {
     ref.read(appStateProvider.notifier).toggleFullscreen();
     //TODO: implement real full screen
+  }
+
+  void _handleSkipTimer() {
+    ref.read(timerProvider.notifier).skipTimerPhase();
+  }
+
+  void _handleNext() {
+    final timerState = ref.read(timerProvider);
+    final timerNotifier = ref.read(timerProvider.notifier);
+
+    if (timerState.canStart || timerState.isPaused || timerState.isFinished) {
+      timerNotifier.startTimer();
+    } else if (timerState.isRunning) {
+      _handleSkipTimer();
+    }
   }
 }
 

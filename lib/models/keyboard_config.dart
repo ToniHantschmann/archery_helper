@@ -11,6 +11,8 @@ enum AppAction {
   back, // back
   confirm,
   toggleFullscreen,
+  skipTimer,
+  next,
 }
 
 class KeyboardConfig {
@@ -22,12 +24,12 @@ class KeyboardConfig {
   factory KeyboardConfig.defaults() {
     return KeyboardConfig(
       keyBindings: {
-        LogicalKeyboardKey.space: AppAction.toggleTimer,
+        LogicalKeyboardKey.space: AppAction.next,
         LogicalKeyboardKey.enter: AppAction.resetTimer,
         LogicalKeyboardKey.escape: AppAction.back,
         LogicalKeyboardKey.keyR: AppAction.resetTimer,
         LogicalKeyboardKey.keyN: AppAction.nextMode,
-        LogicalKeyboardKey.keyP: AppAction.previousMode,
+        LogicalKeyboardKey.keyP: AppAction.toggleTimer,
         LogicalKeyboardKey.keyS: AppAction.toggleSettings,
         LogicalKeyboardKey.keyM: AppAction.toggleMenu,
         LogicalKeyboardKey.f11: AppAction.toggleFullscreen,
@@ -67,7 +69,7 @@ class KeyboardConfig {
   static String getActionName(AppAction action) {
     switch (action) {
       case AppAction.toggleTimer:
-        return 'Timer starten/pausieren';
+        return 'Timer pausieren/starten';
       case AppAction.resetTimer:
         return 'Timer zurücksetzen';
       case AppAction.nextMode:
@@ -84,6 +86,10 @@ class KeyboardConfig {
         return 'Bestätigen';
       case AppAction.toggleFullscreen:
         return 'Vollbild umschalten';
+      case AppAction.skipTimer:
+        return 'Timer überspringen';
+      case AppAction.next:
+        return 'Timer weiter';
     }
   }
 
