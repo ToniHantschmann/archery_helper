@@ -32,7 +32,7 @@ class TimerTexts {
     final baseText = getPhaseText(state.phase);
 
     if (state.isInWarningPeriod) {
-      return 'ACHTUNG - $baseText';
+      return baseText;
     }
 
     if (state.isPaused) {
