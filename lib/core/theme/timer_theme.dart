@@ -5,12 +5,12 @@ class TimerTheme {
   // Standard Farben für Timer-Phasen
   static const Map<TimerPhase, Color> _phaseColors = {
     TimerPhase.idle: Color(0xFF424242), // Grau
-    TimerPhase.preparation: Color(0xFFFF9800), // Orange
-    TimerPhase.active: Color(0xFF4CAF50), // Grün
-    TimerPhase.ended: Color(0xFF212121), // Dunkelgrau
+    TimerPhase.preparation: Color.fromRGBO(59, 13, 13, 1), // Orange
+    TimerPhase.active: Color.fromARGB(255, 18, 74, 20), // Grün
+    TimerPhase.ended: Color.fromRGBO(59, 13, 13, 1), // Dunkelgrau
   };
 
-  static const Color warningColor = Color(0xFFF44336); // Rot
+  static const Color warningColor = Color.fromARGB(255, 125, 84, 7); // Rot
 
   // Haupt-Methoden für UI-Mapping
   static Color getBackgroundColor(TimerState state) {
@@ -25,15 +25,10 @@ class TimerTheme {
   }
 
   static double getFontSize(TimerState state) {
-    return state.isInWarningPeriod ? 140.0 : 120.0;
+    return 120.0;
   }
 
   static FontWeight getFontWeight(TimerState state) {
-    return state.isInWarningPeriod ? FontWeight.bold : FontWeight.normal;
-  }
-
-  // Zusätzliche Theme-Optionen (für später)
-  static Color getAccentColor(TimerState state) {
-    return state.isInWarningPeriod ? Colors.redAccent : Colors.greenAccent;
+    return FontWeight.bold;
   }
 }
