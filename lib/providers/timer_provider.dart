@@ -45,7 +45,6 @@ class TimerNotifier extends StateNotifier<TimerState> {
       _timer?.cancel();
       _handlePhaseTransition();
     }
-    
   }
 
   void setMode(TimerMode mode) {
@@ -93,7 +92,8 @@ class TimerNotifier extends StateNotifier<TimerState> {
 
   void _startTicking() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    // do one iteration of timer with one second duration
+    _timer = Timer(const Duration(seconds: 1), () {
       final newTime = Duration(
         milliseconds: state.remainingTime.inMilliseconds - 100,
       );
@@ -102,6 +102,20 @@ class TimerNotifier extends StateNotifier<TimerState> {
         _handlePhaseTransition();
       } else {
         state = state.copyWith(remainingTime: newTime);
+
+        // now start periodic timer with 100ms intervall
+        // enables us to show milliseconds in the timer
+        _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+          final newTime = Duration(
+            milliseconds: state.remainingTime.inMilliseconds - 100,
+          );
+
+          if (newTime.inMilliseconds <= 0) {
+            _handlePhaseTransition();
+          } else {
+            state = state.copyWith(remainingTime: newTime);
+          }
+        });
       }
     });
   }
