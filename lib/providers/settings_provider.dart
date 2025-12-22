@@ -3,8 +3,11 @@ import '../models/settings.dart';
 import '../models/timer_state.dart';
 
 // Settings Business Logic Notifier
-class SettingsNotifier extends StateNotifier<Settings> {
-  SettingsNotifier() : super(const Settings());
+class SettingsNotifier extends Notifier<Settings> {
+  @override
+  Settings build() {
+    return const Settings();
+  }
 
   void toggleSound() {
     state = state.copyWith(soundEnabled: !state.soundEnabled);
@@ -48,8 +51,8 @@ class SettingsNotifier extends StateNotifier<Settings> {
 }
 
 // Settings Provider - Hauptprovider für Settings
-final settingsProvider = StateNotifierProvider<SettingsNotifier, Settings>(
-  (ref) => SettingsNotifier(),
+final settingsProvider = NotifierProvider<SettingsNotifier, Settings>(
+  () => SettingsNotifier(),
 );
 
 // Convenience Provider für häufige Settings-Zugriffe

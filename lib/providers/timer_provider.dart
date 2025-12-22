@@ -3,10 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/timer_state.dart';
 
 // Business Logic Klasse
-class TimerNotifier extends StateNotifier<TimerState> {
+class TimerNotifier extends Notifier<TimerState> {
   Timer? _timer;
 
-  TimerNotifier() : super(_initialState());
+  @override
+  TimerState build() {
+    ref.onDispose(() {
+      _timer?.cancel();
+    });
+
+    return _initialState();
+  }
 
   static TimerState _initialState() {
     const mode = TimerMode.indoor;
@@ -132,19 +139,13 @@ class TimerNotifier extends StateNotifier<TimerState> {
         _endTimer();
     }
   }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
 }
 
 // ===== PROVIDER DEFINITIONEN (in derselben Datei) =====
 
 // Haupt-Provider
-final timerProvider = StateNotifierProvider<TimerNotifier, TimerState>(
-  (ref) => TimerNotifier(),
+final timerProvider = NotifierProvider<TimerNotifier, TimerState>(
+  () => TimerNotifier(),
 );
 
 // Convenience Provider (abgeleitet vom Haupt-Provider)

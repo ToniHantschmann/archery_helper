@@ -32,8 +32,11 @@ class AppState {
   }
 }
 
-class AppStateNotifier extends StateNotifier<AppState> {
-  AppStateNotifier() : super(AppState(sessionStart: DateTime.now()));
+class AppStateNotifier extends Notifier<AppState> {
+  @override
+  AppState build() {
+    return AppState(sessionStart: DateTime.now());
+  }
 
   void navigateToScreen(AppScreen screen) {
     state = state.copyWith(currentScreen: screen);
@@ -48,8 +51,8 @@ class AppStateNotifier extends StateNotifier<AppState> {
   }
 }
 
-final appStateProvider = StateNotifierProvider<AppStateNotifier, AppState>(
-  (ref) => AppStateNotifier(),
+final appStateProvider = NotifierProvider<AppStateNotifier, AppState>(
+  () => AppStateNotifier(),
 );
 
 // ===== CURRENT SCREEN PROVIDER =====
