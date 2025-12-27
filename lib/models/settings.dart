@@ -38,4 +38,38 @@ class Settings {
       showMilliseconds: showMilliseconds ?? this.showMilliseconds,
     );
   }
+
+  /// Serialization: convert settings to map
+  Map<String, dynamic> toJson() {
+    return {
+      "soundEnabled": soundEnabled,
+      "volume": volume,
+      "defaultMode": defaultMode.index,
+      "customPrepTime": customPrepTime.inSeconds,
+      "customMainTime": customMainTime.inSeconds,
+      "autoStart": autoStart,
+      "showMilliseconds": showMilliseconds,
+    };
+  }
+
+  /// create settings from json
+  factory Settings.fromJson(Map<String, dynamic> json) {
+    return Settings(
+      soundEnabled: json['soundEnabled'] as bool? ?? true,
+      volume: json['volume'] as double? ?? 0.8,
+      defaultMode: _parseTimerMode(json['defaultMode'] as int?),
+      customPrepTime: Duration(seconds: json['customPrepTime'] as int? ?? 10),
+      customMainTime: Duration(seconds: json['customMainTime'] as int? ?? 120),
+      autoStart: json['autoStart'] as bool? ?? false,
+      showMilliseconds: json['showMilliseconds'] as bool? ?? false,
+    );
+  }
+
+  /// Helper: Konvertiert int zu TimerMode mit Fallback
+  static TimerMode _parseTimerMode(int? index) {
+    if (index == null || index < 0 || index >= TimerMode.values.length) {
+      return TimerMode.indoor;
+    }
+    return TimerMode.values[index];
+  }
 }
