@@ -110,8 +110,47 @@ class KeyboardConfig {
     return label;
   }
 
+  /// convert keyboard config to json
+  Map<String, dynamic> toJson() {
+    final Map<String, String> serializable = {};
+    keyBindings.forEach((key, action) {
+      serializable[key.keyId.toString()] = action.name;
+    });
+    return serializable;
+  }
+
+  /// create keyboard config from json
+  factory KeyboardConfig.fromJson(Map<String, dynamic> json) {
+    final Map<LogicalKeyboardKey, AppAction> bindings = {};
+
+    json.forEach((keyIdString, actionName) {
+      final keyId = int.tryParse(keyIdString);
+      final action = _parseAction(actionName as String);
+
+      if (keyId != null && action != null) {
+        bindings[LogicalKeyboardKey(keyId)] = action;
+      }
+    });
+
+    // Falls keine gültigen Bindings gefunden wurden, nutze Defaults
+    if (bindings.isEmpty) {
+      return KeyboardConfig.defaults();
+    }
+
+    return KeyboardConfig(keyBindings: bindings);
+  }
+
   /// helper method to detect letters
   static bool _isLetter(String char) {
     return char.toUpperCase() != char.toLowerCase();
+  }
+
+  /// helper method to convert strings to appActions
+  static AppAction? _parseAction(String actionName) {
+    try {
+      return AppAction.values.firstWhere((action) => action.name == actionName);
+    } catch (e) {
+      return null;
+    }
   }
 }
