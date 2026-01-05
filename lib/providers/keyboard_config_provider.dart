@@ -1,46 +1,55 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/keyboard_config.dart';
+import '../repositories/keyboard_config_repository.dart';
 
-/// Provider für die Keyboard-Konfiguration
+final keyboardConfigRepositoryProvider = Provider<KeyboardConfigRepository>((
+  ref,
+) {
+  return KeyboardConfigRepository();
+});
+
+/// provider for keyboard config
 class KeyboardConfigNotifier extends Notifier<KeyboardConfig> {
+  late final KeyboardConfigRepository _repository;
+
   @override
   KeyboardConfig build() {
+    _repository = ref.watch(keyboardConfigRepositoryProvider);
     return KeyboardConfig.defaults();
   }
 
-  /// Setzt eine neue Tastenbelegung
+  Future<void> loadConfig() async {
+    state = await _repository.loadConfig();
+  }
+
+  Future<void> _save() async {
+    await _repository.saveConfig(state);
+  }
+
   void setKeyBinding(LogicalKeyboardKey key, AppAction action) {
     state = state.addKeyBinding(key, action);
-    // TODO: Später in SharedPreferences speichern
+    _save();
   }
 
-  /// Entfernt eine Tastenbelegung
   void removeKeyBinding(LogicalKeyboardKey key) {
     state = state.removeKeyBinding(key);
-    // TODO: Später in SharedPreferences speichern
+    _save();
   }
 
-  /// Setzt die Tastenbelegung auf Standard zurück
   void resetToDefaults() {
     state = KeyboardConfig.defaults();
-    // TODO: Später aus SharedPreferences löschen
-  }
-
-  /// Lädt die gespeicherte Konfiguration
-  Future<void> loadConfig() async {
-    // TODO: Aus SharedPreferences laden
-    // Für jetzt verwenden wir die Defaults
+    _save();
   }
 }
 
-/// Haupt-Provider für Keyboard-Konfiguration
+/// main provider for keyboard configuration
 final keyboardConfigProvider =
     NotifierProvider<KeyboardConfigNotifier, KeyboardConfig>(
       () => KeyboardConfigNotifier(),
     );
 
-/// Convenience Provider: Gibt die Aktion für eine Taste zurück
+/// convenience provider: returns action for key
 final keyActionProvider = Provider.family<AppAction?, LogicalKeyboardKey>((
   ref,
   key,
