@@ -8,12 +8,14 @@ import '../core/theme/timer_theme.dart';
 // Text Provider
 final timerPhaseTextProvider = Provider<String>((ref) {
   final timerState = ref.watch(timerProvider);
-  return TimerTexts.getPhaseTextEnhanced(timerState);
+  final texts = ref.watch(timerTextsProvider);
+  return texts.getPhaseTextEnhanced(timerState);
 });
 
 final timerModeTextProvider = Provider<String>((ref) {
   final timerState = ref.watch(timerProvider);
-  return TimerTexts.getModeText(timerState.mode);
+  final texts = ref.watch(timerTextsProvider);
+  return texts.getModeText(timerState.mode);
 });
 
 final formattedTimeProvider = Provider<String>((ref) {
@@ -28,13 +30,14 @@ final formattedTimeProvider = Provider<String>((ref) {
 // Button Text Provider
 final startButtonTextProvider = Provider<String>((ref) {
   final timerState = ref.watch(timerProvider);
+  final texts = ref.watch(timerTextsProvider);
 
   if (timerState.isPaused) {
-    return TimerTexts.resumeButton;
+    return texts.resetButton;
   } else if (timerState.canStart) {
-    return TimerTexts.startButton;
+    return texts.startButton;
   } else {
-    return TimerTexts.pauseButton;
+    return texts.pauseButton;
   }
 });
 
