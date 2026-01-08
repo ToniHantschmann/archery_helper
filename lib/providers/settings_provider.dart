@@ -1,3 +1,4 @@
+import 'package:archery_helper/core/l10n/app_language.dart';
 import 'package:archery_helper/repositories/settings_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/settings.dart';
@@ -64,6 +65,11 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  void setLanguage(AppLanguage language) {
+    state = state.copyWith(language: language);
+    _save();
+  }
+
   // Settings zurücksetzen
   void resetToDefaults() {
     state =
@@ -96,4 +102,8 @@ final showMillisecondsProvider = Provider<bool>((ref) {
 
 final autoStartProvider = Provider<bool>((ref) {
   return ref.watch(settingsProvider).autoStart;
+});
+
+final languageProvider = Provider<AppLanguage>((ref) {
+  return ref.watch(settingsProvider).language;
 });
