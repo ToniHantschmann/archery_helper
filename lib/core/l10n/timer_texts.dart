@@ -1,34 +1,131 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/timer_state.dart';
+import 'app_language.dart';
+import '../../providers/settings_provider.dart';
 
+/// Localized texts for the timer screen and timer-related UI
 class TimerTexts {
-  // Phase Texte
-  static const Map<TimerPhase, String> _phaseTexts = {
-    TimerPhase.idle: 'Bereit',
-    TimerPhase.preparation: 'Vorbereitung',
-    TimerPhase.active: 'Aktiv',
-    TimerPhase.ended: 'Beendet',
-  };
+  final AppLanguage _language;
 
-  // Timer-Mode Texte
-  static const Map<TimerMode, String> _modeTexts = {
-    TimerMode.indoor: 'Indoor Timer',
-    TimerMode.outdoor: 'Outdoor Timer',
-    TimerMode.custom: 'Benutzerdefiniert',
-    TimerMode.alternating: '20s Wechsel-Timer',
-    TimerMode.trafficLight: 'Reine Ampel',
-  };
+  const TimerTexts(this._language);
 
-  // Basis-Texte
-  static String getPhaseText(TimerPhase phase) {
-    return _phaseTexts[phase] ?? 'Unbekannt';
+  // ===== PHASE TEXTS =====
+
+  static const _idle = LocalizedText(de: 'Bereit', en: 'Ready');
+
+  static const _preparation = LocalizedText(
+    de: 'Vorbereitung',
+    en: 'Preparation',
+  );
+
+  static const _active = LocalizedText(de: 'Aktiv', en: 'Active');
+
+  static const _ended = LocalizedText(de: 'Beendet', en: 'Ended');
+
+  static const _paused = LocalizedText(de: 'Pausiert', en: 'Paused');
+
+  // ===== TIMER MODE TEXTS =====
+
+  static const _indoor = LocalizedText(de: 'Indoor Timer', en: 'Indoor Timer');
+
+  static const _outdoor = LocalizedText(
+    de: 'Outdoor Timer',
+    en: 'Outdoor Timer',
+  );
+
+  static const _custom = LocalizedText(de: 'Benutzerdefiniert', en: 'Custom');
+
+  static const _alternating = LocalizedText(
+    de: '20s Wechsel-Timer',
+    en: '20s Alternating Timer',
+  );
+
+  static const _trafficLight = LocalizedText(
+    de: 'Ampel',
+    en: 'Traffic Light Only',
+  );
+
+  // ===== BUTTON TEXTS =====
+
+  static const _start = LocalizedText(de: 'Start', en: 'Start');
+
+  static const _pause = LocalizedText(de: 'Pause', en: 'Pause');
+
+  static const _resume = LocalizedText(de: 'Fortsetzen', en: 'Resume');
+
+  static const _reset = LocalizedText(de: 'Reset', en: 'Reset');
+
+  static const _menu = LocalizedText(de: 'Menü', en: 'Menu');
+
+  static const _settings = LocalizedText(de: 'Einstellungen', en: 'Settings');
+
+  static const _back = LocalizedText(de: 'Zurück', en: 'Back');
+
+  // ===== KEYBOARD HINTS =====
+
+  static const _keyboardHints = LocalizedText(
+    de: '[Leertaste] Start/Pause  [Enter] Reset  [Esc] Menü',
+    en: '[Space] Start/Pause  [Enter] Reset  [Esc] Menu',
+  );
+
+  // ===== PUBLIC GETTERS =====
+
+  String get idle => _idle.get(_language);
+  String get preparation => _preparation.get(_language);
+  String get active => _active.get(_language);
+  String get ended => _ended.get(_language);
+  String get paused => _paused.get(_language);
+
+  String get indoor => _indoor.get(_language);
+  String get outdoor => _outdoor.get(_language);
+  String get custom => _custom.get(_language);
+  String get alternating => _alternating.get(_language);
+  String get trafficLight => _trafficLight.get(_language);
+
+  String get startButton => _start.get(_language);
+  String get pauseButton => _pause.get(_language);
+  String get resumeButton => _resume.get(_language);
+  String get resetButton => _reset.get(_language);
+  String get menuButton => _menu.get(_language);
+  String get settingsButton => _settings.get(_language);
+  String get backButton => _back.get(_language);
+
+  String get keyboardHints => _keyboardHints.get(_language);
+
+  // ===== HELPER METHODS =====
+
+  /// Get phase text based on TimerPhase
+  String getPhaseText(TimerPhase phase) {
+    switch (phase) {
+      case TimerPhase.idle:
+        return idle;
+      case TimerPhase.preparation:
+        return preparation;
+      case TimerPhase.active:
+        return active;
+      case TimerPhase.ended:
+        return ended;
+    }
   }
 
-  static String getModeText(TimerMode mode) {
-    return _modeTexts[mode] ?? 'Unbekannt';
+  /// Get mode text based on TimerMode
+  String getModeText(TimerMode mode) {
+    switch (mode) {
+      case TimerMode.indoor:
+        return indoor;
+      case TimerMode.outdoor:
+        return outdoor;
+      case TimerMode.custom:
+        return custom;
+      case TimerMode.alternating:
+        return alternating;
+      case TimerMode.trafficLight:
+        return trafficLight;
+    }
   }
 
-  // Erweiterte/Kombinierte Texte basierend auf State
-  static String getPhaseTextEnhanced(TimerState state) {
+  /// Get enhanced phase text that includes paused state
+  String getPhaseTextEnhanced(TimerState state) {
     final baseText = getPhaseText(state.phase);
 
     if (state.isInWarningPeriod) {
@@ -36,26 +133,13 @@ class TimerTexts {
     }
 
     if (state.isPaused) {
-      return '$baseText (Pausiert)';
+      return '$baseText (${paused})';
     }
 
     return baseText;
   }
 
-  // UI-Labels für Buttons/Menu
-  static const String startButton = 'Start';
-  static const String pauseButton = 'Pause';
-  static const String resumeButton = 'Fortsetzen';
-  static const String resetButton = 'Reset';
-  static const String menuButton = 'Menü';
-  static const String settingsButton = 'Einstellungen';
-  static const String backButton = 'Zurück';
-
-  // Keyboard Hints
-  static const String keyboardHints =
-      '[Space] Start/Pause  [Enter] Reset  [Esc] Menü';
-
-  // Time formatting helpers
+  /// Format time duration
   static String formatTime(Duration duration, {bool showMilliseconds = false}) {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
@@ -68,3 +152,13 @@ class TimerTexts {
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 }
+
+// ===== PROVIDER =====
+
+/// Provider for localized timer texts based on current language from settings
+final timerTextsProvider = Provider<TimerTexts>((ref) {
+  final language = ref.watch(
+    languageProvider,
+  ); // Nutzt jetzt languageProvider aus settings_provider
+  return TimerTexts(language);
+});
