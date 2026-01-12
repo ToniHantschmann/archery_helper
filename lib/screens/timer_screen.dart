@@ -85,6 +85,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
     final timerState = ref.watch(timerProvider);
     final startButtonText = ref.watch(startButtonTextProvider);
     final modeText = ref.watch(timerModeTextProvider);
+    final texts = ref.watch(timerTextsProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -132,7 +133,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
 
               // Reset Button
               _buildControlButton(
-                text: TimerTexts.resetButton,
+                text: texts.resetButton,
                 onPressed:
                     timerState.canReset
                         ? () => ref
@@ -145,7 +146,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
 
               // Previous Mode Button
               _buildControlButton(
-                text: '◀ Modus',
+                text: texts.previousModeButton,
                 onPressed:
                     () => ref
                         .read(appActionsProvider)
@@ -157,7 +158,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
 
               // Next Mode Button
               _buildControlButton(
-                text: 'Modus ▶',
+                text: texts.nextModeButton,
                 onPressed:
                     () => ref
                         .read(appActionsProvider)

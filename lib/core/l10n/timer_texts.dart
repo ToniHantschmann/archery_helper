@@ -61,6 +61,10 @@ class TimerTexts {
 
   static const _back = LocalizedText(de: 'Zurück', en: 'Back');
 
+  static const _previousMode = LocalizedText(de: '◀ Modus', en: '◀ Mode');
+
+  static const _nextMode = LocalizedText(de: 'Modus ▶', en: 'Mode ▶');
+
   // ===== KEYBOARD HINTS =====
 
   static const _keyboardHints = LocalizedText(
@@ -89,6 +93,8 @@ class TimerTexts {
   String get menuButton => _menu.get(_language);
   String get settingsButton => _settings.get(_language);
   String get backButton => _back.get(_language);
+  String get previousModeButton => _previousMode.get(_language);
+  String get nextModeButton => _nextMode.get(_language);
 
   String get keyboardHints => _keyboardHints.get(_language);
 
