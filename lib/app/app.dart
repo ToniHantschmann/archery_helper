@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
 import '../screens/timer_screen.dart';
+import '../screens/settings_screen.dart';
 
 class ArcheryHelperApp extends ConsumerWidget {
   const ArcheryHelperApp({super.key});
@@ -75,22 +76,6 @@ class MenuScreen extends StatelessWidget {
       body: Center(
         child: Text(
           'Menü - Wird später implementiert',
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'Einstellungen - Wird später implementiert',
           style: TextStyle(fontSize: 24),
         ),
       ),

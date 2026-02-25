@@ -55,7 +55,7 @@ class Settings {
       "customMainTime": customMainTime.inSeconds,
       "autoStart": autoStart,
       "showMilliseconds": showMilliseconds,
-      "language": language,
+      "language": language.code,
     };
   }
 

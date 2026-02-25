@@ -165,6 +165,17 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                         .handleAction(AppAction.nextMode),
                 isSecondary: true,
               ),
+
+              const SizedBox(width: 20),
+
+              // Settings Button (NEU)
+              _buildControlButton(
+                text: texts.settingsButton,
+                onPressed:
+                    () => ref
+                        .read(appActionsProvider)
+                        .handleAction(AppAction.toggleSettings),
+              ),
             ],
           ),
         ],
