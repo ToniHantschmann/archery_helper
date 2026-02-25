@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/timer_state.dart';
 
@@ -8,22 +9,20 @@ class TimerNotifier extends Notifier<TimerState> {
 
   @override
   TimerState build() {
-    ref.onDispose(() {
-      _timer?.cancel();
+    ref.onDispose(() => _timer?.cancel());
+
+    ref.listen(settingsProvider, (previous, next) {
+      // Nur reagieren wenn custom Zeiten sich geändert haben und custom Modus aktiv ist
+      if (state.mode == TimerMode.custom &&
+          (previous?.customPrepTime != next.customPrepTime ||
+              previous?.customMainTime != next.customMainTime)) {
+        _timer?.cancel();
+        state = _stateForMode(TimerMode.custom);
+      }
     });
 
-    return _initialState();
-  }
-
-  static TimerState _initialState() {
-    const mode = TimerMode.indoor;
-    return TimerState(
-      remainingTime: mode.defaultPrepTime + mode.defaultMainTime,
-      phase: TimerPhase.idle,
-      mode: mode,
-      preparationTime: mode.defaultPrepTime,
-      mainTime: mode.defaultMainTime,
-    );
+    final settings = ref.read(settingsProvider);
+    return _stateForMode(settings.defaultMode);
   }
 
   void startTimer() {
@@ -43,8 +42,7 @@ class TimerNotifier extends Notifier<TimerState> {
   }
 
   void resetTimer() {
-    _timer?.cancel();
-    state = _initialState().copyWith(mode: state.mode);
+    setMode(state.mode);
   }
 
   void skipTimerPhase() {
@@ -55,13 +53,27 @@ class TimerNotifier extends Notifier<TimerState> {
   }
 
   void setMode(TimerMode mode) {
-    resetTimer();
-    state = TimerState(
-      remainingTime: mode.defaultPrepTime + mode.defaultMainTime,
+    _timer?.cancel();
+    state = _stateForMode(mode);
+  }
+
+  TimerState _stateForMode(TimerMode mode) {
+    final settings = ref.read(settingsProvider);
+    final prepTime =
+        mode == TimerMode.custom
+            ? settings.customPrepTime
+            : mode.defaultPrepTime;
+    final mainTime =
+        mode == TimerMode.custom
+            ? settings.customMainTime
+            : mode.defaultMainTime;
+
+    return TimerState(
+      remainingTime: prepTime + mainTime,
       phase: TimerPhase.idle,
       mode: mode,
-      preparationTime: mode.defaultPrepTime,
-      mainTime: mode.defaultMainTime,
+      preparationTime: prepTime,
+      mainTime: mainTime,
     );
   }
 
