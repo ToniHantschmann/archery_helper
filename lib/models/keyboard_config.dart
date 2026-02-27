@@ -2,17 +2,25 @@ import 'package:flutter/services.dart';
 
 /// defines all possible app actions
 enum AppAction {
+  // ── Timer ──────────────────────────────────────────────
   toggleTimer, // start/pause timer
   resetTimer, // reset timer
-  nextMode, // next mode
-  previousMode, // previous mode
+  skipTimer, // skip current timer phase
+  next, // context-sensitive next action
+  // ── Modi ───────────────────────────────────────────────
+  nextMode, // next timer mode
+  previousMode, // previous timer mode
+  // ── Navigation (Screens) ───────────────────────────────
   toggleMenu, // toggle menu
   toggleSettings, // toggle settings
-  back, // back
-  confirm,
-  toggleFullscreen,
-  skipTimer,
-  next,
+  back, // back / close
+  confirm, // confirm / select
+  toggleFullscreen, // toggle fullscreen
+  // ── Navigation (innerhalb Screens) ────────────────────
+  navigateUp, // move focus up
+  navigateDown, // move focus down
+  navigateLeft, // move focus left / decrease value
+  navigateRight, // move focus right / increase value
 }
 
 class KeyboardConfig {
@@ -24,15 +32,24 @@ class KeyboardConfig {
   factory KeyboardConfig.defaults() {
     return KeyboardConfig(
       keyBindings: {
+        // Timer controls
         LogicalKeyboardKey.space: AppAction.next,
         LogicalKeyboardKey.enter: AppAction.resetTimer,
-        LogicalKeyboardKey.escape: AppAction.back,
         LogicalKeyboardKey.keyR: AppAction.resetTimer,
         LogicalKeyboardKey.keyN: AppAction.nextMode,
         LogicalKeyboardKey.keyP: AppAction.toggleTimer,
+
+        // Screen navigation
+        LogicalKeyboardKey.escape: AppAction.back,
         LogicalKeyboardKey.keyS: AppAction.toggleSettings,
         LogicalKeyboardKey.keyM: AppAction.toggleMenu,
         LogicalKeyboardKey.f11: AppAction.toggleFullscreen,
+
+        // UI navigation (Pfeiltasten)
+        LogicalKeyboardKey.arrowUp: AppAction.navigateUp,
+        LogicalKeyboardKey.arrowDown: AppAction.navigateDown,
+        LogicalKeyboardKey.arrowLeft: AppAction.navigateLeft,
+        LogicalKeyboardKey.arrowRight: AppAction.navigateRight,
       },
     );
   }
@@ -64,14 +81,18 @@ class KeyboardConfig {
         .toList();
   }
 
-  /// returns string for given action
-  ///TODO: move to l10n
+  /// returns localized display name for an action
+  /// TODO: move to l10n
   static String getActionName(AppAction action) {
     switch (action) {
       case AppAction.toggleTimer:
         return 'Timer pausieren/starten';
       case AppAction.resetTimer:
         return 'Timer zurücksetzen';
+      case AppAction.skipTimer:
+        return 'Timer überspringen';
+      case AppAction.next:
+        return 'Timer weiter';
       case AppAction.nextMode:
         return 'Nächster Modus';
       case AppAction.previousMode:
@@ -86,19 +107,27 @@ class KeyboardConfig {
         return 'Bestätigen';
       case AppAction.toggleFullscreen:
         return 'Vollbild umschalten';
-      case AppAction.skipTimer:
-        return 'Timer überspringen';
-      case AppAction.next:
-        return 'Timer weiter';
+      case AppAction.navigateUp:
+        return 'Navigation: Hoch';
+      case AppAction.navigateDown:
+        return 'Navigation: Runter';
+      case AppAction.navigateLeft:
+        return 'Navigation: Links / Wert verringern';
+      case AppAction.navigateRight:
+        return 'Navigation: Rechts / Wert erhöhen';
     }
   }
 
-  /// returns string for the given key
+  /// returns display name for a key
   static String getKeyName(LogicalKeyboardKey key) {
     if (key == LogicalKeyboardKey.space) return 'Leertaste';
     if (key == LogicalKeyboardKey.enter) return 'Enter';
     if (key == LogicalKeyboardKey.escape) return 'Esc';
     if (key == LogicalKeyboardKey.f11) return 'F11';
+    if (key == LogicalKeyboardKey.arrowUp) return '↑';
+    if (key == LogicalKeyboardKey.arrowDown) return '↓';
+    if (key == LogicalKeyboardKey.arrowLeft) return '←';
+    if (key == LogicalKeyboardKey.arrowRight) return '→';
 
     // for character keys (N, P, etc.) return in UpperCase
     final label = key.keyLabel;
@@ -108,6 +137,11 @@ class KeyboardConfig {
     }
 
     return label;
+  }
+
+  /// helper method to detect letters
+  static bool _isLetter(String char) {
+    return char.toUpperCase() != char.toLowerCase();
   }
 
   /// convert keyboard config to json
@@ -138,11 +172,6 @@ class KeyboardConfig {
     }
 
     return KeyboardConfig(keyBindings: bindings);
-  }
-
-  /// helper method to detect letters
-  static bool _isLetter(String char) {
-    return char.toUpperCase() != char.toLowerCase();
   }
 
   /// helper method to convert strings to appActions
