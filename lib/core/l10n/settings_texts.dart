@@ -81,7 +81,7 @@ class SettingsTexts {
     en: 'Reset to Defaults',
   );
 
-  // ===== DIALOG =====
+  // ===== RESET CONFIRMATION =====
 
   static const _resetDialogTitle = LocalizedText(
     de: 'Einstellungen zurücksetzen',
@@ -98,12 +98,24 @@ class SettingsTexts {
 
   static const _reset = LocalizedText(de: 'Zurücksetzen', en: 'Reset');
 
-  // ===== FEEDBACK =====
+  // ===== KEYBOARD NAVIGATION =====
 
-  static const _settingsReset = LocalizedText(
-    de: 'Einstellungen wurden zurückgesetzt',
-    en: 'Settings have been reset',
+  static const _navHintSelect = LocalizedText(
+    de: '↑↓ Auswählen',
+    en: '↑↓ Select',
   );
+
+  static const _navHintChange = LocalizedText(
+    de: '←→ Ändern',
+    en: '←→ Change',
+  );
+
+  static const _navHintConfirm = LocalizedText(
+    de: 'Enter/Leertaste Bestätigen',
+    en: 'Enter/Space Confirm',
+  );
+
+  static const _navHintBack = LocalizedText(de: 'Esc Zurück', en: 'Esc Back');
 
   // ===== UNITS =====
 
@@ -157,7 +169,14 @@ class SettingsTexts {
   String get cancelButton => _cancel.get(_currentLanguage);
   String get resetButton => _reset.get(_currentLanguage);
 
-  String get settingsResetSnackbar => _settingsReset.get(_currentLanguage);
+  String get navHintSelect => _navHintSelect.get(_currentLanguage);
+  String get navHintChange => _navHintChange.get(_currentLanguage);
+  String get navHintConfirm => _navHintConfirm.get(_currentLanguage);
+  String get navHintBack => _navHintBack.get(_currentLanguage);
+
+  /// The full keyboard hint line shown at the bottom of the settings screen
+  String get navigationHint =>
+      '$navHintSelect   ·   $navHintChange   ·   $navHintConfirm   ·   $navHintBack';
 
   String get seconds => _seconds.get(_currentLanguage);
   String get secondsShort => _secondsShort.get(_currentLanguage);

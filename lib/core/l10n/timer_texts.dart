@@ -139,7 +139,7 @@ class TimerTexts {
     }
 
     if (state.isPaused) {
-      return '$baseText (${paused})';
+      return '$baseText ($paused)';
     }
 
     return baseText;
