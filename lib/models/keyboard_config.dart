@@ -34,7 +34,7 @@ class KeyboardConfig {
       keyBindings: {
         // Timer controls
         LogicalKeyboardKey.space: AppAction.next,
-        LogicalKeyboardKey.enter: AppAction.resetTimer,
+        LogicalKeyboardKey.enter: AppAction.confirm,
         LogicalKeyboardKey.keyR: AppAction.resetTimer,
         LogicalKeyboardKey.keyN: AppAction.nextMode,
         LogicalKeyboardKey.keyP: AppAction.toggleTimer,

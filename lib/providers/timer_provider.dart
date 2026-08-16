@@ -41,6 +41,28 @@ class TimerNotifier extends Notifier<TimerState> {
     state = state.copyWith(isPaused: true, isRunning: false);
   }
 
+  /// Play/pause toggle. Lives here because only the notifier knows which
+  /// transitions the current state allows — callers should not re-derive that.
+  void toggle() {
+    if (state.canStart || state.isPaused) {
+      startTimer();
+    } else if (state.isRunning) {
+      pauseTimer();
+    }
+  }
+
+  /// Context-sensitive "one step further": start, skip the running phase, or
+  /// reset once finished. Distinct from [toggle], which never skips or resets.
+  void advance() {
+    if (state.canStart || state.isPaused) {
+      startTimer();
+    } else if (state.isRunning) {
+      skipTimerPhase();
+    } else if (state.isFinished) {
+      resetTimer();
+    }
+  }
+
   void resetTimer() {
     setMode(state.mode);
   }

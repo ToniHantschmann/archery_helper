@@ -4,6 +4,7 @@ import '../core/theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
 import '../screens/timer_screen.dart';
 import '../screens/settings_screen.dart';
+import '../widgets/keyboard_scope.dart';
 
 class ArcheryHelperApp extends ConsumerWidget {
   const ArcheryHelperApp({super.key});
@@ -14,7 +15,7 @@ class ArcheryHelperApp extends ConsumerWidget {
       title: 'Archery Helper',
       theme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
-      home: const AppNavigator(),
+      home: const KeyboardScope(child: AppNavigator()),
     );
   }
 }
@@ -34,7 +35,6 @@ class AppNavigator extends ConsumerWidget {
       case AppScreen.settings:
         return const SettingsScreen();
       case AppScreen.idle:
-      default:
         return const IdleScreen();
     }
   }

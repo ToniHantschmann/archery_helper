@@ -2,11 +2,10 @@ import 'package:archery_helper/models/keyboard_config.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/timer_provider.dart';
 import '../providers/ui_providers.dart';
-import '../providers/app_state_provider.dart';
+import '../providers/app_actions_provider.dart';
 import '../widgets/timer_display.dart';
 import '../widgets/debug_panel.dart';
 import '../core/l10n/timer_texts.dart';
@@ -19,66 +18,36 @@ class TimerScreen extends ConsumerStatefulWidget {
 }
 
 class _TimerScreenState extends ConsumerState<TimerScreen> {
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    // Focus für Keyboard-Eingaben
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     //final timerState = ref.watch(timerProvider);
     final uiState = ref.watch(timerUIStateProvider);
 
+    // Keyboard-Handling liegt app-weit in KeyboardScope (siehe app.dart)
     return Scaffold(
-      body: Focus(
-        focusNode: _focusNode,
-        onKeyEvent: _handleKeyEvent,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          color: uiState.backgroundColor,
-          child: Stack(
-            children: [
-              // Haupt-Timer Display
-              const TimerDisplay(),
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        color: uiState.backgroundColor,
+        child: Stack(
+          children: [
+            // Haupt-Timer Display
+            const TimerDisplay(),
 
-              // Debug Panel (oben rechts) - nur für Development
-              if (kDebugMode)
-                const Positioned(top: 20, right: 20, child: DebugPanel()),
+            // Debug Panel (oben rechts) - nur für Development
+            if (kDebugMode)
+              const Positioned(top: 20, right: 20, child: DebugPanel()),
 
-              // Control Buttons (unten) - für Testing ohne Keyboard
-              Positioned(
-                bottom: 40,
-                left: 0,
-                right: 0,
-                child: _buildControlButtons(),
-              ),
-            ],
-          ),
+            // Control Buttons (unten) - für Testing ohne Keyboard
+            Positioned(
+              bottom: 40,
+              left: 0,
+              right: 0,
+              child: _buildControlButtons(),
+            ),
+          ],
         ),
       ),
     );
-  }
-
-  /// Zentraler Keyboard-Handler - delegiert an AppActionsNotifier
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    // Nur auf Key-Down reagieren
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
-    // Delegiere an den zentralen Action-Handler
-    final appActions = ref.read(appActionsProvider);
-    return appActions.handleKeyPress(event.logicalKey);
   }
 
   Widget _buildControlButtons() {
@@ -96,7 +65,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -194,10 +163,10 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
       style: ElevatedButton.styleFrom(
         backgroundColor:
             isPrimary
-                ? Colors.green.withOpacity(0.8)
+                ? Colors.green.withValues(alpha: 0.8)
                 : isSecondary
-                ? Colors.orange.withOpacity(0.8)
-                : Colors.grey.withOpacity(0.8),
+                ? Colors.orange.withValues(alpha: 0.8)
+                : Colors.grey.withValues(alpha: 0.8),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
