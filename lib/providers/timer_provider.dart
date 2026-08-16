@@ -131,32 +131,21 @@ class TimerNotifier extends Notifier<TimerState> {
     _startTicking();
   }
 
+  /// Ticks at 100ms so the display can show tenths of a second. That the
+  /// starting value stays readable for a full second is handled by
+  /// [TimerTexts.formatTime], which rounds up — the countdown itself runs
+  /// exactly as long as the phase is configured for.
   void _startTicking() {
     _timer?.cancel();
-    // do one iteration of timer with one second duration
-    _timer = Timer(const Duration(seconds: 1), () {
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       final newTime = Duration(
         milliseconds: state.remainingTime.inMilliseconds - 100,
       );
 
-      if (newTime.inMilliseconds <= 0) {
+      if (newTime <= Duration.zero) {
         _handlePhaseTransition();
       } else {
         state = state.copyWith(remainingTime: newTime);
-
-        // now start periodic timer with 100ms intervall
-        // enables us to show milliseconds in the timer
-        _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-          final newTime = Duration(
-            milliseconds: state.remainingTime.inMilliseconds - 100,
-          );
-
-          if (newTime.inMilliseconds <= 0) {
-            _handlePhaseTransition();
-          } else {
-            state = state.copyWith(remainingTime: newTime);
-          }
-        });
       }
     });
   }

@@ -147,13 +147,21 @@ class TimerTexts {
 
   /// Format time duration
   static String formatTime(Duration duration, {bool showMilliseconds = false}) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-
     if (showMilliseconds) {
+      // Hier wird abgeschnitten, denn die Zehntel werden ja mit angezeigt.
       final milliseconds = (duration.inMilliseconds % 1000) ~/ 100;
-      return '$minutes:${seconds.toString().padLeft(2, '0')}.$milliseconds';
+      final seconds = duration.inSeconds % 60;
+      return '${duration.inMinutes}:${seconds.toString().padLeft(2, '0')}'
+          '.$milliseconds';
     }
+
+    // Aufgerundet, nicht abgeschnitten: bei 1:59,9 soll noch "2:00" stehen.
+    // Sonst wäre jeder Wert nur die 100ms bis zum nächsten Tick zu sehen und
+    // der Startwert würde praktisch übersprungen. So steht jede Zahl genau
+    // eine Sekunde und "0:00" erscheint erst, wenn die Zeit wirklich um ist.
+    final totalSeconds = (duration.inMilliseconds / 1000).ceil();
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
 
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
