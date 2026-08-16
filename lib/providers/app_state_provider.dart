@@ -131,7 +131,7 @@ class AppActionsNotifier {
     final timerState = ref.read(timerProvider);
     final timerNotifier = ref.read(timerProvider.notifier);
 
-    if (timerState.isPaused) {
+    if (timerState.canStart || timerState.isPaused) {
       timerNotifier.startTimer();
     } else if (timerState.isRunning) {
       timerNotifier.pauseTimer();
