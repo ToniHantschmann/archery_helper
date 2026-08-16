@@ -1,177 +1,228 @@
-import 'package:archery_helper/models/keyboard_config.dart';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/timer_provider.dart';
-import '../providers/ui_providers.dart';
-import '../providers/app_actions_provider.dart';
-import '../widgets/timer_display.dart';
-import '../widgets/debug_panel.dart';
-import '../core/l10n/timer_texts.dart';
 
-class TimerScreen extends ConsumerStatefulWidget {
+import '../core/l10n/timer_texts.dart';
+import '../core/theme/app_dimens.dart';
+import '../core/theme/app_palette.dart';
+import '../models/keyboard_config.dart';
+import '../providers/app_actions_provider.dart';
+import '../providers/ui_providers.dart';
+import '../widgets/debug_panel.dart';
+import '../widgets/key_hint_rail.dart';
+import '../widgets/status_chip.dart';
+import '../widgets/timer_display.dart';
+import '../widgets/traffic_light.dart';
+
+/// The shot clock.
+///
+/// Layout is one column: a thin status rail on top, the hero (traffic light +
+/// countdown) in the middle, the keyboard legend at the bottom. The hero
+/// switches between a side-by-side and a stacked arrangement depending on the
+/// aspect ratio, so the two wide tunnel monitors get a vertical traffic light
+/// next to a huge clock, while a windowed session still shows both.
+///
+/// Keyboard handling is app-wide in KeyboardScope (see app.dart); nothing here
+/// listens for keys. The taps that exist are a secondary path only — every one
+/// of them dispatches exactly the [AppAction] its key would.
+class TimerScreen extends ConsumerWidget {
   const TimerScreen({super.key});
 
   @override
-  ConsumerState<TimerScreen> createState() => _TimerScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gradient = ref.watch(timerBackgroundGradientProvider);
 
-class _TimerScreenState extends ConsumerState<TimerScreen> {
-  @override
-  Widget build(BuildContext context) {
-    //final timerState = ref.watch(timerProvider);
-    final uiState = ref.watch(timerUIStateProvider);
-
-    // Keyboard-Handling liegt app-weit in KeyboardScope (siehe app.dart)
     return Scaffold(
       body: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        color: uiState.backgroundColor,
+        duration: AppMotion.slow,
+        curve: AppMotion.curve,
+        decoration: BoxDecoration(gradient: gradient),
         child: Stack(
           children: [
-            // Haupt-Timer Display
-            const TimerDisplay(),
+            SafeArea(
+              child: Column(
+                children: [
+                  const _StatusRail(),
+                  const Expanded(child: _TimerHero()),
+                  const _TimerHintRail(),
+                ],
+              ),
+            ),
 
             // Debug Panel (oben rechts) - nur für Development
             if (kDebugMode)
-              const Positioned(top: 20, right: 20, child: DebugPanel()),
-
-            // Control Buttons (unten) - für Testing ohne Keyboard
-            Positioned(
-              bottom: 40,
-              left: 0,
-              right: 0,
-              child: _buildControlButtons(),
-            ),
+              const Positioned(
+                top: AppSpacing.lg,
+                right: AppSpacing.lg,
+                child: DebugPanel(),
+              ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildControlButtons() {
-    final timerState = ref.watch(timerProvider);
-    final startButtonText = ref.watch(startButtonTextProvider);
+/// Mode indicator and paused badge.
+class _StatusRail extends ConsumerWidget {
+  const _StatusRail();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final modeText = ref.watch(timerModeTextProvider);
+    final isPaused = ref.watch(isTimerPausedProvider);
     final texts = ref.watch(timerTextsProvider);
+    final actions = ref.read(appActionsProvider);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.xs,
+      ),
+      child: Row(
         children: [
-          // Timer Mode Indicator
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              modeText,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w300,
-              ),
-            ),
+          // The chevrons keep previousMode reachable with the mouse; it has no
+          // default key binding.
+          _ModeArrow(
+            icon: Icons.chevron_left,
+            onTap: () => actions.handleAction(AppAction.previousMode),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          StatusChip(label: modeText),
+          const SizedBox(width: AppSpacing.sm),
+          _ModeArrow(
+            icon: Icons.chevron_right,
+            onTap: () => actions.handleAction(AppAction.nextMode),
           ),
 
-          const SizedBox(height: 20),
+          const Spacer(),
 
-          // Control Buttons Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Start/Pause Button
-              _buildControlButton(
-                text: startButtonText,
-                onPressed:
-                    timerState.canStart ||
-                            timerState.canPause ||
-                            timerState.canResume
-                        ? () => ref
-                            .read(appActionsProvider)
-                            .handleAction(AppAction.toggleTimer)
-                        : null,
-                isPrimary: true,
-              ),
-
-              const SizedBox(width: 20),
-
-              // Reset Button
-              _buildControlButton(
-                text: texts.resetButton,
-                onPressed:
-                    timerState.canReset
-                        ? () => ref
-                            .read(appActionsProvider)
-                            .handleAction(AppAction.resetTimer)
-                        : null,
-              ),
-
-              const SizedBox(width: 20),
-
-              // Previous Mode Button
-              _buildControlButton(
-                text: texts.previousModeButton,
-                onPressed:
-                    () => ref
-                        .read(appActionsProvider)
-                        .handleAction(AppAction.previousMode),
-                isSecondary: true,
-              ),
-
-              const SizedBox(width: 10),
-
-              // Next Mode Button
-              _buildControlButton(
-                text: texts.nextModeButton,
-                onPressed:
-                    () => ref
-                        .read(appActionsProvider)
-                        .handleAction(AppAction.nextMode),
-                isSecondary: true,
-              ),
-
-              const SizedBox(width: 20),
-
-              // Settings Button (NEU)
-              _buildControlButton(
-                text: texts.settingsButton,
-                onPressed:
-                    () => ref
-                        .read(appActionsProvider)
-                        .handleAction(AppAction.toggleSettings),
-              ),
-            ],
-          ),
+          if (isPaused)
+            StatusChip(
+              label: texts.paused,
+              color: AppPalette.caution,
+              icon: Icons.pause_rounded,
+              filled: true,
+            ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildControlButton({
-    required String text,
-    required VoidCallback? onPressed,
-    bool isPrimary = false,
-    bool isSecondary = false,
-  }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            isPrimary
-                ? Colors.green.withValues(alpha: 0.8)
-                : isSecondary
-                ? Colors.orange.withValues(alpha: 0.8)
-                : Colors.grey.withValues(alpha: 0.8),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+class _ModeArrow extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ModeArrow({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppPalette.surface.withValues(alpha: 0.5),
+          borderRadius: AppRadius.sm,
+          border: Border.all(color: AppPalette.outline, width: 1.5),
+        ),
+        child: Icon(icon, size: 28, color: AppPalette.textMuted),
       ),
-      child: Text(text),
+    );
+  }
+}
+
+/// Traffic light plus countdown.
+class _TimerHero extends ConsumerWidget {
+  const _TimerHero();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lamp = ref.watch(trafficLampProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.md,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > constraints.maxHeight * 1.25;
+
+          if (isWide) {
+            final lightWidth = (constraints.maxWidth * 0.20).clamp(120.0, 340.0);
+
+            return Row(
+              children: [
+                SizedBox(
+                  width: lightWidth,
+                  child: TrafficLight(lit: lamp),
+                ),
+                const SizedBox(width: AppSpacing.xxl),
+                const Expanded(child: TimerDisplay()),
+              ],
+            );
+          }
+
+          final lightHeight = (constraints.maxHeight * 0.26).clamp(80.0, 240.0);
+
+          return Column(
+            children: [
+              SizedBox(
+                height: lightHeight,
+                child: TrafficLight(lit: lamp, axis: Axis.horizontal),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const Expanded(child: TimerDisplay()),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Keyboard legend. Labels come from the live key bindings, so a remapped key
+/// is shown correctly.
+class _TimerHintRail extends ConsumerWidget {
+  const _TimerHintRail();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(timerTextsProvider);
+    final actions = ref.read(appActionsProvider);
+
+    String keyFor(AppAction action) => ref.watch(actionKeyLabelProvider(action));
+
+    KeyHint hint(AppAction action, String label, {bool emphasised = false}) {
+      return KeyHint(
+        keys: [keyFor(action)],
+        label: label,
+        emphasised: emphasised,
+        onTap: () => actions.handleAction(action),
+      );
+    }
+
+    // The rail keeps the neutral cyan accent even though the screen is tinted
+    // by the phase: the signal colours mean "shoot / do not shoot", and a red
+    // key cap would be borrowing that meaning for a piece of chrome.
+    return KeyHintRail(
+      hints: [
+        hint(AppAction.next, texts.hintStartNext, emphasised: true),
+        // Label follows the state (Start / Pause / Fortsetzen) — the binding
+        // is a toggle, so a fixed word would be wrong half the time.
+        hint(AppAction.toggleTimer, ref.watch(startButtonTextProvider)),
+        hint(AppAction.resetTimer, texts.hintReset),
+        hint(AppAction.nextMode, texts.hintMode),
+        hint(AppAction.toggleSettings, texts.hintSettings),
+        hint(AppAction.toggleMenu, texts.hintMenu),
+      ],
     );
   }
 }

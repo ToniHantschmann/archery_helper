@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../core/theme/app_theme.dart';
 import '../providers/app_state_provider.dart';
-import '../screens/timer_screen.dart';
+import '../screens/idle_screen.dart';
+import '../screens/menu_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/timer_screen.dart';
 import '../widgets/keyboard_scope.dart';
 
 class ArcheryHelperApp extends ConsumerWidget {
@@ -37,48 +40,5 @@ class AppNavigator extends ConsumerWidget {
       case AppScreen.idle:
         return const IdleScreen();
     }
-  }
-}
-
-// Placeholder Screens (werden später implementiert)
-class IdleScreen extends StatelessWidget {
-  const IdleScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Bogensport Timer',
-              style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Drücken Sie eine beliebige Taste zum Starten',
-              style: TextStyle(fontSize: 18),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class MenuScreen extends StatelessWidget {
-  const MenuScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          'Menü - Wird später implementiert',
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
-    );
   }
 }

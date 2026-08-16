@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'timer_provider.dart';
-import 'settings_provider.dart';
+
 import '../core/l10n/timer_texts.dart';
 import '../core/theme/timer_theme.dart';
+import '../models/keyboard_config.dart';
+import '../models/timer_state.dart';
+import 'keyboard_config_provider.dart';
+import 'settings_provider.dart';
+import 'timer_provider.dart';
 
-// Text Provider
+// ===== TEXT PROVIDERS =====
+
 final timerPhaseTextProvider = Provider<String>((ref) {
   final timerState = ref.watch(timerProvider);
   final texts = ref.watch(timerTextsProvider);
@@ -27,13 +33,13 @@ final formattedTimeProvider = Provider<String>((ref) {
   );
 });
 
-// Button Text Provider
+/// Label of the start/pause control in the hint rail.
 final startButtonTextProvider = Provider<String>((ref) {
   final timerState = ref.watch(timerProvider);
   final texts = ref.watch(timerTextsProvider);
 
   if (timerState.isPaused) {
-    return texts.resetButton;
+    return texts.resumeButton;
   } else if (timerState.canStart) {
     return texts.startButton;
   } else {
@@ -41,45 +47,85 @@ final startButtonTextProvider = Provider<String>((ref) {
   }
 });
 
-// Theme Provider
-final timerBackgroundColorProvider = Provider<Color>((ref) {
-  final timerState = ref.watch(timerProvider);
-  return TimerTheme.getBackgroundColor(timerState);
+/// The key currently bound to [action], formatted for a key cap.
+///
+/// The hint rails read the binding instead of hard-coding letters, so a
+/// remapped key stays honest on screen. The space bar is special-cased: its
+/// proper name ("Leertaste") does not fit on a cap.
+final actionKeyLabelProvider = Provider.family<String, AppAction>((ref, action) {
+  final keys = ref.watch(keyboardConfigProvider).getKeysForAction(action);
+  if (keys.isEmpty) return '–';
+
+  final key = keys.first;
+  if (key == LogicalKeyboardKey.space) {
+    return ref.watch(timerTextsProvider).keySpaceLabel;
+  }
+
+  return KeyboardConfig.getKeyName(key);
+});
+
+// ===== THEME PROVIDERS =====
+
+/// Which lamp of the traffic light is lit.
+final trafficLampProvider = Provider<TrafficLamp>((ref) {
+  return TimerTheme.lampFor(ref.watch(timerProvider));
+});
+
+final timerBackgroundGradientProvider = Provider<LinearGradient>((ref) {
+  return TimerTheme.backgroundGradient(ref.watch(timerProvider));
+});
+
+final timerAccentColorProvider = Provider<Color>((ref) {
+  return TimerTheme.accentColor(ref.watch(timerProvider));
 });
 
 final timerTextColorProvider = Provider<Color>((ref) {
-  final timerState = ref.watch(timerProvider);
-  return TimerTheme.getTextColor(timerState);
+  return TimerTheme.timeColor(ref.watch(timerProvider));
 });
 
-final timerFontSizeProvider = Provider<double>((ref) {
-  final timerState = ref.watch(timerProvider);
-  return TimerTheme.getFontSize(timerState);
+final timerPhaseColorProvider = Provider<Color>((ref) {
+  return TimerTheme.phaseColor(ref.watch(timerProvider));
 });
 
-final timerFontWeightProvider = Provider<FontWeight>((ref) {
-  final timerState = ref.watch(timerProvider);
-  return TimerTheme.getFontWeight(timerState);
+/// Remaining share of the current phase, quantised to whole seconds — see
+/// [TimerTheme.phaseProgress].
+final phaseProgressProvider = Provider<double>((ref) {
+  return TimerTheme.phaseProgress(ref.watch(timerProvider));
 });
 
-// Combined UI State für Performance
+final isTimerPausedProvider = Provider<bool>((ref) {
+  return ref.watch(timerProvider).isPaused;
+});
+
+final timerPhaseProvider = Provider<TimerPhase>((ref) {
+  return ref.watch(timerProvider).phase;
+});
+
+// ===== COMBINED UI STATE =====
+
+/// Everything the countdown block needs, in one object.
+///
+/// Every field comes from a provider that only notifies when its own value
+/// really changed, so this is recomputed a handful of times per phase rather
+/// than ten times a second — which is also what keeps the display from
+/// repainting while somebody is aiming.
 class TimerUIState {
   final String formattedTime;
   final String phaseText;
-  final Color backgroundColor;
-  final Color textColor;
-  final double fontSize;
-  final FontWeight fontWeight;
+  final Color timeColor;
+  final Color phaseColor;
+  final Color accentColor;
   final bool isWarning;
+  final bool isPaused;
 
   const TimerUIState({
     required this.formattedTime,
     required this.phaseText,
-    required this.backgroundColor,
-    required this.textColor,
-    required this.fontSize,
-    required this.fontWeight,
+    required this.timeColor,
+    required this.phaseColor,
+    required this.accentColor,
     required this.isWarning,
+    required this.isPaused,
   });
 }
 
@@ -87,10 +133,10 @@ final timerUIStateProvider = Provider<TimerUIState>((ref) {
   return TimerUIState(
     formattedTime: ref.watch(formattedTimeProvider),
     phaseText: ref.watch(timerPhaseTextProvider),
-    backgroundColor: ref.watch(timerBackgroundColorProvider),
-    textColor: ref.watch(timerTextColorProvider),
-    fontSize: ref.watch(timerFontSizeProvider),
-    fontWeight: ref.watch(timerFontWeightProvider),
+    timeColor: ref.watch(timerTextColorProvider),
+    phaseColor: ref.watch(timerPhaseColorProvider),
+    accentColor: ref.watch(timerAccentColorProvider),
     isWarning: ref.watch(isInWarningProvider),
+    isPaused: ref.watch(isTimerPausedProvider),
   );
 });

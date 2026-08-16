@@ -6,6 +6,7 @@ import '../models/keyboard_config.dart';
 import '../models/timer_state.dart';
 import 'app_state_provider.dart';
 import 'keyboard_config_provider.dart';
+import 'menu_navigation_provider.dart';
 import 'settings_navigation_provider.dart';
 import 'timer_provider.dart';
 
@@ -122,7 +123,33 @@ class SettingsScreenActions extends ScreenActionHandler {
 class MenuScreenActions extends ScreenActionHandler {
   const MenuScreenActions(super.ref);
 
-  // TODO: navigate/confirm once MenuScreen is implemented.
+  MenuNavigationNotifier get _navigation =>
+      ref.read(menuNavigationProvider.notifier);
+
+  @override
+  KeyEventResult navigate(NavigationDirection direction) {
+    switch (direction) {
+      case NavigationDirection.up:
+        _navigation.moveUp();
+      case NavigationDirection.down:
+        _navigation.moveDown();
+      // The menu is a single column; left/right have nothing to step through.
+      case NavigationDirection.left:
+      case NavigationDirection.right:
+        return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult confirm() {
+    goTo(ref.read(menuNavigationProvider).target);
+    return KeyEventResult.handled;
+  }
+
+  /// Space opens the focused entry here rather than advancing the timer.
+  @override
+  KeyEventResult next() => confirm();
 
   @override
   KeyEventResult back() {

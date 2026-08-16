@@ -72,6 +72,31 @@ class TimerTexts {
     en: '[Space] Start/Pause  [Enter] Reset  [Esc] Menu',
   );
 
+  /// Label printed on the space bar key cap. "Leertaste" is too long for a
+  /// cap, so the rail uses the short form.
+  static const _keySpace = LocalizedText(de: 'Leer', en: 'Space');
+
+  static const _hintStartNext = LocalizedText(
+    de: 'Start / Weiter',
+    en: 'Start / next',
+  );
+
+  static const _hintPlayPause = LocalizedText(
+    de: 'Pause / Weiter',
+    en: 'Pause / resume',
+  );
+
+  static const _hintReset = LocalizedText(de: 'Zurücksetzen', en: 'Reset');
+
+  static const _hintMode = LocalizedText(de: 'Modus', en: 'Mode');
+
+  static const _hintSettings = LocalizedText(
+    de: 'Einstellungen',
+    en: 'Settings',
+  );
+
+  static const _hintMenu = LocalizedText(de: 'Menü', en: 'Menu');
+
   // ===== PUBLIC GETTERS =====
 
   String get idle => _idle.get(_language);
@@ -97,6 +122,14 @@ class TimerTexts {
   String get nextModeButton => _nextMode.get(_language);
 
   String get keyboardHints => _keyboardHints.get(_language);
+
+  String get keySpaceLabel => _keySpace.get(_language);
+  String get hintStartNext => _hintStartNext.get(_language);
+  String get hintPlayPause => _hintPlayPause.get(_language);
+  String get hintReset => _hintReset.get(_language);
+  String get hintMode => _hintMode.get(_language);
+  String get hintSettings => _hintSettings.get(_language);
+  String get hintMenu => _hintMenu.get(_language);
 
   // ===== HELPER METHODS =====
 

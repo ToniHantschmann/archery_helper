@@ -117,6 +117,30 @@ class SettingsTexts {
 
   static const _navHintBack = LocalizedText(de: 'Esc Zurück', en: 'Esc Back');
 
+  /// Labels for the key hint rail. Unlike the `_navHint*` entries above these
+  /// carry no key symbols: the rail draws the keys as caps and takes the
+  /// binding from the (remappable) keyboard config.
+  static const _labelSelect = LocalizedText(de: 'Auswählen', en: 'Select');
+
+  static const _labelChange = LocalizedText(de: 'Ändern', en: 'Change');
+
+  static const _labelConfirm = LocalizedText(de: 'Bestätigen', en: 'Confirm');
+
+  static const _labelBack = LocalizedText(de: 'Zurück', en: 'Back');
+
+  // ===== VALUE LABELS =====
+
+  static const _on = LocalizedText(de: 'An', en: 'On');
+
+  static const _off = LocalizedText(de: 'Aus', en: 'Off');
+
+  /// Shown on the volume row while sound is switched off — the row is skipped
+  /// by the keyboard, so it has to say why it cannot be reached.
+  static const _soundOffNote = LocalizedText(
+    de: 'Ton ist ausgeschaltet',
+    en: 'Sound is switched off',
+  );
+
   // ===== UNITS =====
 
   static const _seconds = LocalizedText(de: 'Sekunden', en: 'Seconds');
@@ -177,6 +201,18 @@ class SettingsTexts {
   /// The full keyboard hint line shown at the bottom of the settings screen
   String get navigationHint =>
       '$navHintSelect   ·   $navHintChange   ·   $navHintConfirm   ·   $navHintBack';
+
+  String get labelSelect => _labelSelect.get(_currentLanguage);
+  String get labelChange => _labelChange.get(_currentLanguage);
+  String get labelConfirm => _labelConfirm.get(_currentLanguage);
+  String get labelBack => _labelBack.get(_currentLanguage);
+
+  String get on => _on.get(_currentLanguage);
+  String get off => _off.get(_currentLanguage);
+  String get soundOffNote => _soundOffNote.get(_currentLanguage);
+
+  /// "An" / "Aus" for a boolean setting.
+  String onOff(bool value) => value ? on : off;
 
   String get seconds => _seconds.get(_currentLanguage);
   String get secondsShort => _secondsShort.get(_currentLanguage);
