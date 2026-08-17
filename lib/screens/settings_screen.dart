@@ -53,16 +53,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     });
   }
 
+  /// Scrolls the selected row into view — but only when it is not already
+  /// there.
+  ///
+  /// Scrolling unconditionally used to start a fresh centring animation on
+  /// every step. Held down, a new one began every ~33ms and was abandoned after
+  /// a fraction of its way, so the list crawled behind the selection and kept
+  /// easing after the key was released. On the usual monitors every row is
+  /// visible anyway, so this now does nothing at all most of the time.
   void _ensureVisible(SettingsItem item) {
     final itemContext = _itemKeys[item]?.currentContext;
     if (itemContext == null) return;
 
+    if (_isFullyVisible(itemContext)) return;
+
     Scrollable.ensureVisible(
       itemContext,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
+      duration: AppMotion.fast,
+      curve: AppMotion.curve,
       alignment: 0.5,
     );
+  }
+
+  /// Whether the row sits inside the viewport with a little room to spare, so
+  /// a row that is only just clipped still counts as needing a scroll.
+  bool _isFullyVisible(BuildContext itemContext) {
+    final scrollable = Scrollable.maybeOf(itemContext);
+    if (scrollable == null) return false;
+
+    final box = itemContext.findRenderObject();
+    final scrollableBox = scrollable.context.findRenderObject();
+    if (box is! RenderBox || scrollableBox is! RenderBox) return false;
+    if (!box.hasSize || !scrollableBox.hasSize) return false;
+
+    final top = box.localToGlobal(Offset.zero, ancestor: scrollableBox).dy;
+    final bottom = top + box.size.height;
+
+    const margin = AppSpacing.lg;
+    return top >= margin && bottom <= scrollableBox.size.height - margin;
   }
 
   @override

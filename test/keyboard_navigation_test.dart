@@ -6,6 +6,7 @@ import 'package:archery_helper/providers/settings_navigation_provider.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,10 +25,13 @@ void main() {
 
   /// Pumps the real app so the test exercises the actual widget tree,
   /// including KeyboardScope in app.dart.
-  Future<void> pumpApp(WidgetTester tester) async {
+  Future<void> pumpApp(
+    WidgetTester tester, {
+    Size size = const Size(1920, 1080),
+  }) async {
     // The default 800x600 test surface is far smaller than the tunnel monitors
     // and makes the timer button row overflow, which would fail every test.
-    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -156,6 +160,54 @@ void main() {
       );
 
       await flushPendingSaves(tester);
+    });
+
+    /// The selected row is scrolled into view, but only when it is not already
+    /// visible. Scrolling on every step used to restart a centring animation
+    /// faster than it could finish, so the list crawled behind a held arrow
+    /// key. A small window is used on purpose — on the tunnel monitors the list
+    /// does not scroll at all, so the guard would never be exercised.
+    testWidgets('moving between visible rows does not scroll the list', (
+      tester,
+    ) async {
+      await pumpApp(tester, size: const Size(1280, 720));
+      await openSettings(tester);
+
+      final list = find.byType(Scrollable).last;
+      final position = tester.state<ScrollableState>(list).position;
+      expect(
+        position.maxScrollExtent,
+        greaterThan(0),
+        reason: 'the guard is only meaningful while the list can scroll',
+      );
+
+      final offsetAtTop = position.pixels;
+
+      // The first rows share the viewport with the selection, so stepping
+      // between them must leave the scroll offset alone.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(selectedItem(), SettingsItem.soundEnabled);
+      expect(
+        position.pixels,
+        offsetAtTop,
+        reason: 'a row that is already visible must not move the viewport',
+      );
+
+      // Stepping on towards the end of the list must still bring the viewport
+      // along. Done key by key on purpose: the list builds its children lazily,
+      // so a row far outside the viewport has no context to scroll to yet —
+      // walking there is what the keyboard actually does.
+      while (selectedItem() != SettingsItem.resetToDefaults) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+      }
+
+      expect(
+        position.pixels,
+        greaterThan(offsetAtTop),
+        reason: 'a row outside the viewport must still be scrolled into view',
+      );
     });
   });
 
