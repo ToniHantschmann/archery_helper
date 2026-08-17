@@ -11,19 +11,22 @@ class TimerNotifier extends Notifier<TimerState> {
   /// When the running phase ends, on the wall clock.
   ///
   /// The remaining time is always derived from this instead of being counted
-  /// down tick by tick. A periodic Timer is only a request: if the platform
-  /// delivers a callback late — or drops it, which is what a busy or
-  /// backgrounded browser tab does — then subtracting a fixed 100ms per
-  /// callback makes the countdown lag behind real time, and a shot clock that
-  /// runs slow is a shot clock that is wrong.
+  /// down step by step. A Timer is only a request: if the platform delivers a
+  /// callback late — or drops it, which is what a busy or backgrounded browser
+  /// tab does — then subtracting a fixed amount per callback makes the
+  /// countdown lag behind real time, and a shot clock that runs slow is a shot
+  /// clock that is wrong.
   ///
   /// `null` whenever nothing is ticking (idle, paused, ended).
   DateTime? _phaseEnd;
 
-  /// Resolution of the countdown. Fine enough for the tenths the display can
-  /// show; the value shown is quantised to the same step so a late callback
-  /// cannot produce a jittery number.
-  static const Duration _tick = Duration(milliseconds: 100);
+  /// The grid the shown number changes on: whole seconds, or tenths while the
+  /// settings ask for milliseconds. The countdown is scheduled onto this grid
+  /// (see [_scheduleNextStep]), so it is the update rate as well.
+  Duration get _displayStep =>
+      ref.read(settingsProvider).showMilliseconds
+          ? const Duration(milliseconds: 100)
+          : const Duration(seconds: 1);
 
   @override
   TimerState build() {
@@ -36,6 +39,15 @@ class TimerNotifier extends Notifier<TimerState> {
               previous?.customMainTime != next.customMainTime)) {
         _stopTicking();
         state = _stateForMode(TimerMode.custom);
+        return;
+      }
+
+      // Das Anzeigeraster hängt an showMilliseconds. Wird es umgeschaltet
+      // während der Countdown läuft, muss sofort auf dem neuen Raster neu
+      // armiert werden — sonst käme das nächste Update erst zur alten Kante.
+      if (previous?.showMilliseconds != next.showMilliseconds &&
+          _phaseEnd != null) {
+        _onStep();
       }
     });
 
@@ -135,12 +147,12 @@ class TimerNotifier extends Notifier<TimerState> {
     _startTicking();
   }
 
-  void _startMainPhase() {
+  void _startMainPhase({DateTime? anchor}) {
     state = state.copyWith(
       phase: TimerPhase.active,
       remainingTime: state.mainTime,
     );
-    _startTicking();
+    _startTicking(anchor: anchor);
   }
 
   void _endTimer() {
@@ -157,25 +169,55 @@ class TimerNotifier extends Notifier<TimerState> {
     _startTicking();
   }
 
-  /// Ticks at 100ms so the display can show tenths of a second. That the
-  /// starting value stays readable for a full second is handled by
-  /// [TimerTexts.formatTime], which rounds up — the countdown itself runs
-  /// exactly as long as the phase is configured for.
+  /// Anchors the phase on the wall clock and arms the first update.
   ///
-  /// Each callback only *reads* the clock (see [_phaseEnd]), so a skipped or
-  /// delayed callback costs a display update, never countdown time.
-  void _startTicking() {
-    _timer?.cancel();
-    _phaseEnd = clock.now().add(state.remainingTime);
-    _timer = Timer.periodic(_tick, (timer) {
-      final remaining = _remaining();
+  /// [anchor] is the moment the phase conceptually starts. It is only passed
+  /// when one phase follows another on its own: the callback that ends the
+  /// preparation can arrive a few milliseconds late, and anchoring the main
+  /// phase on the planned end instead of on "now" keeps that lateness from
+  /// being added to the round. A skipped phase has no such anchor — there
+  /// "now" is exactly right.
+  void _startTicking({DateTime? anchor}) {
+    _phaseEnd = (anchor ?? clock.now()).add(state.remainingTime);
+    _scheduleNextStep(_remaining());
+  }
 
-      if (remaining <= Duration.zero) {
-        _handlePhaseTransition();
-      } else {
-        state = state.copyWith(remainingTime: remaining);
-      }
-    });
+  /// Arms a single timer for the exact moment the shown number changes.
+  ///
+  /// The countdown used to poll on a fixed 100ms grid and round the measured
+  /// remainder onto the same grid — which is where the display changes too.
+  /// A callback that arrived a few milliseconds late therefore rounded a whole
+  /// step too far down and flipped the second early, leaving the next one on
+  /// screen too long. Waiting for the boundary itself cannot make that error:
+  /// a timer never fires *before* its deadline. And because the delay is
+  /// recomputed from [_phaseEnd] at every step, lateness never accumulates.
+  void _scheduleNextStep(Duration remaining) {
+    _timer?.cancel();
+
+    if (remaining <= Duration.zero) {
+      _handlePhaseTransition();
+      return;
+    }
+
+    // The delay is always within (0, step] and never longer than [remaining],
+    // so the timer cannot overshoot the end of the phase: once less than one
+    // step is left it fires exactly on [_phaseEnd]. The phase therefore still
+    // lasts exactly as long as it is configured for.
+    final step = _displayStep;
+    final steps = (remaining.inMicroseconds / step.inMicroseconds).ceil();
+    _timer = Timer(remaining - step * (steps - 1), _onStep);
+  }
+
+  void _onStep() {
+    final remaining = _remaining();
+
+    if (remaining <= Duration.zero) {
+      _handlePhaseTransition(anchor: _phaseEnd);
+      return;
+    }
+
+    state = state.copyWith(remainingTime: remaining);
+    _scheduleNextStep(remaining);
   }
 
   void _stopTicking() {
@@ -183,26 +225,24 @@ class TimerNotifier extends Notifier<TimerState> {
     _phaseEnd = null;
   }
 
-  /// Time left in the running phase, quantised to whole [_tick] steps.
+  /// Time left in the running phase, straight off the clock.
   ///
-  /// Quantising keeps the displayed tenths stable: without it a callback that
-  /// arrives 7ms late would show 9.9 twice or skip a tenth. Falls back to the
-  /// stored value when nothing is running.
+  /// Deliberately not quantised: the update is already scheduled onto the
+  /// display grid, and rounding the measured value onto that same grid is what
+  /// used to let a late callback jump a step early. Falls back to the stored
+  /// value when nothing is running.
   Duration _remaining() {
     final end = _phaseEnd;
     if (end == null) return state.remainingTime;
 
     final left = end.difference(clock.now());
-    if (left <= Duration.zero) return Duration.zero;
-
-    final steps = (left.inMicroseconds / _tick.inMicroseconds).round();
-    return _tick * steps;
+    return left <= Duration.zero ? Duration.zero : left;
   }
 
-  void _handlePhaseTransition() {
+  void _handlePhaseTransition({DateTime? anchor}) {
     switch (state.phase) {
       case TimerPhase.preparation:
-        _startMainPhase();
+        _startMainPhase(anchor: anchor);
         break;
       case TimerPhase.active:
         _endTimer();

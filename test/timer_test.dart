@@ -1,3 +1,4 @@
+import 'package:archery_helper/core/l10n/timer_texts.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
@@ -24,7 +25,13 @@ void main() {
   TimerNotifier notifier() => container.read(timerProvider.notifier);
   TimerState timer() => container.read(timerProvider);
 
-  /// Stops any running countdown so no periodic Timer survives the test.
+  /// What the tunnel actually shows. Formatted straight from the notifier
+  /// rather than through `formattedTimeProvider`: reading a derived provider
+  /// after a state change leaves one of Riverpod's own scheduling timers
+  /// pending, which `testWidgets` then reports as a leak.
+  String display() => TimerTexts.formatTime(timer().remainingTime);
+
+  /// Stops any running countdown so no timer survives the test.
   void stop() => notifier().resetTimer();
 
   group('initial state', () {
@@ -50,17 +57,75 @@ void main() {
   });
 
   group('countdown', () {
-    testWidgets('counts down in 100ms steps', (tester) async {
+    testWidgets('updates once per displayed second, not on a polling grid', (
+      tester,
+    ) async {
       notifier().startTimer();
 
       expect(timer().phase, TimerPhase.preparation);
       expect(timer().remainingTime, const Duration(seconds: 10));
 
+      // Nothing happens in between: the update is scheduled onto the moment
+      // the shown number changes, so a tenth of a second later the state is
+      // still untouched.
       await tester.pump(const Duration(milliseconds: 100));
-      expect(timer().remainingTime, const Duration(milliseconds: 9900));
+      expect(timer().remainingTime, const Duration(seconds: 10));
 
-      await tester.pump(const Duration(milliseconds: 1400));
-      expect(timer().remainingTime, const Duration(milliseconds: 8500));
+      await tester.pump(const Duration(milliseconds: 900));
+      expect(timer().remainingTime, const Duration(seconds: 9));
+
+      // 2.5s in: the update at 2s has run, the one at 3s has not. The state
+      // holds whole seconds because nothing polls in between.
+      await tester.pump(const Duration(milliseconds: 1500));
+      expect(timer().remainingTime, const Duration(seconds: 8));
+
+      stop();
+    });
+
+    testWidgets('the displayed second never flips early', (tester) async {
+      // This is the regression the whole scheduling change is about: polling
+      // on a 100ms grid and rounding onto it let a late callback drop a second
+      // up to 100ms too soon, so a second could be on screen for 0.9s.
+      notifier().startTimer();
+      expect(display(), '0:10');
+
+      await tester.pump(const Duration(milliseconds: 999));
+      expect(display(), '0:10', reason: 'still within the first second');
+
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(display(), '0:09');
+
+      stop();
+    });
+
+    testWidgets('every displayed second lasts exactly one second', (
+      tester,
+    ) async {
+      // Walking the whole preparation phase to the millisecond around each
+      // boundary: the old 100ms polling let a late callback drop the value up
+      // to a step early, so seconds were on screen for 0.9s to 1.1s.
+      notifier().startTimer();
+
+      for (var elapsed = 1; elapsed <= 10; elapsed++) {
+        await tester.pump(const Duration(milliseconds: 999));
+        expect(
+          display(),
+          TimerTexts.formatTime(Duration(seconds: 11 - elapsed)),
+          reason: 'second $elapsed must still be shown 1ms before its end',
+        );
+
+        await tester.pump(const Duration(milliseconds: 1));
+        if (elapsed < 10) {
+          expect(
+            timer().remainingTime,
+            Duration(seconds: 10 - elapsed),
+            reason: 'and must be replaced exactly on the second',
+          );
+        }
+      }
+
+      // The tenth boundary is the end of the phase, not just a display step.
+      expect(timer().phase, TimerPhase.active);
 
       stop();
     });
@@ -75,7 +140,7 @@ void main() {
       // for the display, that is formatTime's job (see timer_texts_test.dart).
       await tester.pump(const Duration(milliseconds: 9900));
       expect(timer().phase, TimerPhase.preparation);
-      expect(timer().remainingTime, const Duration(milliseconds: 100));
+      expect(timer().remainingTime, const Duration(seconds: 1));
 
       await tester.pump(const Duration(milliseconds: 100));
       expect(timer().phase, TimerPhase.active);
@@ -87,6 +152,41 @@ void main() {
       expect(timer().remainingTime, Duration.zero);
       expect(timer().isRunning, isFalse);
       expect(timer().isFinished, isTrue);
+    });
+  });
+
+  group('tenths display', () {
+    testWidgets('switches the countdown to a 100ms grid', (tester) async {
+      container.read(settingsProvider.notifier).toggleShowMilliseconds();
+
+      notifier().startTimer();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(timer().remainingTime, const Duration(milliseconds: 9900));
+
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(timer().remainingTime, const Duration(milliseconds: 9800));
+
+      stop();
+      await tester.pump(const Duration(milliseconds: 400)); // debounced save
+    });
+
+    testWidgets('re-arms on the new grid when switched mid-phase', (
+      tester,
+    ) async {
+      notifier().startTimer();
+      await tester.pump(const Duration(milliseconds: 1500));
+      expect(timer().remainingTime, const Duration(seconds: 9));
+
+      // Switching the setting must not disturb the running countdown, only
+      // how often it reports — the remaining time is re-read from the clock.
+      container.read(settingsProvider.notifier).toggleShowMilliseconds();
+      expect(timer().remainingTime, const Duration(milliseconds: 8500));
+
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(timer().remainingTime, const Duration(milliseconds: 8400));
+
+      stop();
+      await tester.pump(const Duration(milliseconds: 400)); // debounced save
     });
   });
 
@@ -106,18 +206,18 @@ void main() {
       stop();
     });
 
-    testWidgets('pause freezes on the clock, not on the last tick', (
+    testWidgets('pause freezes on the clock, not on the last update', (
       tester,
     ) async {
       notifier().startTimer();
 
-      // Two ticks fired, then another 70ms of real time passed without a
-      // callback. The remaining time is derived from the clock, so those 70ms
-      // are gone — counting ticks would still claim 9.8s are left.
+      // No update has run yet — the next one is due at the full second. The
+      // remaining time is nevertheless derived from the clock, so pausing
+      // hands back exactly the 270ms that passed and not a rounded value.
       await tester.pump(const Duration(milliseconds: 270));
       notifier().pauseTimer();
 
-      expect(timer().remainingTime, const Duration(milliseconds: 9700));
+      expect(timer().remainingTime, const Duration(milliseconds: 9730));
 
       stop();
     });

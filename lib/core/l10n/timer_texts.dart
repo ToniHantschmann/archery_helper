@@ -189,9 +189,11 @@ class TimerTexts {
     }
 
     // Aufgerundet, nicht abgeschnitten: bei 1:59,9 soll noch "2:00" stehen.
-    // Sonst wäre jeder Wert nur die 100ms bis zum nächsten Tick zu sehen und
-    // der Startwert würde praktisch übersprungen. So steht jede Zahl genau
-    // eine Sekunde und "0:00" erscheint erst, wenn die Zeit wirklich um ist.
+    // Sonst würde der Startwert praktisch übersprungen. So steht jede Zahl
+    // genau eine Sekunde und "0:00" erscheint erst, wenn die Zeit wirklich um
+    // ist. Das Aufrunden definiert zugleich die Kante, auf die TimerNotifier
+    // sein nächstes Update plant — wer hier die Rundung ändert, verschiebt den
+    // Zeitpunkt des Wechsels mit.
     final totalSeconds = (duration.inMilliseconds / 1000).ceil();
     final minutes = totalSeconds ~/ 60;
     final seconds = totalSeconds % 60;
