@@ -96,6 +96,24 @@ void main() {
       container.read(timerProvider.notifier).resetTimer();
       await tester.pump();
     });
+
+    for (final entry in sizes.entries) {
+      testWidgets('the traffic light screen fits at ${entry.key}', (
+        tester,
+      ) async {
+        // The signal word takes the whole clock area here, so it is scaled up
+        // much further than a countdown ever is.
+        container.read(timerProvider.notifier).setMode(TimerMode.trafficLight);
+        await pumpScreen(tester, entry.value, AppScreen.timer);
+
+        expect(tester.takeException(), isNull);
+
+        container.read(timerProvider.notifier).advance();
+        await tester.pump(const Duration(milliseconds: 600));
+
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 
   group('menu keyboard wiring', () {
@@ -165,6 +183,26 @@ void main() {
           stateFor(TimerPhase.active, remaining: const Duration(seconds: 25)),
         ),
         TrafficSignal.amber,
+      );
+    });
+
+    test('the hand-switched signal is only ever red or green', () {
+      TimerState manual(TimerPhase phase) => TimerState(
+        remainingTime: Duration.zero,
+        phase: phase,
+        mode: TimerMode.trafficLight,
+        preparationTime: Duration.zero,
+        mainTime: Duration.zero,
+      );
+
+      expect(
+        TimerTheme.signalFor(manual(TimerPhase.preparation)),
+        TrafficSignal.red,
+      );
+      expect(
+        TimerTheme.signalFor(manual(TimerPhase.active)),
+        TrafficSignal.green,
+        reason: 'zero remaining time must not read as a warning period',
       );
     });
   });

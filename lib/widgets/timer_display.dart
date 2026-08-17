@@ -14,12 +14,32 @@ import '../providers/ui_providers.dart';
 /// The clock is wrapped in a `FittedBox`, so it always takes the largest size
 /// the available space allows — a fixed point size would either waste half the
 /// panel on a 2560px monitor or overflow in a windowed 1280px session.
+///
+/// Im Ampel-Modus gibt es keine Zeit: dort rückt das Signalwort an die Stelle
+/// der Uhr und ist damit die ganze Anzeige.
 class TimerDisplay extends ConsumerWidget {
   const TimerDisplay({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uiState = ref.watch(timerUIStateProvider);
+
+    // Ampel-Modus: es gibt keine Zeit, also übernimmt das Signalwort den
+    // Uhren-Platz und wird so groß wie die Fläche es zulässt. Ein zweites,
+    // kleineres Wort darüber wäre nur eine Wiederholung.
+    if (!uiState.showTime) {
+      return Center(
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: AnimatedDefaultTextStyle(
+            duration: AppMotion.medium,
+            curve: AppMotion.curve,
+            style: AppType.clock.copyWith(color: uiState.phaseColor),
+            child: Text(uiState.phaseText.toUpperCase(), maxLines: 1),
+          ),
+        ),
+      );
+    }
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,

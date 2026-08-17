@@ -7,6 +7,7 @@ import '../core/theme/app_dimens.dart';
 import '../core/theme/app_palette.dart';
 import '../models/keyboard_config.dart';
 import '../providers/app_actions_provider.dart';
+import '../providers/timer_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/debug_panel.dart';
 import '../widgets/key_hint_rail.dart';
@@ -159,15 +160,24 @@ class _TimerHintRail extends ConsumerWidget {
       );
     }
 
+    // Ohne Uhr fallen Weiter und Start/Pause zur selben Handlung zusammen, und
+    // zwei Tasten mit demselben Wort nebeneinander wären nur Rauschen.
+    final isManual = ref.watch(isManualModeProvider);
+
     // The rail keeps the neutral cyan accent even though the screen is tinted
     // by the phase: the signal colours mean "shoot / do not shoot", and a red
     // key cap would be borrowing that meaning for a piece of chrome.
     return KeyHintRail(
       hints: [
-        hint(AppAction.next, texts.hintStartNext, emphasised: true),
+        hint(
+          AppAction.next,
+          isManual ? texts.hintToggleSignal : texts.hintStartNext,
+          emphasised: true,
+        ),
         // Label follows the state (Start / Pause / Fortsetzen) — the binding
         // is a toggle, so a fixed word would be wrong half the time.
-        hint(AppAction.toggleTimer, ref.watch(startButtonTextProvider)),
+        if (!isManual)
+          hint(AppAction.toggleTimer, ref.watch(startButtonTextProvider)),
         hint(AppAction.resetTimer, texts.hintReset),
         hint(AppAction.nextMode, texts.hintMode),
         hint(AppAction.toggleSettings, texts.hintSettings),

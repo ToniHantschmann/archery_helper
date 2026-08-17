@@ -103,6 +103,31 @@ void main() {
       expect(TimerMode.values.contains(timer().mode), isTrue);
     });
 
+    testWidgets('space switches the hand-held signal instead of starting it', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      container.read(timerProvider.notifier).setMode(TimerMode.trafficLight);
+      await tester.pumpAndSettle();
+
+      expect(timer().phase, TimerPhase.preparation);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+
+      expect(timer().phase, TimerPhase.active);
+      expect(
+        timer().isRunning,
+        isFalse,
+        reason: 'the traffic light has no countdown to run',
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+
+      expect(timer().phase, TimerPhase.preparation);
+    });
+
     testWidgets('nothing below the scope can take the keyboard focus', (
       tester,
     ) async {

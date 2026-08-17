@@ -38,7 +38,9 @@ final startButtonTextProvider = Provider<String>((ref) {
   final timerState = ref.watch(timerProvider);
   final texts = ref.watch(timerTextsProvider);
 
-  if (timerState.isPaused) {
+  if (timerState.mode.isManual) {
+    return texts.hintToggleSignal;
+  } else if (timerState.isPaused) {
     return texts.resumeButton;
   } else if (timerState.canStart) {
     return texts.startButton;
@@ -97,12 +99,17 @@ class TimerUIState {
   final Color phaseColor;
   final bool isWarning;
 
+  /// Ob überhaupt eine Uhr gezeigt wird. Im Ampel-Modus gibt es keine Zeit,
+  /// dort ist das Phasenwort die ganze Anzeige.
+  final bool showTime;
+
   const TimerUIState({
     required this.formattedTime,
     required this.phaseText,
     required this.timeColor,
     required this.phaseColor,
     required this.isWarning,
+    required this.showTime,
   });
 }
 
@@ -113,5 +120,6 @@ final timerUIStateProvider = Provider<TimerUIState>((ref) {
     timeColor: ref.watch(timerTextColorProvider),
     phaseColor: ref.watch(timerPhaseColorProvider),
     isWarning: ref.watch(isInWarningProvider),
+    showTime: !ref.watch(isManualModeProvider),
   );
 });

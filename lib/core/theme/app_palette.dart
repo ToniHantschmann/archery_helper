@@ -39,6 +39,11 @@ class AppPalette {
   static const Color textPrimary = Color(0xFFF3F7FF);
   static const Color textSecondary = Color(0xFFC3D0E2);
 
+  /// Reines Weiß, nur für das formatfüllende Signalwort im Ampel-Modus.
+  /// Dort trägt der Hintergrund die Farbe allein — das Wort soll ihr nichts
+  /// wegnehmen, auch nicht den leichten Blaustich von [textPrimary].
+  static const Color textOnSignal = Color(0xFFFFFFFF);
+
   /// The dimmest tone we allow. Still ~7:1 against [base] — anything lighter
   /// in weight or darker in tone would disappear from the shooting line.
   static const Color textMuted = Color(0xFF8FA3BC);

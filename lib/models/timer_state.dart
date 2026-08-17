@@ -38,6 +38,13 @@ enum TimerMode {
         return Duration.zero;
     }
   }
+
+  /// Modi ohne Countdown: das Signal wird von Hand geschaltet.
+  ///
+  /// Die Null-Dauern oben sind deshalb keine Konfiguration, sondern der
+  /// Hinweis, dass hier nie eine Uhr läuft — [TimerNotifier] darf in diesem
+  /// Fall gar nicht erst mit dem Ticken anfangen.
+  bool get isManual => this == trafficLight;
 }
 
 class TimerState {
@@ -61,8 +68,13 @@ class TimerState {
     this.warningThreshold = const Duration(seconds: 30),
   });
 
+  // Ohne den Modus-Ausschluss wäre die Warnung im Ampel-Modus dauerhaft aktiv:
+  // dort ist die Restzeit immer null und damit trivialerweise unter der
+  // Schwelle — die grüne Phase käme in Gelb heraus.
   bool get isInWarningPeriod =>
-      phase == TimerPhase.active && remainingTime <= warningThreshold;
+      phase == TimerPhase.active &&
+      !mode.isManual &&
+      remainingTime <= warningThreshold;
 
   bool get canStart => phase == TimerPhase.idle;
   bool get canPause => isRunning && !isPaused;

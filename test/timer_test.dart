@@ -409,4 +409,82 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400)); // debounced save
     });
   });
+
+  group('traffic light mode', () {
+    test('enters on red, not on the pale idle state', () {
+      notifier().setMode(TimerMode.trafficLight);
+
+      // `preparation` rather than `idle`: idle is tinted at a tenth of the
+      // strength, and a barely-red screen is not a signal.
+      expect(timer().phase, TimerPhase.preparation);
+      expect(timer().isRunning, isFalse);
+      expect(timer().isPaused, isFalse);
+      expect(timer().remainingTime, Duration.zero);
+    });
+
+    test('advance switches between red and green', () {
+      notifier().setMode(TimerMode.trafficLight);
+
+      notifier().advance();
+      expect(timer().phase, TimerPhase.active);
+
+      notifier().advance();
+      expect(timer().phase, TimerPhase.preparation);
+    });
+
+    test('toggle switches the same way advance does', () {
+      notifier().setMode(TimerMode.trafficLight);
+
+      notifier().toggle();
+      expect(timer().phase, TimerPhase.active);
+
+      notifier().toggle();
+      expect(timer().phase, TimerPhase.preparation);
+    });
+
+    test('green is not a warning period, so the tint stays green', () {
+      notifier().setMode(TimerMode.trafficLight);
+      notifier().advance();
+
+      // The remaining time is zero here and therefore trivially below the
+      // warning threshold — without the mode check the signal would be amber.
+      expect(timer().isInWarningPeriod, isFalse);
+    });
+
+    testWidgets('never arms a countdown', (tester) async {
+      notifier().setMode(TimerMode.trafficLight);
+      notifier().advance();
+
+      // Nothing is ticking, so time may pass freely without the phase
+      // collapsing towards `ended` the way zero durations used to.
+      await tester.pump(const Duration(minutes: 5));
+
+      expect(timer().phase, TimerPhase.active);
+      expect(timer().isRunning, isFalse);
+    });
+
+    test('skipping does nothing', () {
+      notifier().setMode(TimerMode.trafficLight);
+      notifier().skipTimerPhase();
+
+      expect(timer().phase, TimerPhase.preparation);
+    });
+
+    test('reset returns to red', () {
+      notifier().setMode(TimerMode.trafficLight);
+      notifier().advance();
+      notifier().resetTimer();
+
+      expect(timer().phase, TimerPhase.preparation);
+    });
+
+    test('leaving the mode restores a normal countdown', () {
+      notifier().setMode(TimerMode.trafficLight);
+      notifier().advance();
+      notifier().setMode(TimerMode.indoor);
+
+      expect(timer().phase, TimerPhase.idle);
+      expect(timer().remainingTime, const Duration(seconds: 130));
+    });
+  });
 }

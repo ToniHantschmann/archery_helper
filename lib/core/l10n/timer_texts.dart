@@ -24,6 +24,17 @@ class TimerTexts {
 
   static const _paused = LocalizedText(de: 'Pausiert', en: 'Paused');
 
+  // ===== SIGNAL TEXTS (Ampel-Modus) =====
+  //
+  // Im Ampel-Modus ersetzt eines dieser beiden Wörter die ganze Anzeige, es
+  // steht also formatfüllend im Tunnel. Beide sind kurz gehalten, damit die
+  // FittedBox sie gleich groß skaliert — ein langes Wort auf einer Seite
+  // würde den Wechsel auch als Größensprung lesen lassen.
+
+  static const _signalShoot = LocalizedText(de: 'Schießen', en: 'Shoot');
+
+  static const _signalStop = LocalizedText(de: 'Stopp', en: 'Stop');
+
   // ===== TIMER MODE TEXTS =====
 
   static const _indoor = LocalizedText(de: 'Indoor Timer', en: 'Indoor Timer');
@@ -86,6 +97,11 @@ class TimerTexts {
     en: 'Pause / resume',
   );
 
+  static const _hintToggleSignal = LocalizedText(
+    de: 'Umschalten',
+    en: 'Switch',
+  );
+
   static const _hintReset = LocalizedText(de: 'Zurücksetzen', en: 'Reset');
 
   static const _hintMode = LocalizedText(de: 'Modus', en: 'Mode');
@@ -104,6 +120,8 @@ class TimerTexts {
   String get active => _active.get(_language);
   String get ended => _ended.get(_language);
   String get paused => _paused.get(_language);
+  String get signalShoot => _signalShoot.get(_language);
+  String get signalStop => _signalStop.get(_language);
 
   String get indoor => _indoor.get(_language);
   String get outdoor => _outdoor.get(_language);
@@ -126,6 +144,7 @@ class TimerTexts {
   String get keySpaceLabel => _keySpace.get(_language);
   String get hintStartNext => _hintStartNext.get(_language);
   String get hintPlayPause => _hintPlayPause.get(_language);
+  String get hintToggleSignal => _hintToggleSignal.get(_language);
   String get hintReset => _hintReset.get(_language);
   String get hintMode => _hintMode.get(_language);
   String get hintSettings => _hintSettings.get(_language);
@@ -165,6 +184,13 @@ class TimerTexts {
 
   /// Get enhanced phase text that includes paused state
   String getPhaseTextEnhanced(TimerState state) {
+    // Im Ampel-Modus ist dieses Wort die gesamte Anzeige, nicht die
+    // Beschriftung über einer Uhr — es benennt deshalb die Handlung und nicht
+    // die Phase. Pausiert kann der Modus nicht sein.
+    if (state.mode.isManual) {
+      return state.phase == TimerPhase.active ? signalShoot : signalStop;
+    }
+
     final baseText = getPhaseText(state.phase);
 
     if (state.isInWarningPeriod) {
