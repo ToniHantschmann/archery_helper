@@ -279,6 +279,46 @@ void main() {
       await flushPendingSaves(tester);
     });
 
+    testWidgets('a long hold widens the step, releasing starts over', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await openSettings(tester);
+
+      select(SettingsItem.customMainTime);
+      final before = settings().customMainTime;
+
+      // One key down plus enough repeats to leave the first step width behind.
+      const repeats = 12;
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      for (var i = 0; i < repeats; i++) {
+        await tester.sendKeyRepeatEvent(LogicalKeyboardKey.arrowRight);
+      }
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+
+      final accelerated = settings().customMainTime - before;
+      expect(
+        accelerated,
+        greaterThan(const Duration(seconds: repeats + 1)),
+        reason: 'holding the key must move further than one second per repeat',
+      );
+
+      // A real key down ends the run, so the next press is a small step again.
+      final afterHold = settings().customMainTime;
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+
+      expect(
+        settings().customMainTime - afterHold,
+        const Duration(seconds: 1),
+        reason: 'releasing the key must reset the acceleration',
+      );
+
+      await flushPendingSaves(tester);
+    });
+
     testWidgets('holding a non-navigation key does not repeat', (tester) async {
       await pumpApp(tester);
       await openSettings(tester);

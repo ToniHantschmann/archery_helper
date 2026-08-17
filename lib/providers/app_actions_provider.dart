@@ -29,8 +29,14 @@ abstract class ScreenActionHandler {
   final Ref ref;
 
   /// Arrow keys — in-screen focus movement or value adjustment.
-  KeyEventResult navigate(NavigationDirection direction) =>
-      KeyEventResult.ignored;
+  ///
+  /// [isRepeat] marks an auto-repeat event, i.e. the key was not released since
+  /// the last call. Handlers that step a value use it to accelerate; a plain
+  /// key down ends a run and starts over.
+  KeyEventResult navigate(
+    NavigationDirection direction, {
+    bool isRepeat = false,
+  }) => KeyEventResult.ignored;
 
   /// Confirm / select the focused element.
   KeyEventResult confirm() => KeyEventResult.ignored;
@@ -81,16 +87,19 @@ class SettingsScreenActions extends ScreenActionHandler {
       ref.read(settingsNavigationProvider.notifier);
 
   @override
-  KeyEventResult navigate(NavigationDirection direction) {
+  KeyEventResult navigate(
+    NavigationDirection direction, {
+    bool isRepeat = false,
+  }) {
     switch (direction) {
       case NavigationDirection.up:
         _navigation.moveUp();
       case NavigationDirection.down:
         _navigation.moveDown();
       case NavigationDirection.left:
-        _navigation.adjustLeft();
+        _navigation.adjustLeft(isRepeat: isRepeat);
       case NavigationDirection.right:
-        _navigation.adjustRight();
+        _navigation.adjustRight(isRepeat: isRepeat);
     }
     return KeyEventResult.handled;
   }
@@ -127,7 +136,10 @@ class MenuScreenActions extends ScreenActionHandler {
       ref.read(menuNavigationProvider.notifier);
 
   @override
-  KeyEventResult navigate(NavigationDirection direction) {
+  KeyEventResult navigate(
+    NavigationDirection direction, {
+    bool isRepeat = false,
+  }) {
     switch (direction) {
       case NavigationDirection.up:
         _navigation.moveUp();
@@ -229,22 +241,25 @@ class AppActionsNotifier {
       return KeyEventResult.ignored;
     }
 
-    return handleAction(action);
+    return handleAction(action, isRepeat: isRepeat);
   }
 
-  KeyEventResult handleAction(AppAction action) {
+  /// [isRepeat] is only forwarded to the navigate* actions — they are the only
+  /// repeatable ones, and the only place where "the key is still held" changes
+  /// the behaviour (see [ScreenActionHandler.navigate]).
+  KeyEventResult handleAction(AppAction action, {bool isRepeat = false}) {
     final screen = ref.read(screenActionHandlerProvider);
 
     switch (action) {
       // ── Screen-dependent ────────────────────────────────────
       case AppAction.navigateUp:
-        return screen.navigate(NavigationDirection.up);
+        return screen.navigate(NavigationDirection.up, isRepeat: isRepeat);
       case AppAction.navigateDown:
-        return screen.navigate(NavigationDirection.down);
+        return screen.navigate(NavigationDirection.down, isRepeat: isRepeat);
       case AppAction.navigateLeft:
-        return screen.navigate(NavigationDirection.left);
+        return screen.navigate(NavigationDirection.left, isRepeat: isRepeat);
       case AppAction.navigateRight:
-        return screen.navigate(NavigationDirection.right);
+        return screen.navigate(NavigationDirection.right, isRepeat: isRepeat);
       case AppAction.confirm:
         return screen.confirm();
       case AppAction.next:

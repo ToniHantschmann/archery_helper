@@ -17,8 +17,18 @@ enum SettingsItem {
   resetToDefaults,
 }
 
-/// Step width used when adjusting a duration with navigateLeft/navigateRight.
-const _durationStep = Duration(seconds: 1);
+/// Step widths used when adjusting a duration with navigateLeft/navigateRight,
+/// from the first press to a key held down for a while.
+///
+/// Without acceleration a duration moves 1s per key repeat, so 4:00 would take
+/// ~240 repeats — roughly ten seconds of holding the key. The thresholds below
+/// are counted in repeats, and auto-repeat runs at ~30Hz: the second step width
+/// kicks in after about a quarter second, the third after about one second.
+const _durationSteps = [
+  (afterRepeats: 0, step: Duration(seconds: 1)),
+  (afterRepeats: 8, step: Duration(seconds: 5)),
+  (afterRepeats: 24, step: Duration(seconds: 15)),
+];
 
 /// Duration values are kept inside this range (1 hour is far beyond any
 /// sensible shooting time, but keeps key repeat from running away).
@@ -56,16 +66,29 @@ class SettingsNavState {
 /// keyboard path (AppActionsNotifier) and the mouse path (taps in
 /// SettingsScreen) drive exactly the same state.
 class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
+  /// How many auto-repeat events the current adjust run has seen. Held-down
+  /// keys widen the duration step (see [_durationSteps]); anything that ends
+  /// the run — a real key down, a different row, the other direction — puts it
+  /// back to zero. This is deliberately not derived from timestamps: a key down
+  /// event ends a run unambiguously, a guessed timeout does not.
+  int _repeatRun = 0;
+
+  /// The direction the current run is going in, so reversing starts over.
+  int _repeatDelta = 0;
+
   @override
   SettingsNavState build() => const SettingsNavState();
 
   /// Called when the settings screen is entered, so navigation always starts
   /// at the top instead of wherever it was left last time.
   void reset() {
+    _endRepeatRun();
     state = const SettingsNavState();
   }
 
   void select(SettingsItem item) {
+    if (item != state.selected) _endRepeatRun();
+
     // Moving away from an armed reset cancels it.
     state = state.copyWith(
       selected: item,
@@ -77,9 +100,9 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
 
   void moveDown() => _move(1);
 
-  void adjustLeft() => _adjust(-1);
+  void adjustLeft({bool isRepeat = false}) => _adjust(-1, isRepeat: isRepeat);
 
-  void adjustRight() => _adjust(1);
+  void adjustRight({bool isRepeat = false}) => _adjust(1, isRepeat: isRepeat);
 
   /// Confirm/next on the focused row: toggles switches, arms and then performs
   /// the reset.
@@ -149,7 +172,9 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         .toList();
   }
 
-  void _adjust(int delta) {
+  void _adjust(int delta, {bool isRepeat = false}) {
+    _trackRepeatRun(delta, isRepeat: isRepeat);
+
     final settings = ref.read(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
 
@@ -197,8 +222,32 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
     }
   }
 
+  /// Counts the repeats of an uninterrupted adjust run. A real key down
+  /// (`isRepeat == false`) or a reversal starts a new one.
+  void _trackRepeatRun(int delta, {required bool isRepeat}) {
+    if (!isRepeat || delta != _repeatDelta) {
+      _repeatRun = 0;
+      _repeatDelta = delta;
+      return;
+    }
+
+    _repeatRun++;
+  }
+
+  void _endRepeatRun() {
+    _repeatRun = 0;
+    _repeatDelta = 0;
+  }
+
   Duration _step(Duration current, int delta) {
-    final seconds = current.inSeconds + (_durationStep.inSeconds * delta);
+    final step = _durationSteps
+        .lastWhere((entry) => _repeatRun >= entry.afterRepeats)
+        .step
+        .inSeconds;
+
+    // Snap onto the step width while accelerating, so a held key lands on round
+    // numbers instead of carrying an offset from the 1s phase along.
+    final seconds = ((current.inSeconds / step).round() + delta) * step;
     return Duration(seconds: seconds.clamp(0, _maxDurationSeconds));
   }
 
