@@ -12,6 +12,7 @@ dependencies:
   flutter_riverpod: ^3.0.3
   window_manager: ^0.5.1
   audioplayers: ^6.5.0
+  clock: ^1.1.2
   path: ^1.9.1
   shared_preferences: ^2.5.4
 

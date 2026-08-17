@@ -1,11 +1,29 @@
 import 'dart:async';
 import 'package:archery_helper/providers/settings_provider.dart';
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/timer_state.dart';
 
 // Business Logic Klasse
 class TimerNotifier extends Notifier<TimerState> {
   Timer? _timer;
+
+  /// When the running phase ends, on the wall clock.
+  ///
+  /// The remaining time is always derived from this instead of being counted
+  /// down tick by tick. A periodic Timer is only a request: if the platform
+  /// delivers a callback late — or drops it, which is what a busy or
+  /// backgrounded browser tab does — then subtracting a fixed 100ms per
+  /// callback makes the countdown lag behind real time, and a shot clock that
+  /// runs slow is a shot clock that is wrong.
+  ///
+  /// `null` whenever nothing is ticking (idle, paused, ended).
+  DateTime? _phaseEnd;
+
+  /// Resolution of the countdown. Fine enough for the tenths the display can
+  /// show; the value shown is quantised to the same step so a late callback
+  /// cannot produce a jittery number.
+  static const Duration _tick = Duration(milliseconds: 100);
 
   @override
   TimerState build() {
@@ -16,7 +34,7 @@ class TimerNotifier extends Notifier<TimerState> {
       if (state.mode == TimerMode.custom &&
           (previous?.customPrepTime != next.customPrepTime ||
               previous?.customMainTime != next.customMainTime)) {
-        _timer?.cancel();
+        _stopTicking();
         state = _stateForMode(TimerMode.custom);
       }
     });
@@ -38,7 +56,15 @@ class TimerNotifier extends Notifier<TimerState> {
 
   void pauseTimer() {
     _timer?.cancel();
-    state = state.copyWith(isPaused: true, isRunning: false);
+    // Freeze on the clock-derived value, not on the last tick: pausing between
+    // two callbacks would otherwise hand back up to 100ms of shooting time.
+    final remaining = _remaining();
+    _phaseEnd = null;
+    state = state.copyWith(
+      remainingTime: remaining,
+      isPaused: true,
+      isRunning: false,
+    );
   }
 
   /// Play/pause toggle. Lives here because only the notifier knows which
@@ -69,13 +95,13 @@ class TimerNotifier extends Notifier<TimerState> {
 
   void skipTimerPhase() {
     if (state.isRunning) {
-      _timer?.cancel();
+      _stopTicking();
       _handlePhaseTransition();
     }
   }
 
   void setMode(TimerMode mode) {
-    _timer?.cancel();
+    _stopTicking();
     state = _stateForMode(mode);
   }
 
@@ -118,7 +144,7 @@ class TimerNotifier extends Notifier<TimerState> {
   }
 
   void _endTimer() {
-    _timer?.cancel();
+    _stopTicking();
     state = state.copyWith(
       phase: TimerPhase.ended,
       isRunning: false,
@@ -135,19 +161,42 @@ class TimerNotifier extends Notifier<TimerState> {
   /// starting value stays readable for a full second is handled by
   /// [TimerTexts.formatTime], which rounds up — the countdown itself runs
   /// exactly as long as the phase is configured for.
+  ///
+  /// Each callback only *reads* the clock (see [_phaseEnd]), so a skipped or
+  /// delayed callback costs a display update, never countdown time.
   void _startTicking() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      final newTime = Duration(
-        milliseconds: state.remainingTime.inMilliseconds - 100,
-      );
+    _phaseEnd = clock.now().add(state.remainingTime);
+    _timer = Timer.periodic(_tick, (timer) {
+      final remaining = _remaining();
 
-      if (newTime <= Duration.zero) {
+      if (remaining <= Duration.zero) {
         _handlePhaseTransition();
       } else {
-        state = state.copyWith(remainingTime: newTime);
+        state = state.copyWith(remainingTime: remaining);
       }
     });
+  }
+
+  void _stopTicking() {
+    _timer?.cancel();
+    _phaseEnd = null;
+  }
+
+  /// Time left in the running phase, quantised to whole [_tick] steps.
+  ///
+  /// Quantising keeps the displayed tenths stable: without it a callback that
+  /// arrives 7ms late would show 9.9 twice or skip a tenth. Falls back to the
+  /// stored value when nothing is running.
+  Duration _remaining() {
+    final end = _phaseEnd;
+    if (end == null) return state.remainingTime;
+
+    final left = end.difference(clock.now());
+    if (left <= Duration.zero) return Duration.zero;
+
+    final steps = (left.inMicroseconds / _tick.inMicroseconds).round();
+    return _tick * steps;
   }
 
   void _handlePhaseTransition() {

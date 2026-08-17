@@ -106,6 +106,22 @@ void main() {
       stop();
     });
 
+    testWidgets('pause freezes on the clock, not on the last tick', (
+      tester,
+    ) async {
+      notifier().startTimer();
+
+      // Two ticks fired, then another 70ms of real time passed without a
+      // callback. The remaining time is derived from the clock, so those 70ms
+      // are gone — counting ticks would still claim 9.8s are left.
+      await tester.pump(const Duration(milliseconds: 270));
+      notifier().pauseTimer();
+
+      expect(timer().remainingTime, const Duration(milliseconds: 9700));
+
+      stop();
+    });
+
     testWidgets('resume continues from where it was paused', (tester) async {
       notifier().startTimer();
       await tester.pump(const Duration(seconds: 3));
