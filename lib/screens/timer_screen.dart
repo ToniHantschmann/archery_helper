@@ -82,6 +82,7 @@ class _StatusRail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modeText = ref.watch(timerModeTextProvider);
+    final arrowText = ref.watch(alternatingArrowTextProvider);
     final actions = ref.read(appActionsProvider);
 
     return Padding(
@@ -108,6 +109,11 @@ class _StatusRail extends ConsumerWidget {
           ),
 
           const Spacer(),
+
+          // Der Pfeilzähler steht bewusst hier und nicht bei der Uhr: welcher
+          // Pfeil gerade dran ist, entscheidet nichts an der Schießlinie — es
+          // beantwortet nur die Frage, wie lange die Passe noch dauert.
+          if (arrowText != null) StatusChip(label: arrowText),
         ],
       ),
     );

@@ -57,6 +57,16 @@ class SettingsTexts {
     en: 'Show Milliseconds',
   );
 
+  static const _arrowsPerArcher = LocalizedText(
+    de: 'Pfeile pro Schütze',
+    en: 'Arrows per Archer',
+  );
+
+  static const _arrowsPerArcherSubtitle = LocalizedText(
+    de: 'Nur im Wechsel-Timer',
+    en: 'Alternating timer only',
+  );
+
   // ===== LANGUAGE SETTINGS =====
 
   static const _language = LocalizedText(de: 'Sprache', en: 'Language');
@@ -70,6 +80,11 @@ class SettingsTexts {
   static const _preparationTime = LocalizedText(
     de: 'Vorbereitungszeit',
     en: 'Preparation Time',
+  );
+
+  static const _preparationTimeSubtitle = LocalizedText(
+    de: 'Gilt auch für den Wechsel-Timer',
+    en: 'Also used by the alternating timer',
   );
 
   static const _mainTime = LocalizedText(de: 'Hauptzeit', en: 'Main Time');
@@ -183,7 +198,12 @@ class SettingsTexts {
   String get german => _german.get(_currentLanguage);
   String get english => _english.get(_currentLanguage);
 
+  String get arrowsPerArcher => _arrowsPerArcher.get(_currentLanguage);
+  String get arrowsPerArcherSubtitle =>
+      _arrowsPerArcherSubtitle.get(_currentLanguage);
   String get preparationTime => _preparationTime.get(_currentLanguage);
+  String get preparationTimeSubtitle =>
+      _preparationTimeSubtitle.get(_currentLanguage);
   String get mainTime => _mainTime.get(_currentLanguage);
 
   String get resetToDefaultsButton => _resetToDefaults.get(_currentLanguage);

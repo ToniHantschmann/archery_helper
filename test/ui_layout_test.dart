@@ -114,6 +114,30 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+
+    for (final entry in sizes.entries) {
+      testWidgets('the alternating screen fits mid-round at ${entry.key}', (
+        tester,
+      ) async {
+        // Widest case of this mode: the long phase word ("Vorbereitung A")
+        // next to the arrow chip in the status rail.
+        container.read(timerProvider.notifier).setMode(TimerMode.alternating);
+        await pumpScreen(tester, entry.value, AppScreen.timer);
+
+        container.read(timerProvider.notifier).startTimer();
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+
+        expect(tester.takeException(), isNull);
+
+        // And once the duel is running, on the second archer.
+        await tester.pump(const Duration(seconds: 30));
+        expect(tester.takeException(), isNull);
+
+        container.read(timerProvider.notifier).resetTimer();
+        await tester.pump();
+      });
+    }
   });
 
   group('menu keyboard wiring', () {

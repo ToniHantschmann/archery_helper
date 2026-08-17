@@ -31,6 +31,7 @@ void main() {
     autoStart: true,
     showMilliseconds: true,
     language: AppLanguage.english,
+    alternatingArrows: 5,
   );
 
   test('saved settings survive a round trip unchanged', () async {
@@ -45,6 +46,7 @@ void main() {
     expect(loaded.autoStart, custom.autoStart);
     expect(loaded.showMilliseconds, custom.showMilliseconds);
     expect(loaded.language, custom.language);
+    expect(loaded.alternatingArrows, custom.alternatingArrows);
   });
 
   test('every field is written to the stored json', () {
@@ -59,6 +61,7 @@ void main() {
       'autoStart',
       'showMilliseconds',
       'language',
+      'alternatingArrows',
     });
   });
 
@@ -86,6 +89,16 @@ void main() {
       expect(loaded.volume, 0.25, reason: 'known keys are still used');
       expect(loaded.defaultMode, const Settings().defaultMode);
       expect(loaded.language, const Settings().language);
+      expect(loaded.alternatingArrows, const Settings().alternatingArrows);
+    });
+
+    test('an arrow count outside the allowed range', () async {
+      SharedPreferences.setMockInitialValues({
+        storageKey: jsonEncode({'alternatingArrows': 99}),
+      });
+
+      final loaded = await repository.loadSettings();
+      expect(loaded.alternatingArrows, Settings.maxAlternatingArrows);
     });
 
     test('an out of range mode index', () async {

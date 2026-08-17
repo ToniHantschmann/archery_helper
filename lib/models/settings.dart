@@ -12,6 +12,10 @@ class Settings {
   final bool showMilliseconds;
   final AppLanguage language;
 
+  /// Pfeile pro Schütze im Wechselmodus. Eine Passe besteht damit aus
+  /// 2 × [alternatingArrows] Passagen.
+  final int alternatingArrows;
+
   const Settings({
     this.soundEnabled = true,
     this.volume = 0.8,
@@ -21,7 +25,13 @@ class Settings {
     this.autoStart = false,
     this.showMilliseconds = false,
     this.language = AppLanguage.german,
+    this.alternatingArrows = 3,
   });
+
+  /// Grenzen für [alternatingArrows]. Drei Pfeile sind der Wettkampf-Fall,
+  /// alles darüber ist Training.
+  static const minAlternatingArrows = 1;
+  static const maxAlternatingArrows = 6;
 
   Settings copyWith({
     bool? soundEnabled,
@@ -32,6 +42,7 @@ class Settings {
     bool? autoStart,
     bool? showMilliseconds,
     AppLanguage? language,
+    int? alternatingArrows,
   }) {
     return Settings(
       soundEnabled: soundEnabled ?? this.soundEnabled,
@@ -42,6 +53,7 @@ class Settings {
       autoStart: autoStart ?? this.autoStart,
       showMilliseconds: showMilliseconds ?? this.showMilliseconds,
       language: language ?? this.language,
+      alternatingArrows: alternatingArrows ?? this.alternatingArrows,
     );
   }
 
@@ -56,6 +68,7 @@ class Settings {
       "autoStart": autoStart,
       "showMilliseconds": showMilliseconds,
       "language": language.code,
+      "alternatingArrows": alternatingArrows,
     };
   }
 
@@ -70,6 +83,7 @@ class Settings {
       autoStart: json['autoStart'] as bool? ?? false,
       showMilliseconds: json['showMilliseconds'] as bool? ?? false,
       language: _parseLanguage(json['language'] as String?),
+      alternatingArrows: _parseArrows(json['alternatingArrows'] as int?),
     );
   }
 
@@ -79,6 +93,12 @@ class Settings {
       return TimerMode.indoor;
     }
     return TimerMode.values[index];
+  }
+
+  /// Helper: keep the arrow count inside its range (with fallback)
+  static int _parseArrows(int? arrows) {
+    if (arrows == null) return 3;
+    return arrows.clamp(minAlternatingArrows, maxAlternatingArrows);
   }
 
   /// Helper: convert string to AppLanguage

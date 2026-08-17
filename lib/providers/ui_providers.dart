@@ -24,6 +24,22 @@ final timerModeTextProvider = Provider<String>((ref) {
   return texts.getModeText(timerState.mode);
 });
 
+/// Pfeilzähler des Wechselmodus ("Pfeil 2/3"), sonst `null`.
+///
+/// Liest den ganzen Timer-Zustand, liefert aber innerhalb einer Passage immer
+/// denselben String — und ein [Provider] meldet sich nur bei einem geänderten
+/// Wert. Der Chip hängt also am Wechsel und nicht am Sekundentakt.
+final alternatingArrowTextProvider = Provider<String?>((ref) {
+  final timerState = ref.watch(timerProvider);
+  if (!timerState.mode.isAlternating) return null;
+
+  final texts = ref.watch(timerTextsProvider);
+  return texts.arrowCounter(
+    timerState.currentArrow,
+    timerState.arrowsPerArcher,
+  );
+});
+
 final formattedTimeProvider = Provider<String>((ref) {
   final remainingTime = ref.watch(remainingTimeProvider);
   final settings = ref.watch(settingsProvider);

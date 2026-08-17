@@ -35,6 +35,16 @@ class TimerTexts {
 
   static const _signalStop = LocalizedText(de: 'Stopp', en: 'Stop');
 
+  // ===== WECHSEL-MODUS =====
+  //
+  // Das Phasenwort benennt hier den Schützen, nicht die Phase: aus der Distanz
+  // ist "wer schießt jetzt" die einzige Frage, die der Bildschirm beantworten
+  // muss. Die Buchstaben A und B stehen sprachneutral in [Archer.letter].
+
+  static const _archer = LocalizedText(de: 'Schütze', en: 'Archer');
+
+  static const _arrow = LocalizedText(de: 'Pfeil', en: 'Arrow');
+
   // ===== TIMER MODE TEXTS =====
 
   static const _indoor = LocalizedText(de: 'Indoor Timer', en: 'Indoor Timer');
@@ -122,6 +132,8 @@ class TimerTexts {
   String get paused => _paused.get(_language);
   String get signalShoot => _signalShoot.get(_language);
   String get signalStop => _signalStop.get(_language);
+  String get archer => _archer.get(_language);
+  String get arrow => _arrow.get(_language);
 
   String get indoor => _indoor.get(_language);
   String get outdoor => _outdoor.get(_language);
@@ -182,6 +194,21 @@ class TimerTexts {
     }
   }
 
+  /// Zähler für die Statusleiste des Wechselmodus, z.B. "Pfeil 2/3".
+  String arrowCounter(int current, int total) => '$arrow $current/$total';
+
+  /// Phasenwort des Wechselmodus, oder `null` wenn es hier keines gibt.
+  ///
+  /// Nur solange wirklich gewechselt wird: `idle` und `ended` gehören zur
+  /// ganzen Passe, nicht zu einem der beiden Schützen, und behalten deshalb
+  /// "Bereit" bzw. "Beendet".
+  String? _alternatingPhaseText(TimerState state) {
+    if (!state.mode.isAlternating || !state.phase.isRunningPhase) return null;
+
+    final base = state.phase == TimerPhase.active ? archer : preparation;
+    return '$base ${state.currentArcher.letter}';
+  }
+
   /// Get enhanced phase text that includes paused state
   String getPhaseTextEnhanced(TimerState state) {
     // Im Ampel-Modus ist dieses Wort die gesamte Anzeige, nicht die
@@ -191,7 +218,7 @@ class TimerTexts {
       return state.phase == TimerPhase.active ? signalShoot : signalStop;
     }
 
-    final baseText = getPhaseText(state.phase);
+    final baseText = _alternatingPhaseText(state) ?? getPhaseText(state.phase);
 
     if (state.isInWarningPeriod) {
       return baseText;

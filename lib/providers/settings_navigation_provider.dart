@@ -12,6 +12,7 @@ enum SettingsItem {
   defaultMode,
   autoStart,
   showMilliseconds,
+  alternatingArrows,
   customPrepTime,
   customMainTime,
   resetToDefaults,
@@ -131,6 +132,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.language:
       case SettingsItem.defaultMode:
       case SettingsItem.volume:
+      case SettingsItem.alternatingArrows:
       case SettingsItem.customPrepTime:
       case SettingsItem.customMainTime:
         _adjust(1);
@@ -209,6 +211,11 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         if (settings.showMilliseconds != (delta > 0)) {
           notifier.toggleShowMilliseconds();
         }
+
+      // Ohne Beschleunigung: bei einem Bereich von 1 bis 6 wäre eine
+      // wachsende Schrittweite nur im Weg.
+      case SettingsItem.alternatingArrows:
+        notifier.setAlternatingArrows(settings.alternatingArrows + delta);
 
       case SettingsItem.customPrepTime:
         notifier.setCustomPrepTime(_step(settings.customPrepTime, delta));

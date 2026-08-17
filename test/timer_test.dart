@@ -410,6 +410,209 @@ void main() {
     });
   });
 
+  group('alternating mode', () {
+    /// One passage of the duel: the 20s an archer has for a single arrow.
+    const passage = Duration(seconds: 20);
+
+    test('starts on archer A with the first arrow', () {
+      notifier().setMode(TimerMode.alternating);
+
+      expect(timer().phase, TimerPhase.idle);
+      expect(timer().preparationTime, const Duration(seconds: 10));
+      expect(timer().mainTime, passage);
+      expect(timer().currentArcher, Archer.a);
+      expect(timer().currentArrow, 1);
+      expect(timer().arrowsPerArcher, 3);
+
+      // 30s would cover the whole 20s passage — the shot clock would never be
+      // green.
+      expect(timer().warningThreshold, const Duration(seconds: 5));
+    });
+
+    testWidgets('hands over to B after the 20s, without a new preparation', (
+      tester,
+    ) async {
+      notifier().setMode(TimerMode.alternating);
+      notifier().startTimer();
+
+      expect(timer().phase, TimerPhase.preparation);
+      expect(timer().currentArcher, Archer.a);
+
+      await tester.pump(const Duration(seconds: 10));
+      expect(timer().phase, TimerPhase.active);
+      expect(timer().currentArcher, Archer.a);
+      expect(timer().remainingTime, passage);
+
+      // Straight into B's passage: no red in between, no second preparation.
+      await tester.pump(passage);
+      expect(timer().phase, TimerPhase.active);
+      expect(timer().currentArcher, Archer.b);
+      expect(timer().currentArrow, 1);
+      expect(timer().remainingTime, passage);
+
+      // Back to A, now on the second arrow.
+      await tester.pump(passage);
+      expect(timer().currentArcher, Archer.a);
+      expect(timer().currentArrow, 2);
+
+      stop();
+    });
+
+    testWidgets('ends after both archers have shot every arrow', (tester) async {
+      notifier().setMode(TimerMode.alternating);
+      notifier().startTimer();
+
+      // 10s preparation + 6 passages of 20s. One second short of that the
+      // last passage is still running — the chain must not lose time.
+      await tester.pump(const Duration(seconds: 129));
+      expect(timer().phase, TimerPhase.active);
+      expect(timer().currentArcher, Archer.b);
+      expect(timer().currentArrow, 3);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(timer().phase, TimerPhase.ended);
+      expect(timer().isRunning, isFalse);
+    });
+
+    testWidgets('advance jumps to the next archer with a full passage', (
+      tester,
+    ) async {
+      notifier().setMode(TimerMode.alternating);
+      notifier().startTimer();
+      await tester.pump(const Duration(seconds: 15)); // 5s into A's passage
+
+      expect(timer().currentArcher, Archer.a);
+
+      // The observer saw the arrow leave the bow: the rest of the time is
+      // dropped and B gets the full 20s from now.
+      notifier().advance();
+      expect(timer().currentArcher, Archer.b);
+      expect(timer().remainingTime, passage);
+
+      await tester.pump(const Duration(seconds: 20));
+      expect(timer().currentArcher, Archer.a);
+      expect(timer().currentArrow, 2);
+
+      stop();
+    });
+
+    testWidgets('advance in the last passage ends the round', (tester) async {
+      notifier().setMode(TimerMode.alternating);
+      notifier().startTimer();
+      await tester.pump(const Duration(seconds: 115)); // B's third arrow
+
+      expect(timer().currentArcher, Archer.b);
+      expect(timer().currentArrow, 3);
+
+      notifier().advance();
+      expect(timer().phase, TimerPhase.ended);
+    });
+
+    testWidgets('warns only in the last 5s of a passage', (tester) async {
+      notifier().setMode(TimerMode.alternating);
+      notifier().startTimer();
+      await tester.pump(const Duration(seconds: 10));
+
+      expect(timer().isInWarningPeriod, isFalse);
+
+      await tester.pump(const Duration(seconds: 15));
+      expect(timer().remainingTime, const Duration(seconds: 5));
+      expect(timer().isInWarningPeriod, isTrue);
+
+      // The handover clears it again — the next archer starts on green.
+      await tester.pump(const Duration(seconds: 5));
+      expect(timer().currentArcher, Archer.b);
+      expect(timer().isInWarningPeriod, isFalse);
+
+      stop();
+    });
+
+    testWidgets('takes the arrow count from the settings', (tester) async {
+      container.read(settingsProvider.notifier).setAlternatingArrows(1);
+      notifier().setMode(TimerMode.alternating);
+
+      expect(timer().arrowsPerArcher, 1);
+
+      notifier().startTimer();
+      // 10s preparation + one passage each.
+      await tester.pump(const Duration(seconds: 49));
+      expect(timer().phase, TimerPhase.active);
+      expect(timer().currentArcher, Archer.b);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(timer().phase, TimerPhase.ended);
+
+      await tester.pump(const Duration(milliseconds: 400)); // debounced save
+    });
+
+    testWidgets('takes the preparation time from the settings', (tester) async {
+      container
+          .read(settingsProvider.notifier)
+          .setCustomPrepTime(const Duration(seconds: 20));
+      notifier().setMode(TimerMode.alternating);
+
+      expect(timer().preparationTime, const Duration(seconds: 20));
+
+      notifier().startTimer();
+      await tester.pump(const Duration(seconds: 20));
+      expect(timer().phase, TimerPhase.active);
+      expect(timer().currentArcher, Archer.a);
+
+      stop();
+      await tester.pump(const Duration(milliseconds: 400)); // debounced save
+    });
+
+    testWidgets('a changed arrow count sets the round up again', (tester) async {
+      notifier().setMode(TimerMode.alternating);
+      notifier().startTimer();
+      await tester.pump(const Duration(seconds: 35)); // mid-round
+
+      container.read(settingsProvider.notifier).setAlternatingArrows(2);
+
+      expect(timer().arrowsPerArcher, 2);
+      expect(timer().phase, TimerPhase.idle);
+      expect(timer().currentArcher, Archer.a);
+      expect(timer().currentArrow, 1);
+
+      await tester.pump(const Duration(milliseconds: 400)); // debounced save
+    });
+
+    testWidgets('reset returns to archer A and the first arrow', (tester) async {
+      notifier().setMode(TimerMode.alternating);
+      notifier().startTimer();
+      await tester.pump(const Duration(seconds: 35)); // B, first arrow
+
+      expect(timer().currentArcher, Archer.b);
+
+      notifier().resetTimer();
+      expect(timer().phase, TimerPhase.idle);
+      expect(timer().currentArcher, Archer.a);
+      expect(timer().currentArrow, 1);
+    });
+
+    testWidgets('pausing freezes the passage of the current archer', (
+      tester,
+    ) async {
+      notifier().setMode(TimerMode.alternating);
+      notifier().startTimer();
+      await tester.pump(const Duration(seconds: 35)); // 5s into B's passage
+
+      notifier().pauseTimer();
+      expect(timer().currentArcher, Archer.b);
+      expect(timer().remainingTime, const Duration(seconds: 15));
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(timer().currentArcher, Archer.b);
+
+      notifier().startTimer();
+      await tester.pump(const Duration(seconds: 15));
+      expect(timer().currentArcher, Archer.a);
+      expect(timer().currentArrow, 2);
+
+      stop();
+    });
+  });
+
   group('traffic light mode', () {
     test('enters on red, not on the pale idle state', () {
       notifier().setMode(TimerMode.trafficLight);

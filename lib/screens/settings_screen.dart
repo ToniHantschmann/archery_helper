@@ -147,6 +147,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         _ShowMillisecondsRow(
                           rowKey: _itemKeys[SettingsItem.showMilliseconds]!,
                         ),
+                        _AlternatingArrowsRow(
+                          rowKey: _itemKeys[SettingsItem.alternatingArrows]!,
+                        ),
 
                         _SectionHeader(texts.customTimesSection),
                         _PrepTimeRow(
@@ -782,6 +785,31 @@ class _ShowMillisecondsRow extends ConsumerWidget {
   }
 }
 
+/// Pfeile pro Schütze im Wechselmodus — steht bei den Timer-Einstellungen und
+/// nicht bei den Zeiten, weil es keine Zeit ist.
+class _AlternatingArrowsRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _AlternatingArrowsRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final arrows = ref.watch(alternatingArrowsProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.alternatingArrows,
+      rowKey: rowKey,
+      title: texts.arrowsPerArcher,
+      subtitle: texts.arrowsPerArcherSubtitle,
+      control: _ValueStepper(
+        item: SettingsItem.alternatingArrows,
+        value: '$arrows',
+      ),
+    );
+  }
+}
+
 /// Duration rows are stepped with the arrow keys (holding a key repeats), so
 /// there is no text field to focus — which a keyboard-only kiosk could not
 /// leave again anyway.
@@ -799,6 +827,7 @@ class _PrepTimeRow extends ConsumerWidget {
       item: SettingsItem.customPrepTime,
       rowKey: rowKey,
       title: texts.preparationTime,
+      subtitle: texts.preparationTimeSubtitle,
       control: _ValueStepper(
         item: SettingsItem.customPrepTime,
         value: texts.formatDurationDisplay(duration),

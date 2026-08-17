@@ -1,4 +1,6 @@
+import 'package:archery_helper/core/l10n/app_language.dart';
 import 'package:archery_helper/core/l10n/timer_texts.dart';
+import 'package:archery_helper/models/timer_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The countdown ticks every 100ms, so the seconds display has to round up:
@@ -51,6 +53,77 @@ void main() {
       expect(formatWithMillis(const Duration(milliseconds: 119900)), '1:59.9');
       expect(formatWithMillis(const Duration(milliseconds: 100)), '0:00.1');
       expect(formatWithMillis(Duration.zero), '0:00.0');
+    });
+  });
+
+  group('alternating mode wording', () {
+    const de = TimerTexts(AppLanguage.german);
+    const en = TimerTexts(AppLanguage.english);
+
+    TimerState state({
+      required TimerPhase phase,
+      Archer archer = Archer.a,
+      bool isPaused = false,
+    }) {
+      return TimerState(
+        remainingTime: const Duration(seconds: 20),
+        phase: phase,
+        mode: TimerMode.alternating,
+        isPaused: isPaused,
+        preparationTime: const Duration(seconds: 10),
+        mainTime: const Duration(seconds: 20),
+        warningThreshold: const Duration(seconds: 5),
+        currentArcher: archer,
+        arrowsPerArcher: 3,
+      );
+    }
+
+    test('names the archer instead of the phase while shooting', () {
+      expect(
+        de.getPhaseTextEnhanced(state(phase: TimerPhase.active)),
+        'Schütze A',
+      );
+      expect(
+        de.getPhaseTextEnhanced(
+          state(phase: TimerPhase.active, archer: Archer.b),
+        ),
+        'Schütze B',
+      );
+      expect(
+        en.getPhaseTextEnhanced(state(phase: TimerPhase.active)),
+        'Archer A',
+      );
+    });
+
+    test('names the archer during the preparation too', () {
+      expect(
+        de.getPhaseTextEnhanced(state(phase: TimerPhase.preparation)),
+        'Vorbereitung A',
+      );
+      expect(
+        en.getPhaseTextEnhanced(state(phase: TimerPhase.preparation)),
+        'Preparation A',
+      );
+    });
+
+    test('keeps the round-wide wording for idle and ended', () {
+      // Neither belongs to one of the two archers.
+      expect(de.getPhaseTextEnhanced(state(phase: TimerPhase.idle)), 'Bereit');
+      expect(de.getPhaseTextEnhanced(state(phase: TimerPhase.ended)), 'Beendet');
+    });
+
+    test('still marks a paused round', () {
+      expect(
+        de.getPhaseTextEnhanced(
+          state(phase: TimerPhase.preparation, isPaused: true),
+        ),
+        'Vorbereitung A (Pausiert)',
+      );
+    });
+
+    test('counts the arrows', () {
+      expect(de.arrowCounter(2, 3), 'Pfeil 2/3');
+      expect(en.arrowCounter(2, 3), 'Arrow 2/3');
     });
   });
 }

@@ -88,6 +88,16 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  void setAlternatingArrows(int arrows) {
+    state = state.copyWith(
+      alternatingArrows: arrows.clamp(
+        Settings.minAlternatingArrows,
+        Settings.maxAlternatingArrows,
+      ),
+    );
+    _save();
+  }
+
   void toggleAutoStart() {
     state = state.copyWith(autoStart: !state.autoStart);
     _save();
@@ -142,4 +152,8 @@ final customPrepTimeProvider = Provider<Duration>((ref) {
 
 final customMainTimeProvider = Provider<Duration>((ref) {
   return ref.watch(settingsProvider).customMainTime;
+});
+
+final alternatingArrowsProvider = Provider<int>((ref) {
+  return ref.watch(settingsProvider).alternatingArrows;
 });

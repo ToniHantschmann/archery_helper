@@ -42,6 +42,17 @@ class TimerNotifier extends Notifier<TimerState> {
         return;
       }
 
+      // Der Wechselmodus hängt an der Vorbereitungszeit und an der Pfeilzahl.
+      // Beides ändert den Aufbau der ganzen Passe, deshalb wird sie — wie im
+      // custom-Modus — neu aufgesetzt statt mittendrin umgebaut.
+      if (state.mode.isAlternating &&
+          (previous?.customPrepTime != next.customPrepTime ||
+              previous?.alternatingArrows != next.alternatingArrows)) {
+        _stopTicking();
+        state = _stateForMode(TimerMode.alternating);
+        return;
+      }
+
       // Das Anzeigeraster hängt an showMilliseconds. Wird es umgeschaltet
       // während der Countdown läuft, muss sofort auf dem neuen Raster neu
       // armiert werden — sonst käme das nächste Update erst zur alten Kante.
@@ -152,8 +163,13 @@ class TimerNotifier extends Notifier<TimerState> {
     }
 
     final settings = ref.read(settingsProvider);
+
+    // Der Wechselmodus teilt sich die Vorbereitungszeit mit dem custom-Modus:
+    // sie ist dieselbe Ansage an denselben Schützen, und eine zweite
+    // Einstellung für denselben Wert wäre nur eine Stelle mehr, an der er
+    // falsch stehen kann. Die Schusszeit bleibt die 20s des Modus.
     final prepTime =
-        mode == TimerMode.custom
+        mode == TimerMode.custom || mode.isAlternating
             ? settings.customPrepTime
             : mode.defaultPrepTime;
     final mainTime =
@@ -167,6 +183,8 @@ class TimerNotifier extends Notifier<TimerState> {
       mode: mode,
       preparationTime: prepTime,
       mainTime: mainTime,
+      warningThreshold: mode.defaultWarningThreshold,
+      arrowsPerArcher: mode.isAlternating ? settings.alternatingArrows : 1,
     );
   }
 
@@ -201,6 +219,25 @@ class TimerNotifier extends Notifier<TimerState> {
       remainingTime: state.mainTime,
     );
     _startTicking(anchor: anchor);
+  }
+
+  /// Gibt die Schusszeit an den nächsten Schützen weiter.
+  ///
+  /// Bewusst ohne neue Vorbereitungszeit: im Duell läuft der Wechsel durch,
+  /// B steht schon am Schießbalken. Nach B ist der Pfeil durch und A beginnt
+  /// mit dem nächsten.
+  ///
+  /// [anchor] wird durchgereicht, weil hier bis zu sechs Passagen aneinander
+  /// hängen — ohne die Verankerung am geplanten Ende würde sich die
+  /// Verspätung jedes Callbacks über die ganze Passe aufaddieren.
+  void _startNextPassage({DateTime? anchor}) {
+    final wasSecond = state.currentArcher == Archer.b;
+
+    state = state.copyWith(
+      currentArcher: state.currentArcher.other,
+      currentArrow: wasSecond ? state.currentArrow + 1 : state.currentArrow,
+    );
+    _startMainPhase(anchor: anchor);
   }
 
   void _endTimer() {
@@ -293,7 +330,11 @@ class TimerNotifier extends Notifier<TimerState> {
         _startMainPhase(anchor: anchor);
         break;
       case TimerPhase.active:
-        _endTimer();
+        if (state.hasNextPassage) {
+          _startNextPassage(anchor: anchor);
+        } else {
+          _endTimer();
+        }
         break;
       default:
         _endTimer();
