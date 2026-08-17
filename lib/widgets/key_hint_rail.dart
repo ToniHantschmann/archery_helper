@@ -16,11 +16,16 @@ class KeyHint {
   /// Marks the hint as the primary action of the screen.
   final bool emphasised;
 
+  /// Whether this is the entry keyboard focus (left/right) currently sits on.
+  /// Screens without hint-rail navigation leave this false for every entry.
+  final bool isSelected;
+
   const KeyHint({
     required this.keys,
     required this.label,
     this.onTap,
     this.emphasised = false,
+    this.isSelected = false,
   });
 }
 
@@ -94,12 +99,30 @@ class _HintEntry extends StatelessWidget {
       ],
     );
 
-    if (hint.onTap == null) return row;
+    // The border is always drawn, transparent when not selected, so gaining
+    // focus recolours it instead of laying the row out again (see the border-
+    // as-padding rule in AppTheme.selectablePanel).
+    final framed = Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: hint.isSelected ? accent : Colors.transparent,
+          width: 2,
+        ),
+        borderRadius: AppRadius.sm,
+      ),
+      child: row,
+    );
+
+    if (hint.onTap == null) return framed;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: hint.onTap,
-      child: row,
+      child: framed,
     );
   }
 }

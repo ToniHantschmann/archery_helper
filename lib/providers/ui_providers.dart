@@ -49,6 +49,24 @@ final startButtonTextProvider = Provider<String>((ref) {
   }
 });
 
+/// Actions shown in the timer screen's bottom hint rail, in the same order
+/// [TimerScreenActions] steps through with left/right — see
+/// `timer_hint_navigation_provider.dart`. Kept next to the other hint-rail
+/// providers so the two stay in sync; `_TimerHintRail` builds its [KeyHint]s
+/// from this list rather than duplicating the order.
+final timerHintActionsProvider = Provider<List<AppAction>>((ref) {
+  final isManual = ref.watch(isManualModeProvider);
+
+  return [
+    AppAction.next,
+    if (!isManual) AppAction.toggleTimer,
+    AppAction.resetTimer,
+    AppAction.nextMode,
+    AppAction.toggleSettings,
+    AppAction.toggleMenu,
+  ];
+});
+
 /// The key currently bound to [action], formatted for a key cap.
 ///
 /// The hint rails read the binding instead of hard-coding letters, so a

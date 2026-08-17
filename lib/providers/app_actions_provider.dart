@@ -8,6 +8,7 @@ import 'app_state_provider.dart';
 import 'keyboard_config_provider.dart';
 import 'menu_navigation_provider.dart';
 import 'settings_navigation_provider.dart';
+import 'timer_hint_navigation_provider.dart';
 import 'timer_provider.dart';
 
 /// Direction of an in-screen navigation step.
@@ -61,9 +62,33 @@ abstract class ScreenActionHandler {
 class TimerScreenActions extends ScreenActionHandler {
   const TimerScreenActions(super.ref);
 
+  TimerHintNavigationNotifier get _hints =>
+      ref.read(timerHintNavigationProvider.notifier);
+
+  /// Left/right step through the bottom hint rail; up/down are unused here.
+  @override
+  KeyEventResult navigate(
+    NavigationDirection direction, {
+    bool isRepeat = false,
+  }) {
+    switch (direction) {
+      case NavigationDirection.left:
+        _hints.moveLeft();
+      case NavigationDirection.right:
+        _hints.moveRight();
+      case NavigationDirection.up:
+      case NavigationDirection.down:
+        return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
+  }
+
+  /// Fires whichever hint is focused, rather than a fixed toggle — the hint
+  /// rail is what left/right now move through, so Enter has to confirm that
+  /// selection instead of a hard-coded action.
   @override
   KeyEventResult confirm() {
-    ref.read(timerProvider.notifier).toggle();
+    _hints.activate();
     return KeyEventResult.handled;
   }
 
