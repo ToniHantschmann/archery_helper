@@ -323,7 +323,7 @@ class _SettingsRow extends ConsumerWidget {
             horizontal: AppSpacing.lg,
             vertical: AppSpacing.md,
           ),
-          decoration: isSelected ? AppTheme.selectedPanel() : AppTheme.panel(),
+          decoration: AppTheme.selectablePanel(isSelected: isSelected),
           child: Opacity(
             opacity: enabled ? 1.0 : 0.45,
             child: Row(
@@ -355,6 +355,10 @@ class _SettingsRow extends ConsumerWidget {
 
 /// The bar in front of the selected row. Always occupies its slot so a moving
 /// selection does not shift the labels around.
+///
+/// Fixed size on purpose: animating the height would relayout the row (and the
+/// list) in every frame of the highlight, for the same reason the border width
+/// is constant — see [AppTheme.selectablePanel]. Only the colour moves.
 class _SelectionMarker extends StatelessWidget {
   final bool isSelected;
 
@@ -366,7 +370,7 @@ class _SelectionMarker extends StatelessWidget {
       duration: AppMotion.fast,
       curve: AppMotion.curve,
       width: 8,
-      height: isSelected ? 56 : 32,
+      height: 56,
       decoration: BoxDecoration(
         color: isSelected ? AppPalette.accent : AppPalette.outline,
         borderRadius: AppRadius.pill,
@@ -830,12 +834,12 @@ class _ResetRow extends ConsumerWidget {
           duration: AppMotion.fast,
           curve: AppMotion.curve,
           padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration:
-              armed
-                  ? AppTheme.selectedPanel(color: AppPalette.caution)
-                  : isSelected
-                  ? AppTheme.selectedPanel()
-                  : AppTheme.panel(),
+          // Armed reads as selected in the warning colour, so the row cannot
+          // change size between its three states either.
+          decoration: AppTheme.selectablePanel(
+            isSelected: armed || isSelected,
+            color: armed ? AppPalette.caution : AppPalette.accent,
+          ),
           child:
               armed
                   ? _ResetConfirmation(

@@ -75,38 +75,51 @@ class AppTheme {
 
   // ===== SHARED SURFACE TREATMENTS =====
 
-  /// A panel on the app background.
-  static BoxDecoration panel({
-    Color color = AppPalette.surface,
-    BorderRadius radius = AppRadius.lg,
-    Color borderColor = AppPalette.outline,
-    double borderWidth = 1.5,
-  }) {
-    return BoxDecoration(
-      color: color,
-      borderRadius: radius,
-      border: Border.all(color: borderColor, width: borderWidth),
-    );
-  }
-
-  /// A panel that is currently selected. The affordance is deliberately loud —
-  /// a tinted background alone is invisible from the shooting line, so the
-  /// selected row also gets a thick accent border and a coloured halo.
-  static BoxDecoration selectedPanel({
+  /// A panel that can hold the keyboard selection — a settings row, a menu
+  /// entry. Both states come from this one function on purpose.
+  ///
+  /// The affordance is deliberately loud: a faint tint is invisible from the
+  /// shooting line, so the selected panel gets a clearly lifted background plus
+  /// the accent border.
+  ///
+  /// Two performance rules are baked in here rather than left to the call
+  /// sites, because both are invisible until someone notices the app "feels
+  /// sluggish":
+  ///
+  /// * **The border width never changes.** A border is laid out like padding,
+  ///   so a width that grew with the selection would relayout the panel — and
+  ///   with it the whole list — in every frame of the 160ms highlight. Same
+  ///   width, different colour, and the state change stays a repaint.
+  /// * **No blurred halo.** The selected panel used to carry a 32px shadow,
+  ///   lerped onto two large panels on every selection step. A blur is the most
+  ///   expensive thing these screens can paint and ruinous on a software
+  ///   rasteriser. Fill and border carry the same meaning for a fraction of the
+  ///   cost — the same trade the timer screen made when the drawn traffic light
+  ///   gave way to a tinted background.
+  ///
+  /// [color] is the accent the selected state is drawn in; the reset row uses
+  /// [AppPalette.caution] to mark an armed confirmation.
+  static BoxDecoration selectablePanel({
+    required bool isSelected,
     Color color = AppPalette.accent,
     BorderRadius radius = AppRadius.lg,
   }) {
     return BoxDecoration(
-      color: Color.alphaBlend(color.withValues(alpha: 0.14), AppPalette.surface),
+      color:
+          isSelected
+              ? Color.alphaBlend(
+                color.withValues(alpha: 0.22),
+                AppPalette.surface,
+              )
+              : AppPalette.surface,
       borderRadius: radius,
-      border: Border.all(color: color, width: 3),
-      boxShadow: [
-        BoxShadow(
-          color: color.withValues(alpha: 0.35),
-          blurRadius: 32,
-          spreadRadius: 1,
-        ),
-      ],
+      border: Border.all(
+        color: isSelected ? color : AppPalette.outline,
+        width: _selectableBorderWidth,
+      ),
     );
   }
+
+  /// Shared by both states of [selectablePanel]; see the rule in its docs.
+  static const double _selectableBorderWidth = 3;
 }

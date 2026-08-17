@@ -147,8 +147,7 @@ class _MenuEntry extends ConsumerWidget {
             horizontal: AppSpacing.lg,
             vertical: AppSpacing.lg,
           ),
-          decoration:
-              isSelected ? AppTheme.selectedPanel() : AppTheme.panel(),
+          decoration: AppTheme.selectablePanel(isSelected: isSelected),
           child: Row(
             children: [
               Icon(
