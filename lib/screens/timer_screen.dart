@@ -12,15 +12,14 @@ import '../widgets/debug_panel.dart';
 import '../widgets/key_hint_rail.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/timer_display.dart';
-import '../widgets/traffic_light.dart';
 
 /// The shot clock.
 ///
-/// Layout is one column: a thin status rail on top, the hero (traffic light +
-/// countdown) in the middle, the keyboard legend at the bottom. The hero
-/// switches between a side-by-side and a stacked arrangement depending on the
-/// aspect ratio, so the two wide tunnel monitors get a vertical traffic light
-/// next to a huge clock, while a windowed session still shows both.
+/// Layout is one column: a thin status rail on top, the countdown in the
+/// middle, the keyboard legend at the bottom. The signal itself is carried by
+/// the tinted background — there is no drawn traffic light. From the shooting
+/// line the whole panel changing colour reads faster than three lamps on it,
+/// and it leaves the entire width to the clock.
 ///
 /// Keyboard handling is app-wide in KeyboardScope (see app.dart); nothing here
 /// listens for keys. The taps that exist are a secondary path only — every one
@@ -43,7 +42,15 @@ class TimerScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   const _StatusRail(),
-                  const Expanded(child: _TimerHero()),
+                  const Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xl,
+                        vertical: AppSpacing.md,
+                      ),
+                      child: TimerDisplay(),
+                    ),
+                  ),
                   const _TimerHintRail(),
                 ],
               ),
@@ -63,15 +70,16 @@ class TimerScreen extends ConsumerWidget {
   }
 }
 
-/// Mode indicator and paused badge.
+/// Mode indicator.
+///
+/// The paused state is deliberately not shown here: the phase word above the
+/// countdown already says it, in type you can read from the shooting line.
 class _StatusRail extends ConsumerWidget {
   const _StatusRail();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modeText = ref.watch(timerModeTextProvider);
-    final isPaused = ref.watch(isTimerPausedProvider);
-    final texts = ref.watch(timerTextsProvider);
     final actions = ref.read(appActionsProvider);
 
     return Padding(
@@ -98,14 +106,6 @@ class _StatusRail extends ConsumerWidget {
           ),
 
           const Spacer(),
-
-          if (isPaused)
-            StatusChip(
-              label: texts.paused,
-              color: AppPalette.caution,
-              icon: Icons.pause_rounded,
-              filled: true,
-            ),
         ],
       ),
     );
@@ -133,56 +133,6 @@ class _ModeArrow extends StatelessWidget {
           border: Border.all(color: AppPalette.outline, width: 1.5),
         ),
         child: Icon(icon, size: 28, color: AppPalette.textMuted),
-      ),
-    );
-  }
-}
-
-/// Traffic light plus countdown.
-class _TimerHero extends ConsumerWidget {
-  const _TimerHero();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final lamp = ref.watch(trafficLampProvider);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xl,
-        vertical: AppSpacing.md,
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth > constraints.maxHeight * 1.25;
-
-          if (isWide) {
-            final lightWidth = (constraints.maxWidth * 0.20).clamp(120.0, 340.0);
-
-            return Row(
-              children: [
-                SizedBox(
-                  width: lightWidth,
-                  child: TrafficLight(lit: lamp),
-                ),
-                const SizedBox(width: AppSpacing.xxl),
-                const Expanded(child: TimerDisplay()),
-              ],
-            );
-          }
-
-          final lightHeight = (constraints.maxHeight * 0.26).clamp(80.0, 240.0);
-
-          return Column(
-            children: [
-              SizedBox(
-                height: lightHeight,
-                child: TrafficLight(lit: lamp, axis: Axis.horizontal),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const Expanded(child: TimerDisplay()),
-            ],
-          );
-        },
       ),
     );
   }

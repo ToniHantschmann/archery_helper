@@ -66,17 +66,8 @@ final actionKeyLabelProvider = Provider.family<String, AppAction>((ref, action) 
 
 // ===== THEME PROVIDERS =====
 
-/// Which lamp of the traffic light is lit.
-final trafficLampProvider = Provider<TrafficLamp>((ref) {
-  return TimerTheme.lampFor(ref.watch(timerProvider));
-});
-
 final timerBackgroundGradientProvider = Provider<LinearGradient>((ref) {
   return TimerTheme.backgroundGradient(ref.watch(timerProvider));
-});
-
-final timerAccentColorProvider = Provider<Color>((ref) {
-  return TimerTheme.accentColor(ref.watch(timerProvider));
 });
 
 final timerTextColorProvider = Provider<Color>((ref) {
@@ -85,16 +76,6 @@ final timerTextColorProvider = Provider<Color>((ref) {
 
 final timerPhaseColorProvider = Provider<Color>((ref) {
   return TimerTheme.phaseColor(ref.watch(timerProvider));
-});
-
-/// Remaining share of the current phase, quantised to whole seconds — see
-/// [TimerTheme.phaseProgress].
-final phaseProgressProvider = Provider<double>((ref) {
-  return TimerTheme.phaseProgress(ref.watch(timerProvider));
-});
-
-final isTimerPausedProvider = Provider<bool>((ref) {
-  return ref.watch(timerProvider).isPaused;
 });
 
 final timerPhaseProvider = Provider<TimerPhase>((ref) {
@@ -114,18 +95,14 @@ class TimerUIState {
   final String phaseText;
   final Color timeColor;
   final Color phaseColor;
-  final Color accentColor;
   final bool isWarning;
-  final bool isPaused;
 
   const TimerUIState({
     required this.formattedTime,
     required this.phaseText,
     required this.timeColor,
     required this.phaseColor,
-    required this.accentColor,
     required this.isWarning,
-    required this.isPaused,
   });
 }
 
@@ -135,8 +112,6 @@ final timerUIStateProvider = Provider<TimerUIState>((ref) {
     phaseText: ref.watch(timerPhaseTextProvider),
     timeColor: ref.watch(timerTextColorProvider),
     phaseColor: ref.watch(timerPhaseColorProvider),
-    accentColor: ref.watch(timerAccentColorProvider),
     isWarning: ref.watch(isInWarningProvider),
-    isPaused: ref.watch(isTimerPausedProvider),
   );
 });

@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 /// * The screens hang several meters above the shooting line, so everything is
 ///   built for contrast. There is no "subtle grey on grey" here — the dimmest
 ///   text tone still sits far above the background.
-/// * The three signal colours (red / amber / green) belong to the traffic
-///   light and to nothing else. The interaction accent is therefore a cyan
-///   that can never be mistaken for a shooting signal.
+/// * The three signal colours (red / amber / green) belong to the shooting
+///   signal and to nothing else. The interaction accent is therefore a cyan
+///   that can never be mistaken for it.
 ///
 /// Neutrals are a cool slate rather than flat black: on a large panel a pure
 /// `#000` reads as a hole, while a deep blue-grey keeps the surfaces legible
@@ -52,21 +52,17 @@ class AppPalette {
 
   // ===== SIGNAL COLOURS =====
   //
-  // Each lamp comes as a triple: the lit core, the bloom around it, and the
-  // colour of the unlit socket (a very dark version of the same hue, so the
-  // housing still reads as a traffic light when the lamp is off).
+  // Each signal comes as a pair: the saturated core, used to tint the screen,
+  // and a lighter version of the same hue for type sitting on that tint.
 
   static const Color redCore = Color(0xFFFF3B2F);
-  static const Color redGlow = Color(0xFFFF7A63);
-  static const Color redOff = Color(0xFF2E0A0A);
+  static const Color redOnTint = Color(0xFFFF7A63);
 
   static const Color amberCore = Color(0xFFFFB114);
-  static const Color amberGlow = Color(0xFFFFD166);
-  static const Color amberOff = Color(0xFF2C1D04);
+  static const Color amberOnTint = Color(0xFFFFD166);
 
   static const Color greenCore = Color(0xFF22D964);
-  static const Color greenGlow = Color(0xFF74F2A3);
-  static const Color greenOff = Color(0xFF06291A);
+  static const Color greenOnTint = Color(0xFF74F2A3);
 
   // ===== STATUS =====
 

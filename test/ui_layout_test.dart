@@ -125,7 +125,7 @@ void main() {
     });
   });
 
-  group('traffic light semantics', () {
+  group('signal semantics', () {
     TimerState stateFor(
       TimerPhase phase, {
       Duration remaining = const Duration(seconds: 60),
@@ -140,89 +140,32 @@ void main() {
     }
 
     test('red while nobody may shoot', () {
-      expect(TimerTheme.lampFor(stateFor(TimerPhase.idle)), TrafficLamp.red);
+      expect(TimerTheme.signalFor(stateFor(TimerPhase.idle)), TrafficSignal.red);
       expect(
-        TimerTheme.lampFor(stateFor(TimerPhase.preparation)),
-        TrafficLamp.red,
+        TimerTheme.signalFor(stateFor(TimerPhase.preparation)),
+        TrafficSignal.red,
       );
       expect(
-        TimerTheme.lampFor(stateFor(TimerPhase.ended)),
-        TrafficLamp.red,
-        reason: 'a dark traffic light would read as a broken display',
+        TimerTheme.signalFor(stateFor(TimerPhase.ended)),
+        TrafficSignal.red,
+        reason: 'a screen with no signal would read as a broken display',
       );
     });
 
     test('green during the shooting time', () {
       expect(
-        TimerTheme.lampFor(stateFor(TimerPhase.active)),
-        TrafficLamp.green,
+        TimerTheme.signalFor(stateFor(TimerPhase.active)),
+        TrafficSignal.green,
       );
     });
 
     test('amber once the warning threshold is reached', () {
       expect(
-        TimerTheme.lampFor(
+        TimerTheme.signalFor(
           stateFor(TimerPhase.active, remaining: const Duration(seconds: 25)),
         ),
-        TrafficLamp.amber,
+        TrafficSignal.amber,
       );
-    });
-  });
-
-  group('phase progress', () {
-    TimerState running(Duration remaining) {
-      return TimerState(
-        remainingTime: remaining,
-        phase: TimerPhase.preparation,
-        mode: TimerMode.indoor,
-        preparationTime: const Duration(seconds: 10),
-        mainTime: const Duration(seconds: 120),
-      );
-    }
-
-    test('runs from full to empty over the phase', () {
-      expect(TimerTheme.phaseProgress(running(const Duration(seconds: 10))), 1);
-      expect(
-        TimerTheme.phaseProgress(running(const Duration(seconds: 5))),
-        0.5,
-      );
-    });
-
-    test('is quantised to whole seconds', () {
-      // Everything inside the same second must give the same value, otherwise
-      // the progress rail would repaint ten times a second.
-      expect(
-        TimerTheme.phaseProgress(running(const Duration(milliseconds: 4100))),
-        TimerTheme.phaseProgress(running(const Duration(milliseconds: 4900))),
-      );
-    });
-
-    test('is full while idle and empty once ended', () {
-      const base = TimerState(
-        remainingTime: Duration(seconds: 120),
-        phase: TimerPhase.idle,
-        mode: TimerMode.indoor,
-        preparationTime: Duration(seconds: 10),
-        mainTime: Duration(seconds: 120),
-      );
-
-      expect(TimerTheme.phaseProgress(base), 1.0);
-      expect(
-        TimerTheme.phaseProgress(base.copyWith(phase: TimerPhase.ended)),
-        0.0,
-      );
-    });
-
-    test('survives a mode without durations', () {
-      const trafficLightOnly = TimerState(
-        remainingTime: Duration.zero,
-        phase: TimerPhase.active,
-        mode: TimerMode.trafficLight,
-        preparationTime: Duration.zero,
-        mainTime: Duration.zero,
-      );
-
-      expect(TimerTheme.phaseProgress(trafficLightOnly), 0.0);
     });
   });
 }

@@ -109,17 +109,4 @@ class AppTheme {
       ],
     );
   }
-
-  /// Soft coloured halo used behind lamps and around active values.
-  static List<BoxShadow> glow(Color color, {double strength = 1.0}) {
-    if (strength <= 0) return const [];
-
-    return [
-      BoxShadow(
-        color: color.withValues(alpha: 0.45 * strength),
-        blurRadius: 48 * strength,
-        spreadRadius: 2 * strength,
-      ),
-    ];
-  }
 }

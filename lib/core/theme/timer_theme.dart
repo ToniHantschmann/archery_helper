@@ -3,27 +3,26 @@ import 'package:flutter/material.dart';
 import '../../models/timer_state.dart';
 import 'app_palette.dart';
 
-/// One lamp of the traffic light.
+/// One state of the shooting signal.
 ///
-/// The three signals keep their everyday meaning, which is also the World
-/// Archery meaning: red = do not shoot, green = shooting time, amber = the end
-/// of the shooting time is near.
-enum TrafficLamp {
-  red(AppPalette.redCore, AppPalette.redGlow, AppPalette.redOff),
-  amber(AppPalette.amberCore, AppPalette.amberGlow, AppPalette.amberOff),
-  green(AppPalette.greenCore, AppPalette.greenGlow, AppPalette.greenOff);
+/// There is no drawn traffic light any more — the signal is the colour of the
+/// whole screen, so there is nothing here that lights up or glows. The three
+/// signals keep their everyday meaning, which is also the World Archery
+/// meaning: red = do not shoot, green = shooting time, amber = the end of the
+/// shooting time is near.
+enum TrafficSignal {
+  red(AppPalette.redCore, AppPalette.redOnTint),
+  amber(AppPalette.amberCore, AppPalette.amberOnTint),
+  green(AppPalette.greenCore, AppPalette.greenOnTint);
 
-  const TrafficLamp(this.core, this.glow, this.off);
+  const TrafficSignal(this.core, this.onTint);
 
-  /// Colour of the lit lamp.
+  /// The saturated signal colour. Only ever used to tint the background,
+  /// never as a large flat fill.
   final Color core;
 
-  /// Colour of the bloom around a lit lamp.
-  final Color glow;
-
-  /// Colour of the unlit socket — a very dark version of the same hue, so the
-  /// housing still reads as a traffic light when the lamp is dark.
-  final Color off;
+  /// The lighter version of the same hue, for type sitting on that tint.
+  final Color onTint;
 }
 
 /// Maps timer state to the look of the timer screen.
@@ -33,44 +32,39 @@ enum TrafficLamp {
 class TimerTheme {
   const TimerTheme._();
 
-  /// Which lamp is lit for a given state.
+  /// Which signal a given state shows.
   ///
   /// Idle and ended both show red: in both cases nobody may shoot, and a
-  /// traffic light that is completely dark would read as "display broken"
-  /// from the shooting line.
-  static TrafficLamp lampFor(TimerState state) {
-    if (state.isInWarningPeriod) return TrafficLamp.amber;
+  /// screen with no signal at all would read as "display broken" from the
+  /// shooting line.
+  static TrafficSignal signalFor(TimerState state) {
+    if (state.isInWarningPeriod) return TrafficSignal.amber;
 
     switch (state.phase) {
       case TimerPhase.idle:
       case TimerPhase.preparation:
       case TimerPhase.ended:
-        return TrafficLamp.red;
+        return TrafficSignal.red;
       case TimerPhase.active:
-        return TrafficLamp.green;
+        return TrafficSignal.green;
     }
   }
 
-  /// The colour that carries the state through the rest of the screen:
-  /// countdown digits, phase label, progress rail.
-  static Color accentColor(TimerState state) => lampFor(state).core;
-
   /// Background of the timer screen.
   ///
-  /// The whole screen stays tinted by the current phase — that is what lets
-  /// somebody read the state from the corner of their eye — but the tint is a
-  /// deep, desaturated gradient rather than a flat block of colour, so the
-  /// white countdown keeps its contrast.
+  /// The tinted screen *is* the traffic light: it is the only thing carrying
+  /// the signal, which is why the tint is much stronger than a decorative
+  /// background would be. It stays a deep gradient rather than a flat block of
+  /// signal colour, so the white countdown on top keeps its contrast.
   static LinearGradient backgroundGradient(TimerState state) {
-    final tint = lampFor(state);
+    final tint = signalFor(state);
     final isIdle = state.phase == TimerPhase.idle;
 
-    // Enough tint to recognise the state from the corner of the eye, not
-    // enough to turn the panel into a coloured surface — the lamp, the phase
-    // word and the progress rail carry the colour, the background only hints
-    // at it. Idle is the most neutral state of all: the light is red, but the
-    // room should not be bathed in red while nothing is happening.
-    final strength = isIdle ? 0.07 : 0.15;
+    // Strong enough to read as red/green/amber across the tunnel, still dark
+    // enough for white type. Idle is the exception: the signal is red, but the
+    // room should not be bathed in red while nothing is happening, so idle
+    // only hints at it.
+    final strength = isIdle ? 0.08 : 0.34;
 
     return LinearGradient(
       begin: Alignment.topLeft,
@@ -88,38 +82,15 @@ class TimerTheme {
   /// the state is one you must react to — a paused or warning clock should be
   /// distinguishable without reading the label.
   static Color timeColor(TimerState state) {
-    if (state.isInWarningPeriod) return AppPalette.amberGlow;
+    if (state.isInWarningPeriod) return AppPalette.amberOnTint;
     if (state.isPaused) return AppPalette.textSecondary;
-    if (state.phase == TimerPhase.ended) return AppPalette.redGlow;
+    if (state.phase == TimerPhase.ended) return AppPalette.redOnTint;
     return AppPalette.textPrimary;
   }
 
   /// Colour of the phase word above the countdown.
   static Color phaseColor(TimerState state) {
     if (state.phase == TimerPhase.idle) return AppPalette.textSecondary;
-    return lampFor(state).glow;
-  }
-
-  /// How much of the current phase is left, from 1.0 down to 0.0.
-  ///
-  /// Quantised to whole seconds on purpose. The countdown ticks every 100ms,
-  /// and a value that changed on every tick would repaint the progress rail
-  /// ten times a second for a difference nobody can see from five meters.
-  static double phaseProgress(TimerState state) {
-    final total = switch (state.phase) {
-      TimerPhase.preparation => state.preparationTime,
-      TimerPhase.active => state.mainTime,
-      TimerPhase.idle => state.mainTime,
-      TimerPhase.ended => state.mainTime,
-    };
-
-    if (state.phase == TimerPhase.idle) return 1.0;
-    if (state.phase == TimerPhase.ended) return 0.0;
-    if (total.inMilliseconds <= 0) return 0.0;
-
-    final remainingSeconds = (state.remainingTime.inMilliseconds / 1000).ceil();
-    final totalSeconds = (total.inMilliseconds / 1000).ceil();
-
-    return (remainingSeconds / totalSeconds).clamp(0.0, 1.0);
+    return signalFor(state).onTint;
   }
 }
