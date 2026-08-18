@@ -9,7 +9,10 @@ import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/menu_navigation_provider.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
+import 'package:archery_helper/widgets/key_hint_rail.dart';
+import 'package:archery_helper/widgets/led_corner.dart';
 import 'package:archery_helper/widgets/led_panel.dart';
+import 'package:archery_helper/widgets/status_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -312,6 +315,45 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 400));
     });
+  });
+
+  /// Der Turniermodus: die Wand oben links *in* der vollen Bedienansicht. Weil
+  /// der Mediaplayer nur das Rechteck (0,0,120,80) sieht, muss beides
+  /// gleichzeitig stimmen — die Ecke auf dem Pixel und die Bedienansicht
+  /// vollständig daneben.
+  group('the LED corner sits inside the full competition view', () {
+    for (final entry in sizes.entries) {
+      testWidgets('ledWithControl at ${entry.key}', (tester) async {
+        container
+            .read(settingsProvider.notifier)
+            .setCompetitionDisplay(CompetitionDisplay.ledWithControl);
+
+        await pumpScreen(tester, entry.value, AppScreen.competition);
+
+        expect(tester.takeException(), isNull);
+
+        // Die Wand.
+        expect(find.byKey(ledTimeKey), findsOneWidget);
+        expect(find.byKey(ledGroupKey), findsOneWidget);
+        expect(tester.getTopLeft(find.byType(LedPanel)), Offset.zero);
+
+        // Und daneben genau das, was der reine LED-Modus wegnimmt.
+        expect(find.byType(StatusChip), findsWidgets);
+        expect(find.byType(KeyHintRail), findsOneWidget);
+
+        // Der Passenzähler weicht der Ecke aus. Ohne diese Zusicherung merkt
+        // niemand, wenn eine spätere Layout-Änderung ihn wieder darunter
+        // schiebt — auf der Wand fällt es nie auf, nur dem Schießleiter.
+        final corner = ledCornerSize(tester.element(find.byType(LedCorner)));
+        expect(
+          tester.getTopLeft(find.byType(StatusChip).first).dx,
+          greaterThanOrEqualTo(corner.width),
+        );
+
+        await leaveScreen(tester);
+        await tester.pump(const Duration(milliseconds: 400));
+      });
+    }
   });
 
   group('menu keyboard wiring', () {

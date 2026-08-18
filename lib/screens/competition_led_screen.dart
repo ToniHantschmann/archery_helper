@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_palette.dart';
 import '../models/competition_state.dart';
-import '../providers/settings_provider.dart';
 import '../widgets/led_panel.dart';
 
 /// Der Wettkampfmodus für die LED-Wand am Außenstand.
@@ -25,13 +24,15 @@ import '../widgets/led_panel.dart';
 ///   gerastert — die Vorschau zeigt Größenverhältnisse wahrheitsgetreu, aber
 ///   nicht, wie scharf eine Kante auf der Wand am Ende wirkt.
 class CompetitionLedScreen extends ConsumerWidget {
-  const CompetitionLedScreen({super.key});
+  /// Ob das Panel hochskaliert beurteilt werden soll, statt echte Dioden zu
+  /// treffen. Als Parameter und nicht aus den Einstellungen gelesen: der Schirm
+  /// muss nicht wissen, *warum* er gezeigt wird — nur, wie er aussehen soll.
+  final bool isPreview;
+
+  const CompetitionLedScreen({super.key, required this.isPreview});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isPreview =
-        ref.watch(competitionDisplayProvider) == CompetitionDisplay.ledPreview;
-
     return Scaffold(
       backgroundColor: AppPalette.ledBlack,
       body: LayoutBuilder(

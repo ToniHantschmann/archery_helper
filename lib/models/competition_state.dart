@@ -78,6 +78,19 @@ enum CompetitionDisplay {
 
   /// Das Panel in echten Gerätepixeln, links oben, Rest des Bildes schwarz.
   led,
+
+  /// Das Panel links oben *in* der vollen Bedienansicht.
+  ///
+  /// Für den Turnierbetrieb, mit **gespiegelten** Bildschirmen: der Player
+  /// sieht nur das Rechteck (0, 0, 120, 80) des Bildes, alles daneben existiert
+  /// für die Wand nicht. Also kann dort dieselbe Ansicht stehen, die der
+  /// Schießleiter am Laptop ohnehin braucht — Passe, Gruppen und Tastenleiste,
+  /// die [led] gerade wegnimmt.
+  ///
+  /// Ein Fenster, eine Uhr, keine Fensterverwaltung: die Wand hängt nicht daran,
+  /// wie das Layout daneben aussieht, sondern nur daran, dass das Panel zuletzt
+  /// und auf Gerätepixel (0,0) gezeichnet wird.
+  ledWithControl,
 }
 
 /// Vorbereitungszeit vor jeder Schusszeit — am Passenanfang und beim

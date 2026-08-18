@@ -41,7 +41,9 @@ void main() {
     competitionDiscipline: CompetitionDiscipline.outdoor,
     competitionEnds: 9,
     competitionLineup: CompetitionLineup.ab,
-    competitionDisplay: CompetitionDisplay.led,
+    // Bewusst der letzte Wert des Enums: ein Index, der beim Lesen aus dem
+    // Gespeicherten am ehesten aus der Liste fällt.
+    competitionDisplay: CompetitionDisplay.ledWithControl,
   );
 
   test('saved settings survive a round trip unchanged', () async {
@@ -138,12 +140,16 @@ void main() {
     });
 
     test('an out of range display index', () async {
-      SharedPreferences.setMockInitialValues({
-        storageKey: jsonEncode({'competitionDisplay': -1}),
-      });
+      // Beide Enden: eine gespeicherte Anzeigeart, die es nicht mehr gibt, ist
+      // der Fall, der beim Schrumpfen des Enums entsteht.
+      for (final index in [-1, CompetitionDisplay.values.length]) {
+        SharedPreferences.setMockInitialValues({
+          storageKey: jsonEncode({'competitionDisplay': index}),
+        });
 
-      final loaded = await repository.loadSettings();
-      expect(loaded.competitionDisplay, CompetitionDisplay.standard);
+        final loaded = await repository.loadSettings();
+        expect(loaded.competitionDisplay, CompetitionDisplay.standard);
+      }
     });
 
     test('an out of range mode index', () async {

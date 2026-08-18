@@ -14,6 +14,7 @@ import '../providers/hint_navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
+import '../widgets/led_corner.dart';
 import 'competition_led_screen.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/timer_display.dart';
@@ -39,13 +40,17 @@ class CompetitionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (ref.watch(competitionDisplayProvider) != CompetitionDisplay.standard) {
-      return const CompetitionLedScreen();
+    final display = ref.watch(competitionDisplayProvider);
+    if (display == CompetitionDisplay.led ||
+        display == CompetitionDisplay.ledPreview) {
+      return CompetitionLedScreen(
+        isPreview: display == CompetitionDisplay.ledPreview,
+      );
     }
 
     final gradient = ref.watch(competitionBackgroundGradientProvider);
 
-    return Scaffold(
+    final view = Scaffold(
       body: AnimatedContainer(
         duration: AppMotion.slow,
         curve: AppMotion.curve,
@@ -72,6 +77,15 @@ class CompetitionScreen extends ConsumerWidget {
         ),
       ),
     );
+
+    if (display != CompetitionDisplay.ledWithControl) return view;
+
+    // Die Ecke zuletzt, damit sie über allem liegt: nur so ist der Ausschnitt
+    // unabhängig davon, was das Layout darunter gerade tut.
+    return Stack(
+      alignment: Alignment.topLeft,
+      children: [view, const LedCorner()],
+    );
   }
 }
 
@@ -88,9 +102,17 @@ class _CompetitionStatusRail extends ConsumerWidget {
     final settingsTexts = ref.watch(settingsTextsProvider);
     final discipline = ref.watch(competitionDisciplineProvider);
 
+    // Der Passenzähler steht dort, wo im Wandmodus die Ecke liegt — also weicht
+    // er ihr aus, statt unter ihr zu verschwinden.
+    final reserved =
+        ref.watch(competitionDisplayProvider) ==
+            CompetitionDisplay.ledWithControl
+        ? ledCornerSize(context).width + AppSpacing.md
+        : 0.0;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xl,
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xl + reserved,
         AppSpacing.lg,
         AppSpacing.xl,
         AppSpacing.xs,

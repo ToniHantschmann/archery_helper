@@ -85,8 +85,8 @@ class SettingsTexts {
   static const _display = LocalizedText(de: 'Ausgabe', en: 'Output');
 
   static const _displaySubtitle = LocalizedText(
-    de: 'Monitor oder LED-Wand (120 × 80 Pixel)',
-    en: 'Monitor or LED panel (120 × 80 pixels)',
+    de: 'LED-Wand: 120 × 80 Pixel oben links, Skalierung 100 %',
+    en: 'LED panel: 120 × 80 pixels at the top left, 100 % scaling',
   );
 
   static const _displayStandard = LocalizedText(de: 'Monitor', en: 'Monitor');
@@ -97,6 +97,14 @@ class SettingsTexts {
   );
 
   static const _displayLed = LocalizedText(de: 'LED-Wand', en: 'LED panel');
+
+  /// Setzt gespiegelte Bildschirme voraus — das muss dort stehen, wo man den
+  /// Wert auswählt, sonst sitzt der Ausschnitt am Turniertag auf dem falschen
+  /// Bild.
+  static const _displayLedWithControl = LocalizedText(
+    de: 'LED-Wand + Bedienung (gespiegelt)',
+    en: 'LED panel + control (mirrored)',
+  );
 
   static const _arrows = LocalizedText(de: 'Pfeile', en: 'arrows');
 
@@ -386,6 +394,8 @@ class SettingsTexts {
         return _displayLedPreview.get(_currentLanguage);
       case CompetitionDisplay.led:
         return _displayLed.get(_currentLanguage);
+      case CompetitionDisplay.ledWithControl:
+        return _displayLedWithControl.get(_currentLanguage);
     }
   }
 
