@@ -300,6 +300,42 @@ void main() {
     });
   });
 
+  /// Vollbild gilt für die ganze App: F11 schaltet dasselbe persistierte
+  /// Setting wie die Zeile in den allgemeinen Einstellungen — es gibt keinen
+  /// zweiten Zustand, der davon abweichen könnte.
+  group('fullscreen', () {
+    testWidgets('F11 toggles the fullscreen setting from any screen', (
+      tester,
+    ) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+      expect(settings().fullscreen, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f11);
+      await tester.pumpAndSettle();
+      expect(settings().fullscreen, isFalse);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.f11);
+      await tester.pumpAndSettle();
+      expect(settings().fullscreen, isTrue);
+
+      await flushPendingSaves(tester);
+    });
+
+    testWidgets('confirm on the fullscreen row toggles the same setting', (
+      tester,
+    ) async {
+      await pumpApp(tester, startAt: AppScreen.generalSettings);
+      select(SettingsItem.fullscreen);
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(settings().fullscreen, isFalse);
+
+      await flushPendingSaves(tester);
+    });
+  });
+
   group('settings selection', () {
     testWidgets('arrow down and up move the selection', (tester) async {
       await pumpApp(tester, startAt: AppScreen.generalSettings);
@@ -308,7 +344,7 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(selectedItem(), SettingsItem.soundEnabled);
+      expect(selectedItem(), SettingsItem.fullscreen);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();

@@ -16,6 +16,7 @@ import 'settings_provider.dart';
 enum SettingsItem {
   // ── Allgemein ──────────────────────────────────────────
   language(SettingsSection.general),
+  fullscreen(SettingsSection.general),
   soundEnabled(SettingsSection.general),
   volume(SettingsSection.general),
   resetGeneral(SettingsSection.general),
@@ -167,6 +168,9 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
     final notifier = ref.read(settingsProvider.notifier);
 
     switch (state.selected) {
+      case SettingsItem.fullscreen:
+        notifier.toggleFullscreen();
+
       case SettingsItem.soundEnabled:
         notifier.toggleSound();
 
@@ -248,6 +252,11 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         notifier.setLanguage(
           _cycle(AppLanguage.values, settings.language, delta),
         );
+
+      case SettingsItem.fullscreen:
+        if (settings.fullscreen != (delta > 0)) {
+          notifier.toggleFullscreen();
+        }
 
       case SettingsItem.soundEnabled:
         if (settings.soundEnabled != (delta > 0)) {

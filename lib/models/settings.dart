@@ -13,6 +13,11 @@ class Settings {
   final bool showMilliseconds;
   final AppLanguage language;
 
+  /// Ob die App das Fenster füllt. Der Tunnelrechner läuft als Kiosk, deshalb
+  /// ist Vollbild der Normalfall; F11 und die Zeile in den allgemeinen
+  /// Einstellungen schalten dasselbe Feld.
+  final bool fullscreen;
+
   /// Pfeile pro Schütze im Wechselmodus. Eine Passe besteht damit aus
   /// 2 × [alternatingArrows] Passagen.
   final int alternatingArrows;
@@ -39,6 +44,7 @@ class Settings {
     this.autoStart = false,
     this.showMilliseconds = false,
     this.language = AppLanguage.german,
+    this.fullscreen = true,
     this.alternatingArrows = 3,
     this.competitionDiscipline = CompetitionDiscipline.indoor,
     this.competitionEnds = 20,
@@ -65,6 +71,7 @@ class Settings {
     bool? autoStart,
     bool? showMilliseconds,
     AppLanguage? language,
+    bool? fullscreen,
     int? alternatingArrows,
     CompetitionDiscipline? competitionDiscipline,
     int? competitionEnds,
@@ -80,6 +87,7 @@ class Settings {
       autoStart: autoStart ?? this.autoStart,
       showMilliseconds: showMilliseconds ?? this.showMilliseconds,
       language: language ?? this.language,
+      fullscreen: fullscreen ?? this.fullscreen,
       alternatingArrows: alternatingArrows ?? this.alternatingArrows,
       competitionDiscipline:
           competitionDiscipline ?? this.competitionDiscipline,
@@ -100,6 +108,7 @@ class Settings {
       "autoStart": autoStart,
       "showMilliseconds": showMilliseconds,
       "language": language.code,
+      "fullscreen": fullscreen,
       "alternatingArrows": alternatingArrows,
       "competitionDiscipline": competitionDiscipline.index,
       "competitionEnds": competitionEnds,
@@ -119,6 +128,7 @@ class Settings {
       autoStart: json['autoStart'] as bool? ?? false,
       showMilliseconds: json['showMilliseconds'] as bool? ?? false,
       language: _parseLanguage(json['language'] as String?),
+      fullscreen: json['fullscreen'] as bool? ?? true,
       alternatingArrows: _parseArrows(json['alternatingArrows'] as int?),
       competitionDiscipline: _parseEnum(
         CompetitionDiscipline.values,

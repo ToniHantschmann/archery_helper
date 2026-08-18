@@ -105,6 +105,13 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  /// Vollbild an/aus. Das Fenster folgt diesem Wert (siehe `main.dart`), F11
+  /// und die Einstellungszeile schalten beide hier.
+  void toggleFullscreen() {
+    state = state.copyWith(fullscreen: !state.fullscreen);
+    _save();
+  }
+
   void setLanguage(AppLanguage language) {
     state = state.copyWith(language: language);
     _save();
@@ -161,6 +168,7 @@ class SettingsNotifier extends Notifier<Settings> {
     state = switch (section) {
       SettingsSection.general => state.copyWith(
         language: defaults.language,
+        fullscreen: defaults.fullscreen,
         soundEnabled: defaults.soundEnabled,
         volume: defaults.volume,
       ),
@@ -211,6 +219,10 @@ final autoStartProvider = Provider<bool>((ref) {
 
 final languageProvider = Provider<AppLanguage>((ref) {
   return ref.watch(settingsProvider).language;
+});
+
+final fullscreenProvider = Provider<bool>((ref) {
+  return ref.watch(settingsProvider).fullscreen;
 });
 
 final customPrepTimeProvider = Provider<Duration>((ref) {

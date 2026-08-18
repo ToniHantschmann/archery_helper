@@ -161,6 +161,15 @@ class SettingsTexts {
 
   static const _english = LocalizedText(de: 'Englisch', en: 'English');
 
+  // ===== DISPLAY SETTINGS =====
+
+  static const _fullscreen = LocalizedText(de: 'Vollbild', en: 'Fullscreen');
+
+  static const _fullscreenNote = LocalizedText(
+    de: 'Auch mit F11 umschaltbar',
+    en: 'Also toggled with F11',
+  );
+
   // ===== CUSTOM TIMES =====
 
   static const _preparationTime = LocalizedText(
@@ -310,6 +319,9 @@ class SettingsTexts {
   String get language => _language.get(_currentLanguage);
   String get german => _german.get(_currentLanguage);
   String get english => _english.get(_currentLanguage);
+
+  String get fullscreen => _fullscreen.get(_currentLanguage);
+  String get fullscreenNote => _fullscreenNote.get(_currentLanguage);
 
   String get arrowsPerArcher => _arrowsPerArcher.get(_currentLanguage);
   String get arrowsPerArcherSubtitle =>

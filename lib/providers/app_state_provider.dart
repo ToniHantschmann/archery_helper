@@ -18,25 +18,18 @@ enum AppScreen {
 
 class AppState {
   final AppScreen currentScreen;
-  final bool isFullscreen;
   final DateTime sessionStart;
 
   const AppState({
     // The menu is the home screen: the app is a collection of tunnel helpers,
     // and the timer is only the first of them.
     this.currentScreen = AppScreen.menu,
-    this.isFullscreen = true,
     required this.sessionStart,
   });
 
-  AppState copyWith({
-    AppScreen? currentScreen,
-    bool? isFullscreen,
-    DateTime? sessionStart,
-  }) {
+  AppState copyWith({AppScreen? currentScreen, DateTime? sessionStart}) {
     return AppState(
       currentScreen: currentScreen ?? this.currentScreen,
-      isFullscreen: isFullscreen ?? this.isFullscreen,
       sessionStart: sessionStart ?? this.sessionStart,
     );
   }
@@ -50,10 +43,6 @@ class AppStateNotifier extends Notifier<AppState> {
 
   void navigateToScreen(AppScreen screen) {
     state = state.copyWith(currentScreen: screen);
-  }
-
-  void toggleFullscreen() {
-    state = state.copyWith(isFullscreen: !state.isFullscreen);
   }
 
   void startNewSession() {

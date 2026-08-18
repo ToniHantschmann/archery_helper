@@ -110,6 +110,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SectionHeader(texts.languageSection),
           _LanguageRow(rowKey: _itemKeys[SettingsItem.language]!),
 
+          _SectionHeader(texts.displaySection),
+          _FullscreenRow(rowKey: _itemKeys[SettingsItem.fullscreen]!),
+
           _SectionHeader(texts.soundSection),
           _SoundEnabledRow(rowKey: _itemKeys[SettingsItem.soundEnabled]!),
           _VolumeRow(rowKey: _itemKeys[SettingsItem.volume]!),
@@ -725,6 +728,26 @@ class _LanguageRow extends ConsumerWidget {
         item: SettingsItem.language,
         value: texts.getLanguageName(language),
       ),
+    );
+  }
+}
+
+class _FullscreenRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _FullscreenRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final fullscreen = ref.watch(fullscreenProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.fullscreen,
+      rowKey: rowKey,
+      title: texts.fullscreen,
+      subtitle: texts.fullscreenNote,
+      control: _TogglePill(item: SettingsItem.fullscreen, value: fullscreen),
     );
   }
 }

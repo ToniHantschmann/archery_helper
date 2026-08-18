@@ -10,6 +10,7 @@ import 'hint_navigation_provider.dart';
 import 'keyboard_config_provider.dart';
 import 'menu_navigation_provider.dart';
 import 'settings_navigation_provider.dart';
+import 'settings_provider.dart';
 import 'timer_provider.dart';
 
 /// Direction of an in-screen navigation step.
@@ -477,9 +478,11 @@ class AppActionsNotifier {
         _toggleScreen(AppScreen.menu);
         return KeyEventResult.handled;
 
+      // Vollbild gilt für die ganze App, nicht für einen Screen: die Aktion
+      // bleibt deshalb global und schaltet das persistierte Setting, dem das
+      // Fenster folgt (siehe `main.dart`).
       case AppAction.toggleFullscreen:
-        ref.read(appStateProvider.notifier).toggleFullscreen();
-        //TODO: implement real full screen
+        ref.read(settingsProvider.notifier).toggleFullscreen();
         return KeyEventResult.handled;
     }
   }

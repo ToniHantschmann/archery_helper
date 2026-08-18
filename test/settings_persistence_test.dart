@@ -37,6 +37,9 @@ void main() {
     autoStart: true,
     showMilliseconds: true,
     language: AppLanguage.english,
+    // Der Default ist true, also prüft nur false, dass der Wert wirklich
+    // gespeichert und nicht bloß wieder auf den Default gesetzt wird.
+    fullscreen: false,
     alternatingArrows: 5,
     competitionDiscipline: CompetitionDiscipline.outdoor,
     competitionEnds: 9,
@@ -58,6 +61,7 @@ void main() {
     expect(loaded.autoStart, custom.autoStart);
     expect(loaded.showMilliseconds, custom.showMilliseconds);
     expect(loaded.language, custom.language);
+    expect(loaded.fullscreen, custom.fullscreen);
     expect(loaded.alternatingArrows, custom.alternatingArrows);
     expect(loaded.competitionDiscipline, custom.competitionDiscipline);
     expect(loaded.competitionEnds, custom.competitionEnds);
@@ -77,6 +81,7 @@ void main() {
       'autoStart',
       'showMilliseconds',
       'language',
+      'fullscreen',
       'alternatingArrows',
       'competitionDiscipline',
       'competitionEnds',
