@@ -12,11 +12,11 @@ import 'app_palette.dart';
 /// meaning: red = do not shoot, green = shooting time, amber = the end of the
 /// shooting time is near.
 enum TrafficSignal {
-  red(AppPalette.redCore, AppPalette.redOnTint),
-  amber(AppPalette.amberCore, AppPalette.amberOnTint),
-  green(AppPalette.greenCore, AppPalette.greenOnTint);
+  red(AppPalette.redCore, AppPalette.redOnTint, AppPalette.ledRed),
+  amber(AppPalette.amberCore, AppPalette.amberOnTint, AppPalette.ledAmber),
+  green(AppPalette.greenCore, AppPalette.greenOnTint, AppPalette.ledGreen);
 
-  const TrafficSignal(this.core, this.onTint);
+  const TrafficSignal(this.core, this.onTint, this.led);
 
   /// The saturated signal colour. Only ever used to tint the background,
   /// never as a large flat fill.
@@ -24,6 +24,13 @@ enum TrafficSignal {
 
   /// The lighter version of the same hue, for type sitting on that tint.
   final Color onTint;
+
+  /// Dieselbe Bedeutung für die LED-Wand am Außenstand.
+  ///
+  /// Eine dritte Spalte statt eines zweiten Switch: *ob* rot, gelb oder grün
+  /// gilt, entscheidet weiterhin nur [TimerTheme.signalFor] — die Wand hat
+  /// lediglich eigene Farbwerte dafür (siehe `AppPalette`).
+  final Color led;
 }
 
 /// Maps the signal state to the look of the timer and competition screens.
@@ -102,4 +109,13 @@ class TimerTheme {
     if (state.phase == TimerPhase.idle) return AppPalette.textSecondary;
     return signalFor(state).onTint;
   }
+
+  /// Die Zahl auf der LED-Wand.
+  ///
+  /// Anders als [timeColor] kennt sie nur zwei Fälle. Warnung und Ablauf trägt
+  /// dort die Signalfläche daneben, und eine mitgefärbte Zahl wäre die zweite
+  /// Kopie derselben Aussage. Übrig bleibt „pausiert" — das steht auf dem
+  /// Panel sonst nirgends.
+  static Color ledTimeColor(SignalState state) =>
+      state.isPaused ? AppPalette.ledDim : AppPalette.ledWhite;
 }

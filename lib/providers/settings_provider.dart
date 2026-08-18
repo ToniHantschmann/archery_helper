@@ -138,6 +138,11 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  void setCompetitionDisplay(CompetitionDisplay display) {
+    state = state.copyWith(competitionDisplay: display);
+    _save();
+  }
+
   // Settings zurücksetzen
   void resetToDefaults() {
     state =
@@ -171,6 +176,7 @@ class SettingsNotifier extends Notifier<Settings> {
         competitionDiscipline: defaults.competitionDiscipline,
         competitionEnds: defaults.competitionEnds,
         competitionLineup: defaults.competitionLineup,
+        competitionDisplay: defaults.competitionDisplay,
       ),
     };
     _save();
@@ -229,4 +235,8 @@ final competitionEndsProvider = Provider<int>((ref) {
 
 final competitionLineupProvider = Provider<CompetitionLineup>((ref) {
   return ref.watch(settingsProvider).competitionLineup;
+});
+
+final competitionDisplayProvider = Provider<CompetitionDisplay>((ref) {
+  return ref.watch(settingsProvider).competitionDisplay;
 });

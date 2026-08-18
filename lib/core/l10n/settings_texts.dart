@@ -51,6 +51,8 @@ class SettingsTexts {
 
   static const _targetSection = LocalizedText(de: 'Scheibe', en: 'Target');
 
+  static const _displaySection = LocalizedText(de: 'Anzeige', en: 'Display');
+
   // ===== WETTKAMPF =====
 
   static const _discipline = LocalizedText(de: 'Disziplin', en: 'Discipline');
@@ -79,6 +81,22 @@ class SettingsTexts {
   static const _lineupAb = LocalizedText(de: 'A / B', en: 'A / B');
 
   static const _lineupSingle = LocalizedText(de: 'Alle', en: 'All');
+
+  static const _display = LocalizedText(de: 'Ausgabe', en: 'Output');
+
+  static const _displaySubtitle = LocalizedText(
+    de: 'Monitor oder LED-Wand (120 × 80 Pixel)',
+    en: 'Monitor or LED panel (120 × 80 pixels)',
+  );
+
+  static const _displayStandard = LocalizedText(de: 'Monitor', en: 'Monitor');
+
+  static const _displayLedPreview = LocalizedText(
+    de: 'LED-Vorschau',
+    en: 'LED preview',
+  );
+
+  static const _displayLed = LocalizedText(de: 'LED-Wand', en: 'LED panel');
 
   static const _arrows = LocalizedText(de: 'Pfeile', en: 'arrows');
 
@@ -262,6 +280,7 @@ class SettingsTexts {
   String get languageSection => _languageSection.get(_currentLanguage);
   String get roundSection => _roundSection.get(_currentLanguage);
   String get targetSection => _targetSection.get(_currentLanguage);
+  String get displaySection => _displaySection.get(_currentLanguage);
 
   String get discipline => _discipline.get(_currentLanguage);
   String get disciplineSubtitle => _disciplineSubtitle.get(_currentLanguage);
@@ -269,6 +288,8 @@ class SettingsTexts {
   String get endsSubtitle => _endsSubtitle.get(_currentLanguage);
   String get lineup => _lineup.get(_currentLanguage);
   String get lineupSubtitle => _lineupSubtitle.get(_currentLanguage);
+  String get display => _display.get(_currentLanguage);
+  String get displaySubtitle => _displaySubtitle.get(_currentLanguage);
 
   String get soundEnabled => _soundEnabled.get(_currentLanguage);
   String get volume => _volume.get(_currentLanguage);
@@ -353,6 +374,18 @@ class SettingsTexts {
         return _lineupAb.get(_currentLanguage);
       case CompetitionLineup.single:
         return _lineupSingle.get(_currentLanguage);
+    }
+  }
+
+  /// Anzeigename einer Ausgabeart.
+  String getDisplayName(CompetitionDisplay display) {
+    switch (display) {
+      case CompetitionDisplay.standard:
+        return _displayStandard.get(_currentLanguage);
+      case CompetitionDisplay.ledPreview:
+        return _displayLedPreview.get(_currentLanguage);
+      case CompetitionDisplay.led:
+        return _displayLed.get(_currentLanguage);
     }
   }
 

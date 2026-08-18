@@ -155,6 +155,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SectionHeader(texts.targetSection),
           _LineupRow(rowKey: _itemKeys[SettingsItem.competitionLineup]!),
 
+          _SectionHeader(texts.displaySection),
+          _DisplayRow(rowKey: _itemKeys[SettingsItem.competitionDisplay]!),
+
           const SizedBox(height: AppSpacing.lg),
           _ResetRow(
             item: SettingsItem.resetCompetition,
@@ -973,6 +976,32 @@ class _LineupRow extends ConsumerWidget {
       control: _ValueStepper(
         item: SettingsItem.competitionLineup,
         value: texts.getLineupName(lineup),
+      ),
+    );
+  }
+}
+
+/// Auf welchem Schirm der Wettkampf läuft — Monitor oder die LED-Wand am
+/// Außenstand. Eine Eigenschaft des Aufstellungsorts, deshalb persistiert und
+/// nicht auf einer Taste.
+class _DisplayRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _DisplayRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final display = ref.watch(competitionDisplayProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.competitionDisplay,
+      rowKey: rowKey,
+      title: texts.display,
+      subtitle: texts.displaySubtitle,
+      control: _ValueStepper(
+        item: SettingsItem.competitionDisplay,
+        value: texts.getDisplayName(display),
       ),
     );
   }

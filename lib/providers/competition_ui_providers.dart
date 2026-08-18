@@ -115,6 +115,43 @@ final competitionSignalColorProvider = Provider<Color>((ref) {
   return TimerTheme.signalFor(ref.watch(competitionProvider).signal).onTint;
 });
 
+// ===== LED-WAND =====
+//
+// Eigene Provider statt der obigen, weil die Wand eine andere Farbtabelle
+// braucht (voll gesättigt statt getönt) und ein anderes Zeitformat. Die
+// *Entscheidung*, welches Signal gilt, kommt weiterhin aus derselben Quelle.
+
+final competitionLedSignalColorProvider = Provider<Color>((ref) {
+  return TimerTheme.signalFor(ref.watch(competitionProvider).signal).led;
+});
+
+final competitionLedTimeColorProvider = Provider<Color>((ref) {
+  return TimerTheme.ledTimeColor(ref.watch(competitionProvider).signal);
+});
+
+/// Die Zahl auf der Wand — die einzige Stelle, die sie formatiert.
+///
+/// Bewusst nicht [competitionFormattedTimeProvider] mitbenutzt: dessen
+/// Millisekunden („1:59.8", sechs Zeichen) passen auf 120 Pixel nicht. Und
+/// hier soll später eine Einstellung zwischen „4:00" und der reinen
+/// Sekundenzahl „240" umschalten können — dass es dafür genau einen Ort gibt,
+/// ist der halbe Aufwand dieser Ergänzung.
+final competitionLedTimeProvider = Provider<String>((ref) {
+  return TimerTexts.formatTime(ref.watch(competitionRemainingProvider));
+});
+
+/// Das Kürzel der Gruppe, die gerade dran ist — oder `null`, wenn alle
+/// zusammen schießen.
+///
+/// Auf 24 Pixel Spaltenbreite ist für die ganze Leiste kein Platz, und was
+/// auf der Schießlinie zählt, ist ohnehin nur „wer ist dran".
+final competitionLedGroupProvider = Provider<String?>((ref) {
+  final rail = ref.watch(competitionGroupRailProvider);
+  if (rail.lineup.groupLabels.length < 2) return null;
+
+  return rail.lineup.orderedLabels(reversed: rail.reversed)[rail.groupIndex];
+});
+
 // ===== COMBINED =====
 
 /// Derselbe Anzeigezustand wie bei der Ampel, damit [TimerDisplay] für beide

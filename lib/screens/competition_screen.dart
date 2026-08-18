@@ -6,6 +6,7 @@ import '../core/l10n/settings_texts.dart';
 import '../core/theme/app_dimens.dart';
 import '../core/theme/app_palette.dart';
 import '../core/theme/app_typography.dart';
+import '../models/competition_state.dart';
 import '../models/keyboard_config.dart';
 import '../providers/app_actions_provider.dart';
 import '../providers/competition_ui_providers.dart';
@@ -13,6 +14,7 @@ import '../providers/hint_navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
+import 'competition_led_screen.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/timer_display.dart';
 
@@ -23,6 +25,12 @@ import '../widgets/timer_display.dart';
 /// einem einzelnen Countdown unterscheiden: in welcher Passe wir sind, und
 /// welche Gruppe gerade an der Schießlinie steht.
 ///
+/// Steht die Anzeige auf LED-Wand, übernimmt [CompetitionLedScreen] — dieselbe
+/// Runde, nur auf 120 × 80 Pixel eingedampft. Die Verzweigung sitzt hier und
+/// nicht im `AppNavigator`, damit [AppScreen.competition] *ein* Screen bleibt:
+/// Tastenbelegung, Herkunft der Einstellungen und die Layout-Tests hängen alle
+/// daran, und eine zweite Zeile im Navigator würde sie auseinanderziehen.
+///
 /// Keyboard handling is app-wide in KeyboardScope (see app.dart); nothing here
 /// listens for keys. Jeder Tap löst genau die [AppAction] aus, die seine Taste
 /// auslösen würde.
@@ -31,6 +39,10 @@ class CompetitionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(competitionDisplayProvider) != CompetitionDisplay.standard) {
+      return const CompetitionLedScreen();
+    }
+
     final gradient = ref.watch(competitionBackgroundGradientProvider);
 
     return Scaffold(

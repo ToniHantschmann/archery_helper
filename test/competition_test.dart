@@ -538,4 +538,51 @@ void main() {
       stop();
     });
   });
+
+  /// Die LED-Wand zeigt ganze Sekunden — auf 120 Pixeln ist für Zehntel kein
+  /// Platz. Sie ist aber nur eine Anzeige: an der Runde selbst ändert der
+  /// Wechsel nichts.
+  group('the LED display', () {
+    void setDisplay(CompetitionDisplay display) =>
+        container.read(settingsProvider.notifier).setCompetitionDisplay(display);
+
+    test('keeps whole seconds even while milliseconds are switched on', () {
+      container.read(settingsProvider.notifier).toggleShowMilliseconds();
+      expect(notifier().displayStep, const Duration(milliseconds: 100));
+
+      setDisplay(CompetitionDisplay.led);
+      expect(notifier().displayStep, const Duration(seconds: 1));
+
+      setDisplay(CompetitionDisplay.ledPreview);
+      expect(notifier().displayStep, const Duration(seconds: 1));
+
+      // Zurück auf den Monitor gilt wieder die allgemeine Einstellung.
+      setDisplay(CompetitionDisplay.standard);
+      expect(notifier().displayStep, const Duration(milliseconds: 100));
+    });
+
+    testWidgets('switching mid-round leaves end, group and time alone', (
+      tester,
+    ) async {
+      notifier().start();
+      await tester.pump(const Duration(seconds: 10));
+      notifier().skipPhase();
+      await tester.pump(const Duration(seconds: 121));
+
+      // Zweite Gruppe der ersten Passe, Vorbereitung läuft.
+      expect(round().groupIndex, 1);
+      final before = round().remainingTime;
+
+      setDisplay(CompetitionDisplay.led);
+      await tester.pump();
+
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 1);
+      expect(round().remainingTime, before);
+      expect(round().isRunning, isTrue);
+
+      stop();
+      await tester.pump(const Duration(milliseconds: 400));
+    });
+  });
 }

@@ -31,6 +31,7 @@ enum SettingsItem {
   competitionDiscipline(SettingsSection.competition),
   competitionEnds(SettingsSection.competition),
   competitionLineup(SettingsSection.competition),
+  competitionDisplay(SettingsSection.competition),
   resetCompetition(SettingsSection.competition);
 
   const SettingsItem(this.section);
@@ -194,6 +195,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.customMainTime:
       case SettingsItem.competitionDiscipline:
       case SettingsItem.competitionEnds:
+      case SettingsItem.competitionDisplay:
       case SettingsItem.competitionLineup:
         _adjust(1);
     }
@@ -301,6 +303,11 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.competitionLineup:
         notifier.setCompetitionLineup(
           _cycle(CompetitionLineup.values, settings.competitionLineup, delta),
+        );
+
+      case SettingsItem.competitionDisplay:
+        notifier.setCompetitionDisplay(
+          _cycle(CompetitionDisplay.values, settings.competitionDisplay, delta),
         );
 
       case SettingsItem.resetGeneral:

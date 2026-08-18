@@ -27,6 +27,9 @@ class Settings {
   /// Wie die Schützen an der Scheibe aufgeteilt sind.
   final CompetitionLineup competitionLineup;
 
+  /// Auf welchem Schirm der Wettkampf angezeigt wird — Monitor oder LED-Wand.
+  final CompetitionDisplay competitionDisplay;
+
   const Settings({
     this.soundEnabled = true,
     this.volume = 0.8,
@@ -40,6 +43,7 @@ class Settings {
     this.competitionDiscipline = CompetitionDiscipline.indoor,
     this.competitionEnds = 20,
     this.competitionLineup = CompetitionLineup.abcd,
+    this.competitionDisplay = CompetitionDisplay.standard,
   });
 
   /// Grenzen für [alternatingArrows]. Drei Pfeile sind der Wettkampf-Fall,
@@ -65,6 +69,7 @@ class Settings {
     CompetitionDiscipline? competitionDiscipline,
     int? competitionEnds,
     CompetitionLineup? competitionLineup,
+    CompetitionDisplay? competitionDisplay,
   }) {
     return Settings(
       soundEnabled: soundEnabled ?? this.soundEnabled,
@@ -80,6 +85,7 @@ class Settings {
           competitionDiscipline ?? this.competitionDiscipline,
       competitionEnds: competitionEnds ?? this.competitionEnds,
       competitionLineup: competitionLineup ?? this.competitionLineup,
+      competitionDisplay: competitionDisplay ?? this.competitionDisplay,
     );
   }
 
@@ -98,6 +104,7 @@ class Settings {
       "competitionDiscipline": competitionDiscipline.index,
       "competitionEnds": competitionEnds,
       "competitionLineup": competitionLineup.index,
+      "competitionDisplay": competitionDisplay.index,
     };
   }
 
@@ -123,6 +130,11 @@ class Settings {
         CompetitionLineup.values,
         json['competitionLineup'] as int?,
         CompetitionLineup.abcd,
+      ),
+      competitionDisplay: _parseEnum(
+        CompetitionDisplay.values,
+        json['competitionDisplay'] as int?,
+        CompetitionDisplay.standard,
       ),
     );
   }

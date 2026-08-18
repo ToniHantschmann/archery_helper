@@ -1,11 +1,16 @@
 import 'package:archery_helper/app/app.dart';
+import 'package:archery_helper/core/l10n/timer_texts.dart';
 import 'package:archery_helper/core/theme/timer_theme.dart';
+import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/models/signal_state.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/app_state_provider.dart';
 import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/menu_navigation_provider.dart';
+import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
+import 'package:archery_helper/widgets/led_panel.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -167,6 +172,146 @@ void main() {
         await tester.pump();
       });
     }
+  });
+
+  /// Die LED-Wand am Außenstand ist 120 × 80 Pixel groß. Der übliche
+  /// Overflow-Test greift dort nur halb: eine zu große Schrift *clippt*, und
+  /// das ist kein RenderFlex-Overflow. Geprüft wird deshalb, dass die Strings
+  /// selbst in ihre Zellen passen — und zwar unabhängig davon, welche Schrift
+  /// gerade rechnet (der Testlauf benutzt eine andere als die App).
+  group('the LED panel fits its 120x80 grid', () {
+    double widthOf(String text, TextStyle style) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      return painter.width;
+    }
+
+    test('every time the round can show fits the clock cell', () {
+      // Alle Werte, die eine Runde durchläuft: die Freiluft-Schusszeit, die
+      // Hallen-Schusszeit, die Vorbereitung und der Ablauf.
+      const durations = [
+        Duration(seconds: 240),
+        Duration(seconds: 120),
+        Duration(seconds: 61),
+        Duration(seconds: 60),
+        Duration(seconds: 10),
+        Duration(seconds: 9),
+        Duration.zero,
+      ];
+
+      for (final duration in durations) {
+        final text = TimerTexts.formatTime(duration);
+
+        expect(
+          widthOf(text, LedPanelSpec.timeStyle),
+          lessThanOrEqualTo(LedPanelSpec.timeWidth),
+          reason: '"$text" muss in die Uhrenzelle passen',
+        );
+      }
+    });
+
+    test('the samples the font size is derived from stay the widest case', () {
+      // Die Schriftgröße wird an [timeSamples] bemessen. Der Test hält fest,
+      // dass darin auch die reine Sekundenzahl steckt — sonst würde die
+      // geplante Umschaltung von „4:00" auf „240" die Anzeige clippen, ohne
+      // dass ein Test anschlägt.
+      expect(LedPanelSpec.timeSamples, contains('240'));
+
+      for (final sample in LedPanelSpec.timeSamples) {
+        expect(
+          widthOf(sample, LedPanelSpec.timeStyle),
+          lessThanOrEqualTo(LedPanelSpec.timeWidth + 0.01),
+          reason: '"$sample" muss in die Uhrenzelle passen',
+        );
+      }
+    });
+
+    test('the stretched clock fills the panel without spilling over it', () {
+      expect(
+        LedPanelSpec.timeFontSize * LedPanelSpec.timeScaleY,
+        closeTo(LedPanelSpec.height, 0.01),
+      );
+    });
+
+    test('every group label fits the side column', () {
+      for (final lineup in CompetitionLineup.values) {
+        for (final label in lineup.groupLabels) {
+          expect(
+            widthOf(label, LedPanelSpec.groupStyle),
+            lessThanOrEqualTo(LedPanelSpec.groupWidth + 0.01),
+            reason: '"$label" muss in die Seitenspalte passen',
+          );
+        }
+      }
+    });
+
+    test('the nudged clock keeps its digits inside the panel', () {
+      // Die Versalhöhe steckt in [LedPanelSpec] als Konstante — hier wird
+      // nachgerechnet, dass die verschobene Zahl mit ihr oben wie unten noch
+      // in der Wand steht.
+      final baseline = TextPainter(
+        text: TextSpan(text: '4:00', style: LedPanelSpec.timeStyle),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final b = baseline.computeDistanceToActualBaseline(
+        TextBaseline.alphabetic,
+      );
+
+      final capHeight = 0.711 * LedPanelSpec.timeFontSize;
+      final top =
+          (b - capHeight) * LedPanelSpec.timeScaleY + LedPanelSpec.timeNudgeY;
+      final bottom = b * LedPanelSpec.timeScaleY + LedPanelSpec.timeNudgeY;
+
+      expect(top, greaterThanOrEqualTo(0));
+      expect(bottom, lessThanOrEqualTo(LedPanelSpec.height));
+      // Und zwar mittig: oben und unten gleich viel Luft.
+      expect(top, closeTo(LedPanelSpec.height - bottom, 0.01));
+    });
+
+    for (final display in [
+      CompetitionDisplay.led,
+      CompetitionDisplay.ledPreview,
+    ]) {
+      for (final entry in sizes.entries) {
+        testWidgets('${display.name} lays out at ${entry.key}', (tester) async {
+          container
+              .read(settingsProvider.notifier)
+              .setCompetitionDisplay(display);
+
+          await pumpScreen(tester, entry.value, AppScreen.competition);
+
+          container.read(competitionProvider.notifier).start();
+          await tester.pump(const Duration(milliseconds: 600));
+
+          expect(tester.takeException(), isNull);
+          expect(find.byKey(ledTimeKey), findsOneWidget);
+          expect(find.byKey(ledGroupKey), findsOneWidget);
+
+          container.read(competitionProvider.notifier).reset();
+          // Der Debounce der Einstellungen darf den Test nicht überleben.
+          await tester.pump(const Duration(milliseconds: 400));
+        });
+      }
+    }
+
+    testWidgets('all together shows no group and no empty cell', (
+      tester,
+    ) async {
+      container.read(settingsProvider.notifier)
+        ..setCompetitionLineup(CompetitionLineup.single)
+        ..setCompetitionDisplay(CompetitionDisplay.ledPreview);
+
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(ledTimeKey), findsOneWidget);
+      expect(find.byKey(ledGroupKey), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 400));
+    });
   });
 
   group('menu keyboard wiring', () {

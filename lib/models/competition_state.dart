@@ -57,6 +57,29 @@ enum CompetitionLineup {
       reversed ? groupLabels.reversed.toList() : groupLabels;
 }
 
+/// Auf welchem Schirm der Wettkampfmodus angezeigt wird.
+///
+/// Am Außenstand hängt eine LED-Wand mit 96×64 cm bei 8 mm Pixelabstand, also
+/// **120×80 Pixel**. Darauf passt der normale Wettkampfschirm nicht — dort
+/// bleibt nur Restzeit, Gruppe und Ampelfarbe, und der Hintergrund muss
+/// schwarz sein, damit die Dioden an diesen Stellen einfach aus bleiben.
+///
+/// Das ist eine Eigenschaft des *Aufstellungsorts*, nicht der Runde: der
+/// Rechner am Außenstand steht dauerhaft auf [led], der im Tunnel auf
+/// [standard]. Deshalb eine persistierte Einstellung und keine Taste.
+enum CompetitionDisplay {
+  /// Der volle Wettkampfschirm auf einem gewöhnlichen Monitor.
+  standard,
+
+  /// Das 120×80-Panel, ganzzahlig hochskaliert auf das Fenster. Ohne diesen
+  /// Zwischenschritt wäre das Layout auf einem normalen Bildschirm ein
+  /// briefmarkengroßer Fleck und nur über Tests zu beurteilen.
+  ledPreview,
+
+  /// Das Panel in echten Gerätepixeln, links oben, Rest des Bildes schwarz.
+  led,
+}
+
 /// Vorbereitungszeit vor jeder Schusszeit — am Passenanfang und beim
 /// Gruppenwechsel derselbe Wert (World Archery: 10 Sekunden).
 const competitionPreparationTime = Duration(seconds: 10);

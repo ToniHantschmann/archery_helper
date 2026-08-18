@@ -23,12 +23,32 @@ class CompetitionNotifier extends Notifier<CompetitionState>
   @override
   Duration get storedRemaining => state.remainingTime;
 
+  /// Auf der LED-Wand immer ganze Sekunden.
+  ///
+  /// Auf 120×80 Pixeln ist für „1:59.8" kein Platz, das Panel zeigt also
+  /// ohnehin nur ganze Sekunden — und ein Zehntelraster würde die Uhr zehnmal
+  /// pro Sekunde für eine Anzeige rechnen lassen, die sich einmal ändert.
+  @override
+  Duration get displayStep =>
+      ref.read(competitionDisplayProvider) == CompetitionDisplay.standard
+      ? super.displayStep
+      : const Duration(seconds: 1);
+
   @override
   CompetitionState build() {
     ref.onDispose(stopTicking);
     watchDisplayStep();
 
     ref.listen(settingsProvider, (previous, next) {
+      // Die Anzeigeart wechselt das Raster (siehe [displayStep]), aber nicht
+      // die Runde: Passe, Gruppe und Restzeit bleiben stehen. Ohne den Schritt
+      // stünde der armierte Timer noch auf dem alten Raster — dieselbe
+      // Begründung wie in [PhaseClock.watchDisplayStep].
+      if (previous?.competitionDisplay != next.competitionDisplay) {
+        if (isTicking) stepNow();
+        return;
+      }
+
       // Disziplin, Passenzahl und Aufstellung beschreiben den Aufbau der ganzen
       // Runde. Sie mitten in einer laufenden Runde umzubauen hätte keine
       // Bedeutung — also wird die Runde neu aufgesetzt, wie im custom-Modus der

@@ -69,6 +69,26 @@ class AppPalette {
   static const Color greenCore = Color(0xFF22D964);
   static const Color greenOnTint = Color(0xFF74F2A3);
 
+  // ===== LED-PANEL =====
+  //
+  // Die Wand am Außenstand ist 120x80 Pixel groß und leuchtet mit 6500 Nits.
+  // Dort gelten die Regeln von oben *nicht*: Schwarz ist hier kein Loch,
+  // sondern die ausgeschaltete Diode — die einzige Möglichkeit, die Fläche
+  // nicht blenden zu lassen. Und die Signalfarben stehen voll gesättigt, weil
+  // eine LED-Wand eine ganz andere Gammakurve hat als ein Monitor: die
+  // abgetönten [redCore] & Co. werden dort stumpf statt weich.
+
+  static const Color ledBlack = Color(0xFF000000);
+  static const Color ledWhite = Color(0xFFFFFFFF);
+
+  /// Die pausierte Uhr. Auf dem Panel steht kein Phasenwort, also ist die
+  /// gedimmte Zahl das Einzige, was „pausiert" überhaupt anzeigen kann.
+  static const Color ledDim = Color(0xFF707070);
+
+  static const Color ledRed = Color(0xFFFF0000);
+  static const Color ledAmber = Color(0xFFFFB000);
+  static const Color ledGreen = Color(0xFF00FF00);
+
   // ===== STATUS =====
 
   /// Warnings inside the UI chrome (armed reset, disabled hints). Kept

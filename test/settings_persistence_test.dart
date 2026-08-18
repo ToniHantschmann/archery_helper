@@ -4,9 +4,12 @@ import 'package:archery_helper/core/l10n/app_language.dart';
 import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/models/keyboard_config.dart';
 import 'package:archery_helper/models/settings.dart';
+import 'package:archery_helper/models/settings_section.dart';
 import 'package:archery_helper/models/timer_state.dart';
+import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/repositories/settings_repository.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,6 +41,7 @@ void main() {
     competitionDiscipline: CompetitionDiscipline.outdoor,
     competitionEnds: 9,
     competitionLineup: CompetitionLineup.ab,
+    competitionDisplay: CompetitionDisplay.led,
   );
 
   test('saved settings survive a round trip unchanged', () async {
@@ -56,6 +60,7 @@ void main() {
     expect(loaded.competitionDiscipline, custom.competitionDiscipline);
     expect(loaded.competitionEnds, custom.competitionEnds);
     expect(loaded.competitionLineup, custom.competitionLineup);
+    expect(loaded.competitionDisplay, custom.competitionDisplay);
   });
 
   test('every field is written to the stored json', () {
@@ -74,6 +79,7 @@ void main() {
       'competitionDiscipline',
       'competitionEnds',
       'competitionLineup',
+      'competitionDisplay',
     });
   });
 
@@ -131,6 +137,15 @@ void main() {
       expect(loaded.competitionLineup, CompetitionLineup.abcd);
     });
 
+    test('an out of range display index', () async {
+      SharedPreferences.setMockInitialValues({
+        storageKey: jsonEncode({'competitionDisplay': -1}),
+      });
+
+      final loaded = await repository.loadSettings();
+      expect(loaded.competitionDisplay, CompetitionDisplay.standard);
+    });
+
     test('an out of range mode index', () async {
       SharedPreferences.setMockInitialValues({
         storageKey: jsonEncode({'defaultMode': 99}),
@@ -181,6 +196,37 @@ void main() {
         isNull,
         reason: 'the action already has a key, so its default stays free',
       );
+    });
+  });
+
+  /// Die Reset-Zeile eines Bereichs darf nur anfassen, was auf ihrem Screen
+  /// steht — sonst nähme sie beim Zurücksetzen der Wettkampfwerte die
+  /// Ampelzeiten mit. Jedes neue Feld muss in genau einem Bereich landen.
+  group('resetting one section', () {
+    late ProviderContainer container;
+
+    setUp(() => container = ProviderContainer());
+    tearDown(() => container.dispose());
+
+    test('the competition section takes its own fields and nothing else', () {
+      final notifier = container.read(settingsProvider.notifier);
+
+      notifier
+        ..setCompetitionDiscipline(CompetitionDiscipline.outdoor)
+        ..setCompetitionLineup(CompetitionLineup.ab)
+        ..setCompetitionDisplay(CompetitionDisplay.led)
+        ..setAlternatingArrows(5);
+
+      notifier.resetSection(SettingsSection.competition);
+
+      const defaults = Settings();
+      final settings = container.read(settingsProvider);
+
+      expect(settings.competitionDiscipline, defaults.competitionDiscipline);
+      expect(settings.competitionEnds, defaults.competitionEnds);
+      expect(settings.competitionLineup, defaults.competitionLineup);
+      expect(settings.competitionDisplay, defaults.competitionDisplay);
+      expect(settings.alternatingArrows, 5, reason: 'gehört zur Ampel');
     });
   });
 }
