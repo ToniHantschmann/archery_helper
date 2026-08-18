@@ -181,11 +181,11 @@ void main() {
       // the settings tile below the timer tile.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.timerSettings);
+      expect(container.read(menuNavigationProvider), MenuItem.generalSettings);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
-      expect(container.read(currentScreenProvider), AppScreen.timerSettings);
+      expect(container.read(currentScreenProvider), AppScreen.generalSettings);
     });
 
     testWidgets('Esc does nothing — the menu is the home screen', (
@@ -255,7 +255,7 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.timerSettings);
+      expect(container.read(menuNavigationProvider), MenuItem.generalSettings);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();

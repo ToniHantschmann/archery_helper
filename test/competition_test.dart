@@ -469,6 +469,30 @@ void main() {
       expect(round().currentEnd, 1);
       expect(round().groupIndex, 1);
     });
+
+    test('winding back and forth over an end boundary lands where it began', () {
+      setEnds(3);
+
+      // Über die Passengrenze hinweg und wieder zurück — dort dreht sich die
+      // Gruppenreihenfolge um, also ist das die Stelle, an der ein Schritt zu
+      // viel oder zu wenig auffällt.
+      notifier().fastForward();
+      notifier().fastForward();
+      notifier().fastForward();
+      expect(round().currentEnd, 2);
+      expect(round().groupIndex, 1);
+      expect(round().currentGroup, 'AB', reason: 'end 2 shoots CD first');
+
+      notifier().rewind();
+      notifier().rewind();
+      notifier().rewind();
+
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 0);
+      expect(round().currentGroup, 'AB');
+      expect(round().phase, TimerPhase.idle);
+      expect(round().isRunning, isFalse);
+    });
   });
 
   group('settings changes', () {

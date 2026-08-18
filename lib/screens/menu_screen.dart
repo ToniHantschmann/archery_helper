@@ -192,10 +192,6 @@ class _MenuTile extends ConsumerWidget {
         return Icons.emoji_events_rounded;
       case MenuItem.idle:
         return Icons.schedule_rounded;
-      case MenuItem.timerSettings:
-        return Icons.tune_rounded;
-      case MenuItem.competitionSettings:
-        return Icons.rule_rounded;
       case MenuItem.generalSettings:
         return Icons.settings_rounded;
     }
@@ -209,10 +205,6 @@ class _MenuTile extends ConsumerWidget {
         return texts.competition;
       case MenuItem.idle:
         return texts.idle;
-      case MenuItem.timerSettings:
-        return texts.timerSettings;
-      case MenuItem.competitionSettings:
-        return texts.competitionSettings;
       case MenuItem.generalSettings:
         return texts.generalSettings;
     }
@@ -226,10 +218,6 @@ class _MenuTile extends ConsumerWidget {
         return texts.competitionDescription;
       case MenuItem.idle:
         return texts.idleDescription;
-      case MenuItem.timerSettings:
-        return texts.timerSettingsDescription;
-      case MenuItem.competitionSettings:
-        return texts.competitionSettingsDescription;
       case MenuItem.generalSettings:
         return texts.generalSettingsDescription;
     }

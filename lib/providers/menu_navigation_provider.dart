@@ -4,15 +4,15 @@ import 'app_state_provider.dart';
 
 /// Entries of the menu screen, in visual order — the order navigateUp and
 /// navigateDown step through.
-/// Erste Zeile sind die Werkzeuge, zweite Zeile deren Einstellungen — bei drei
-/// Spalten fällt das genau so auseinander, und die Einstellungen stehen unter
-/// dem Werkzeug, zu dem sie gehören.
+///
+/// Nur die Werkzeuge und die allgemeinen Einstellungen. Die Ampel- und die
+/// Wettkampf-Einstellungen stehen bewusst nicht hier: sie gehören zu ihrem
+/// Werkzeug und werden von dort aus mit S geöffnet und mit Esc wieder
+/// verlassen — im Hauptmenü wären sie ein zweiter Weg zur selben Sache.
 enum MenuItem {
   timer(AppScreen.timer),
   competition(AppScreen.competition),
   idle(AppScreen.idle),
-  timerSettings(AppScreen.timerSettings),
-  competitionSettings(AppScreen.competitionSettings),
   generalSettings(AppScreen.generalSettings);
 
   const MenuItem(this.target);

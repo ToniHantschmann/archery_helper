@@ -99,8 +99,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         currentScreen(),
-        AppScreen.menu,
-        reason: 'a kiosk without a mouse must be able to leave every screen',
+        AppScreen.timer,
+        reason: 'Esc leads back to the tool the settings belong to',
       );
     });
 
@@ -286,9 +286,10 @@ void main() {
       expect(currentScreen(), AppScreen.competitionSettings);
       expect(selectedItem(), SettingsItem.competitionDiscipline);
 
-      // Und dieselbe Taste führt wieder heraus.
+      // Und dieselbe Taste führt wieder heraus — zurück in den Wettkampf,
+      // nicht ins Hauptmenü.
       await openSettings(tester);
-      expect(currentScreen(), AppScreen.menu);
+      expect(currentScreen(), AppScreen.competition);
     });
   });
 
@@ -598,7 +599,7 @@ void main() {
       // Only the next Esc leaves.
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
-      expect(currentScreen(), AppScreen.menu);
+      expect(currentScreen(), AppScreen.timer);
 
       await flushPendingSaves(tester);
     });
@@ -620,5 +621,6 @@ void main() {
       expect(resetArmed(), isFalse);
       expect(selectedItem(), isNot(SettingsItem.resetTimer));
     });
+
   });
 }

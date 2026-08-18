@@ -37,26 +37,6 @@ class MenuTexts {
     en: 'Qualification round with ends',
   );
 
-  static const _timerSettings = LocalizedText(
-    de: 'Ampel-Einstellungen',
-    en: 'Timer Settings',
-  );
-
-  static const _timerSettingsDescription = LocalizedText(
-    de: 'Modi und Zeiten der Ampel',
-    en: 'Timer modes and times',
-  );
-
-  static const _competitionSettings = LocalizedText(
-    de: 'Wettkampf-Einstellungen',
-    en: 'Competition Settings',
-  );
-
-  static const _competitionSettingsDescription = LocalizedText(
-    de: 'Disziplin, Passen und Aufstellung',
-    en: 'Discipline, ends and lineup',
-  );
-
   static const _generalSettings = LocalizedText(
     de: 'Allgemein',
     en: 'General',
@@ -89,12 +69,6 @@ class MenuTexts {
   String get timerDescription => _timerDescription.get(_language);
   String get competition => _competition.get(_language);
   String get competitionDescription => _competitionDescription.get(_language);
-  String get timerSettings => _timerSettings.get(_language);
-  String get timerSettingsDescription =>
-      _timerSettingsDescription.get(_language);
-  String get competitionSettings => _competitionSettings.get(_language);
-  String get competitionSettingsDescription =>
-      _competitionSettingsDescription.get(_language);
   String get generalSettings => _generalSettings.get(_language);
   String get generalSettingsDescription =>
       _generalSettingsDescription.get(_language);

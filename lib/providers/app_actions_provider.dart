@@ -242,6 +242,22 @@ class SettingsScreenActions extends ScreenActionHandler {
   SettingsNavigationNotifier get _navigation =>
       ref.read(settingsNavigationProvider.notifier);
 
+  /// Der Screen, zu dem dieser Einstellungsbereich gehört — und damit der, auf
+  /// den Esc zurückführt. Die bereichsspezifischen Einstellungen werden aus
+  /// ihrem Werkzeug heraus geöffnet, also muss man auch dorthin zurückkommen
+  /// und nicht ins Hauptmenü.
+  ///
+  /// Der Wildcard-Zweig lässt sich nicht vermeiden — geschaltet wird über
+  /// [AppScreen], nicht über die Einstellungs-Screens allein —, er ist aber
+  /// bewusst der Rückweg ins Hauptmenü und keine stille Notbremse: kommt ein
+  /// vierter Einstellungsbereich dazu, gehört er in diese Liste, sonst führt
+  /// sein Esc ins Menü statt zu seinem Werkzeug.
+  AppScreen get _origin => switch (ref.read(currentScreenProvider)) {
+    AppScreen.timerSettings => AppScreen.timer,
+    AppScreen.competitionSettings => AppScreen.competition,
+    _ => AppScreen.menu,
+  };
+
   @override
   KeyEventResult navigate(
     NavigationDirection direction, {
@@ -274,7 +290,7 @@ class SettingsScreenActions extends ScreenActionHandler {
   /// hierher geführt hat, führt auch wieder heraus.
   @override
   KeyEventResult openSettings() {
-    goTo(AppScreen.menu);
+    goTo(_origin);
     return KeyEventResult.handled;
   }
 
@@ -286,7 +302,7 @@ class SettingsScreenActions extends ScreenActionHandler {
       return KeyEventResult.handled;
     }
 
-    goTo(AppScreen.menu);
+    goTo(_origin);
     return KeyEventResult.handled;
   }
 }
