@@ -1,6 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum AppScreen { timer, menu, settings, idle }
+/// Jeder Screen der App — ein Wert pro Vollbildseite.
+///
+/// Die Einstellungen sind drei Screens, nicht einer: was zur Ampel gehört, wird
+/// bei der Ampel eingestellt, was zum Wettkampf gehört, beim Wettkampf. Jeder
+/// neue Wert hier erzwingt eine Entscheidung in `AppNavigator` und in
+/// `screenActionHandlerProvider` — beide schalten erschöpfend über dieses Enum.
+enum AppScreen {
+  timer,
+  competition,
+  menu,
+  generalSettings,
+  timerSettings,
+  competitionSettings,
+  idle,
+}
 
 class AppState {
   final AppScreen currentScreen;
@@ -8,7 +22,9 @@ class AppState {
   final DateTime sessionStart;
 
   const AppState({
-    this.currentScreen = AppScreen.timer,
+    // The menu is the home screen: the app is a collection of tunnel helpers,
+    // and the timer is only the first of them.
+    this.currentScreen = AppScreen.menu,
     this.isFullscreen = true,
     required this.sessionStart,
   });

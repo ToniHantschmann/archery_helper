@@ -5,10 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/keyboard_config.dart';
 import '../models/timer_state.dart';
 import 'app_state_provider.dart';
+import 'competition_provider.dart';
+import 'hint_navigation_provider.dart';
 import 'keyboard_config_provider.dart';
 import 'menu_navigation_provider.dart';
 import 'settings_navigation_provider.dart';
-import 'timer_hint_navigation_provider.dart';
 import 'timer_provider.dart';
 
 /// Direction of an in-screen navigation step.
@@ -48,10 +49,33 @@ abstract class ScreenActionHandler {
   /// Leave / close.
   KeyEventResult back() => KeyEventResult.ignored;
 
-  /// Reset. Defaults to resetting the timer, which is what the key means on
-  /// every screen — the timer keeps running while you are elsewhere.
+  /// Reset. Defaults to resetting the Ampel timer, which is what the key means
+  /// on every screen — the timer keeps running while you are elsewhere.
   KeyEventResult resetTimer() {
     ref.read(timerProvider.notifier).resetTimer();
+    return KeyEventResult.handled;
+  }
+
+  /// Play/pause. Wie [resetTimer] eine Uhr-Taste: sie gehört dem Screen, weil es
+  /// zwei Uhren gibt (Ampel und Wettkampf) und die Taste immer die meint, die
+  /// man vor sich hat.
+  KeyEventResult toggleTimer() {
+    ref.read(timerProvider.notifier).toggle();
+    return KeyEventResult.handled;
+  }
+
+  KeyEventResult skipTimer() {
+    ref.read(timerProvider.notifier).skipTimerPhase();
+    return KeyEventResult.handled;
+  }
+
+  /// Öffnet die Einstellungen, die zu diesem Screen gehören.
+  ///
+  /// Es gibt kein globales Einstellungsmenü mehr — S bedeutet „stell das ein,
+  /// was ich gerade vor mir habe". Ohne eigene Einstellungen bleibt der
+  /// allgemeine Bereich.
+  KeyEventResult openSettings() {
+    goTo(AppScreen.generalSettings);
     return KeyEventResult.handled;
   }
 
@@ -62,7 +86,7 @@ abstract class ScreenActionHandler {
 class TimerScreenActions extends ScreenActionHandler {
   const TimerScreenActions(super.ref);
 
-  TimerHintNavigationNotifier get _hints =>
+  HintNavigationNotifier get _hints =>
       ref.read(timerHintNavigationProvider.notifier);
 
   /// Left/right step through the bottom hint rail; up/down are unused here.
@@ -95,6 +119,89 @@ class TimerScreenActions extends ScreenActionHandler {
   @override
   KeyEventResult next() {
     ref.read(timerProvider.notifier).advance();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult openSettings() {
+    goTo(AppScreen.timerSettings);
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult back() {
+    goTo(AppScreen.menu);
+    return KeyEventResult.handled;
+  }
+}
+
+/// Der Wettkampfschirm.
+///
+/// Bis auf die Uhr, an der sie hängen, dieselben Tasten wie bei der Ampel: die
+/// Uhr-Tasten sind hier auf [competitionProvider] umgebogen, damit der
+/// Schießleiter nicht wissen muss, welche der beiden Uhren die Taste gerade
+/// meint.
+class CompetitionScreenActions extends ScreenActionHandler {
+  const CompetitionScreenActions(super.ref);
+
+  HintNavigationNotifier get _hints =>
+      ref.read(competitionHintNavigationProvider.notifier);
+
+  CompetitionNotifier get _competition =>
+      ref.read(competitionProvider.notifier);
+
+  @override
+  KeyEventResult navigate(
+    NavigationDirection direction, {
+    bool isRepeat = false,
+  }) {
+    switch (direction) {
+      case NavigationDirection.left:
+        _hints.moveLeft();
+      case NavigationDirection.right:
+        _hints.moveRight();
+      case NavigationDirection.up:
+      case NavigationDirection.down:
+        return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult confirm() {
+    _hints.activate();
+    return KeyEventResult.handled;
+  }
+
+  /// Die Taste des Schießleiters: startet, oder lässt die restliche Schusszeit
+  /// fallen und übergibt an die nächste Gruppe.
+  @override
+  KeyEventResult next() {
+    _competition.advance();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult toggleTimer() {
+    _competition.toggle();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult skipTimer() {
+    _competition.skipPhase();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult resetTimer() {
+    _competition.reset();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult openSettings() {
+    goTo(AppScreen.competitionSettings);
     return KeyEventResult.handled;
   }
 
@@ -139,6 +246,14 @@ class SettingsScreenActions extends ScreenActionHandler {
   @override
   KeyEventResult next() => confirm();
 
+  /// S ist auf einem Einstellungs-Screen der Weg zurück — die Taste, die
+  /// hierher geführt hat, führt auch wieder heraus.
+  @override
+  KeyEventResult openSettings() {
+    goTo(AppScreen.menu);
+    return KeyEventResult.handled;
+  }
+
   @override
   KeyEventResult back() {
     // A pending reset confirmation is cancelled first — only a second Esc
@@ -147,9 +262,7 @@ class SettingsScreenActions extends ScreenActionHandler {
       return KeyEventResult.handled;
     }
 
-    // Back to the timer, not the menu: that is where you came from in
-    // practice, and MenuScreen is still a placeholder.
-    goTo(AppScreen.timer);
+    goTo(AppScreen.menu);
     return KeyEventResult.handled;
   }
 }
@@ -170,10 +283,10 @@ class MenuScreenActions extends ScreenActionHandler {
         _navigation.moveUp();
       case NavigationDirection.down:
         _navigation.moveDown();
-      // The menu is a single column; left/right have nothing to step through.
       case NavigationDirection.left:
+        _navigation.moveLeft();
       case NavigationDirection.right:
-        return KeyEventResult.ignored;
+        _navigation.moveRight();
     }
     return KeyEventResult.handled;
   }
@@ -188,18 +301,15 @@ class MenuScreenActions extends ScreenActionHandler {
   @override
   KeyEventResult next() => confirm();
 
-  @override
-  KeyEventResult back() {
-    goTo(AppScreen.timer);
-    return KeyEventResult.handled;
-  }
+  // No back(): the menu is the home screen, so there is nothing above it. The
+  // base class default (ignored) is the behaviour we want.
 }
 
 class IdleScreenActions extends ScreenActionHandler {
   const IdleScreenActions(super.ref);
 
-  /// The idle screen says "press any key to start", so anything meaningful
-  /// wakes it into the timer.
+  /// The idle screen says "press any key", so anything meaningful wakes it —
+  /// into the menu, which is where every screen leads back to.
   @override
   KeyEventResult confirm() => _wake();
 
@@ -209,8 +319,11 @@ class IdleScreenActions extends ScreenActionHandler {
   @override
   KeyEventResult back() => _wake();
 
+  @override
+  KeyEventResult openSettings() => _wake();
+
   KeyEventResult _wake() {
-    goTo(AppScreen.timer);
+    goTo(AppScreen.menu);
     return KeyEventResult.handled;
   }
 }
@@ -224,7 +337,13 @@ final screenActionHandlerProvider = Provider<ScreenActionHandler>((ref) {
   switch (screen) {
     case AppScreen.timer:
       return TimerScreenActions(ref);
-    case AppScreen.settings:
+    case AppScreen.competition:
+      return CompetitionScreenActions(ref);
+    case AppScreen.generalSettings:
+    case AppScreen.timerSettings:
+    case AppScreen.competitionSettings:
+      // Alle drei Einstellungs-Screens verhalten sich gleich; welcher Bereich
+      // offen ist, weiß der Navigations-Notifier.
       return SettingsScreenActions(ref);
     case AppScreen.menu:
       return MenuScreenActions(ref);
@@ -293,15 +412,14 @@ class AppActionsNotifier {
         return screen.back();
       case AppAction.resetTimer:
         return screen.resetTimer();
+      case AppAction.toggleTimer:
+        return screen.toggleTimer();
+      case AppAction.skipTimer:
+        return screen.skipTimer();
+      case AppAction.toggleSettings:
+        return screen.openSettings();
 
       // ── Global ──────────────────────────────────────────────
-      case AppAction.toggleTimer:
-        ref.read(timerProvider.notifier).toggle();
-        return KeyEventResult.handled;
-
-      case AppAction.skipTimer:
-        ref.read(timerProvider.notifier).skipTimerPhase();
-        return KeyEventResult.handled;
 
       case AppAction.nextMode:
         _cycleMode(1);
@@ -313,10 +431,6 @@ class AppActionsNotifier {
 
       case AppAction.toggleMenu:
         _toggleScreen(AppScreen.menu);
-        return KeyEventResult.handled;
-
-      case AppAction.toggleSettings:
-        _toggleScreen(AppScreen.settings);
         return KeyEventResult.handled;
 
       case AppAction.toggleFullscreen:
@@ -334,12 +448,12 @@ class AppActionsNotifier {
     ref.read(timerProvider.notifier).setMode(modes[nextIndex]);
   }
 
-  /// Toggling a screen you are already on returns to the timer.
+  /// Toggling a screen you are already on returns home, i.e. to the menu.
   void _toggleScreen(AppScreen screen) {
     final current = ref.read(currentScreenProvider);
     ref
         .read(appStateProvider.notifier)
-        .navigateToScreen(current == screen ? AppScreen.timer : screen);
+        .navigateToScreen(current == screen ? AppScreen.menu : screen);
   }
 }
 

@@ -67,7 +67,7 @@ final startButtonTextProvider = Provider<String>((ref) {
 
 /// Actions shown in the timer screen's bottom hint rail, in the same order
 /// [TimerScreenActions] steps through with left/right — see
-/// `timer_hint_navigation_provider.dart`. Kept next to the other hint-rail
+/// `hint_navigation_provider.dart`. Kept next to the other hint-rail
 /// providers so the two stay in sync; `_TimerHintRail` builds its [KeyHint]s
 /// from this list rather than duplicating the order.
 final timerHintActionsProvider = Provider<List<AppAction>>((ref) {
@@ -103,15 +103,15 @@ final actionKeyLabelProvider = Provider.family<String, AppAction>((ref, action) 
 // ===== THEME PROVIDERS =====
 
 final timerBackgroundGradientProvider = Provider<LinearGradient>((ref) {
-  return TimerTheme.backgroundGradient(ref.watch(timerProvider));
+  return TimerTheme.backgroundGradient(ref.watch(timerProvider).signal);
 });
 
 final timerTextColorProvider = Provider<Color>((ref) {
-  return TimerTheme.timeColor(ref.watch(timerProvider));
+  return TimerTheme.timeColor(ref.watch(timerProvider).signal);
 });
 
 final timerPhaseColorProvider = Provider<Color>((ref) {
-  return TimerTheme.phaseColor(ref.watch(timerProvider));
+  return TimerTheme.phaseColor(ref.watch(timerProvider).signal);
 });
 
 final timerPhaseProvider = Provider<TimerPhase>((ref) {

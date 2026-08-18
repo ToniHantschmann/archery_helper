@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
+import '../models/settings_section.dart';
 import '../providers/app_state_provider.dart';
+import '../screens/competition_screen.dart';
 import '../screens/idle_screen.dart';
 import '../screens/menu_screen.dart';
 import '../screens/settings_screen.dart';
@@ -33,10 +35,16 @@ class AppNavigator extends ConsumerWidget {
     switch (currentScreen) {
       case AppScreen.timer:
         return const TimerScreen();
+      case AppScreen.competition:
+        return const CompetitionScreen();
       case AppScreen.menu:
         return const MenuScreen();
-      case AppScreen.settings:
-        return const SettingsScreen();
+      case AppScreen.generalSettings:
+        return const SettingsScreen(section: SettingsSection.general);
+      case AppScreen.timerSettings:
+        return const SettingsScreen(section: SettingsSection.timer);
+      case AppScreen.competitionSettings:
+        return const SettingsScreen(section: SettingsSection.competition);
       case AppScreen.idle:
         return const IdleScreen();
     }

@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:archery_helper/core/l10n/app_language.dart';
 import 'package:archery_helper/repositories/settings_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/competition_state.dart';
 import '../models/settings.dart';
+import '../models/settings_section.dart';
 import '../models/timer_state.dart';
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
@@ -108,10 +110,69 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  /// Setzt die Disziplin — und mit ihr die Passenzahl.
+  ///
+  /// Die 20 Passen der Halle und die 12 der Freiluft gehören zur Disziplin, also
+  /// kommen sie mit. Danach ist die Passenzahl wieder frei: ein Vereinsformat
+  /// schießt auch mal zehn.
+  void setCompetitionDiscipline(CompetitionDiscipline discipline) {
+    state = state.copyWith(
+      competitionDiscipline: discipline,
+      competitionEnds: discipline.defaultEnds,
+    );
+    _save();
+  }
+
+  void setCompetitionEnds(int ends) {
+    state = state.copyWith(
+      competitionEnds: ends.clamp(
+        Settings.minCompetitionEnds,
+        Settings.maxCompetitionEnds,
+      ),
+    );
+    _save();
+  }
+
+  void setCompetitionLineup(CompetitionLineup lineup) {
+    state = state.copyWith(competitionLineup: lineup);
+    _save();
+  }
+
   // Settings zurücksetzen
   void resetToDefaults() {
     state =
         const Settings(); // Verwendet Default-Werte aus Settings Konstruktor
+    _save();
+  }
+
+  /// Setzt nur die Werte eines Bereichs zurück.
+  ///
+  /// Jeder Einstellungs-Screen hat seine eigene Reset-Zeile, und die darf nur
+  /// anfassen, was auf diesem Screen steht — sonst würde die Reset-Zeile der
+  /// Wettkampf-Einstellungen die Ampelzeiten mitnehmen.
+  void resetSection(SettingsSection section) {
+    const defaults = Settings();
+
+    state = switch (section) {
+      SettingsSection.general => state.copyWith(
+        language: defaults.language,
+        soundEnabled: defaults.soundEnabled,
+        volume: defaults.volume,
+      ),
+      SettingsSection.timer => state.copyWith(
+        defaultMode: defaults.defaultMode,
+        autoStart: defaults.autoStart,
+        showMilliseconds: defaults.showMilliseconds,
+        alternatingArrows: defaults.alternatingArrows,
+        customPrepTime: defaults.customPrepTime,
+        customMainTime: defaults.customMainTime,
+      ),
+      SettingsSection.competition => state.copyWith(
+        competitionDiscipline: defaults.competitionDiscipline,
+        competitionEnds: defaults.competitionEnds,
+        competitionLineup: defaults.competitionLineup,
+      ),
+    };
     _save();
   }
 }
@@ -156,4 +217,16 @@ final customMainTimeProvider = Provider<Duration>((ref) {
 
 final alternatingArrowsProvider = Provider<int>((ref) {
   return ref.watch(settingsProvider).alternatingArrows;
+});
+
+final competitionDisciplineProvider = Provider<CompetitionDiscipline>((ref) {
+  return ref.watch(settingsProvider).competitionDiscipline;
+});
+
+final competitionEndsProvider = Provider<int>((ref) {
+  return ref.watch(settingsProvider).competitionEnds;
+});
+
+final competitionLineupProvider = Provider<CompetitionLineup>((ref) {
+  return ref.watch(settingsProvider).competitionLineup;
 });

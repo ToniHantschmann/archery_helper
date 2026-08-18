@@ -7,13 +7,19 @@ import '../core/theme/app_palette.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/app_typography.dart';
 import '../models/keyboard_config.dart';
+import '../models/settings_section.dart';
 import '../providers/app_actions_provider.dart';
 import '../providers/settings_navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
 
-/// Settings screen.
+/// Settings screen for one [SettingsSection].
+///
+/// Es gibt drei davon — Allgemein, Ampel, Wettkampf — und alle drei sind dieser
+/// Screen mit einem anderen [section]. Die Zeilen selbst wissen nichts von der
+/// Aufteilung: welcher Bereich welche Zeilen hat, steht einmal in
+/// [SettingsItem.section], und [_rowsFor] baut daraus die Liste.
 ///
 /// Fully keyboard operable: the selected row lives in
 /// [settingsNavigationProvider] and is driven by the navigate* actions coming
@@ -32,26 +38,24 @@ import '../widgets/key_hint_rail.dart';
 /// so changing one value or moving the selection rebuilds only what changed —
 /// not the whole list.
 class SettingsScreen extends ConsumerStatefulWidget {
-  const SettingsScreen({super.key});
+  final SettingsSection section;
+
+  const SettingsScreen({super.key, required this.section});
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  /// One key per row so the selected row can be scrolled into view.
-  final Map<SettingsItem, GlobalKey> _itemKeys = {
-    for (final item in SettingsItem.values) item: GlobalKey(),
+  /// One key per row of this section so the selected row can be scrolled into
+  /// view.
+  late final Map<SettingsItem, GlobalKey> _itemKeys = {
+    for (final item in SettingsItem.of(widget.section)) item: GlobalKey(),
   };
 
-  @override
-  void initState() {
-    super.initState();
-    // Always start at the top when the screen is entered.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) ref.read(settingsNavigationProvider.notifier).reset();
-    });
-  }
+  // Kein Zurücksetzen der Auswahl von hier aus: welcher Bereich offen ist,
+  // leitet SettingsNavigationNotifier selbst aus dem Screen ab
+  // (openSettingsSectionProvider) und fängt dabei oben an.
 
   /// Scrolls the selected row into view — but only when it is not already
   /// there.
@@ -93,6 +97,71 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return top >= margin && bottom <= scrollableBox.size.height - margin;
   }
 
+  /// Die Zeilen des offenen Bereichs, mit ihren Zwischenüberschriften.
+  ///
+  /// Die Reset-Zeile steht in jedem Bereich am Ende und fasst nur diesen
+  /// Bereich an — siehe [SettingsNotifier.resetSection].
+  List<Widget> _rowsFor(SettingsTexts texts) {
+    switch (widget.section) {
+      case SettingsSection.general:
+        return [
+          _SectionHeader(texts.languageSection),
+          _LanguageRow(rowKey: _itemKeys[SettingsItem.language]!),
+
+          _SectionHeader(texts.soundSection),
+          _SoundEnabledRow(rowKey: _itemKeys[SettingsItem.soundEnabled]!),
+          _VolumeRow(rowKey: _itemKeys[SettingsItem.volume]!),
+
+          const SizedBox(height: AppSpacing.lg),
+          _ResetRow(
+            item: SettingsItem.resetGeneral,
+            rowKey: _itemKeys[SettingsItem.resetGeneral]!,
+          ),
+        ];
+
+      case SettingsSection.timer:
+        return [
+          _SectionHeader(texts.timerSection),
+          _DefaultModeRow(rowKey: _itemKeys[SettingsItem.defaultMode]!),
+          _AutoStartRow(rowKey: _itemKeys[SettingsItem.autoStart]!),
+          _ShowMillisecondsRow(
+            rowKey: _itemKeys[SettingsItem.showMilliseconds]!,
+          ),
+          _AlternatingArrowsRow(
+            rowKey: _itemKeys[SettingsItem.alternatingArrows]!,
+          ),
+
+          _SectionHeader(texts.customTimesSection),
+          _PrepTimeRow(rowKey: _itemKeys[SettingsItem.customPrepTime]!),
+          _MainTimeRow(rowKey: _itemKeys[SettingsItem.customMainTime]!),
+
+          const SizedBox(height: AppSpacing.lg),
+          _ResetRow(
+            item: SettingsItem.resetTimer,
+            rowKey: _itemKeys[SettingsItem.resetTimer]!,
+          ),
+        ];
+
+      case SettingsSection.competition:
+        return [
+          _SectionHeader(texts.roundSection),
+          _DisciplineRow(
+            rowKey: _itemKeys[SettingsItem.competitionDiscipline]!,
+          ),
+          _EndsRow(rowKey: _itemKeys[SettingsItem.competitionEnds]!),
+
+          _SectionHeader(texts.targetSection),
+          _LineupRow(rowKey: _itemKeys[SettingsItem.competitionLineup]!),
+
+          const SizedBox(height: AppSpacing.lg),
+          _ResetRow(
+            item: SettingsItem.resetCompetition,
+            rowKey: _itemKeys[SettingsItem.resetCompetition]!,
+          ),
+        ];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Only the texts are watched here: a language switch legitimately rebuilds
@@ -116,7 +185,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              _SettingsHeader(title: texts.screenTitle),
+              _SettingsHeader(title: texts.sectionTitle(widget.section)),
 
               Expanded(
                 child: Center(
@@ -129,42 +198,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         AppSpacing.xl,
                         AppSpacing.xl,
                       ),
-                      children: [
-                        _SectionHeader(texts.languageSection),
-                        _LanguageRow(rowKey: _itemKeys[SettingsItem.language]!),
-
-                        _SectionHeader(texts.soundSection),
-                        _SoundEnabledRow(
-                          rowKey: _itemKeys[SettingsItem.soundEnabled]!,
-                        ),
-                        _VolumeRow(rowKey: _itemKeys[SettingsItem.volume]!),
-
-                        _SectionHeader(texts.timerSection),
-                        _DefaultModeRow(
-                          rowKey: _itemKeys[SettingsItem.defaultMode]!,
-                        ),
-                        _AutoStartRow(rowKey: _itemKeys[SettingsItem.autoStart]!),
-                        _ShowMillisecondsRow(
-                          rowKey: _itemKeys[SettingsItem.showMilliseconds]!,
-                        ),
-                        _AlternatingArrowsRow(
-                          rowKey: _itemKeys[SettingsItem.alternatingArrows]!,
-                        ),
-
-                        _SectionHeader(texts.customTimesSection),
-                        _PrepTimeRow(
-                          rowKey: _itemKeys[SettingsItem.customPrepTime]!,
-                        ),
-                        _MainTimeRow(
-                          rowKey: _itemKeys[SettingsItem.customMainTime]!,
-                        ),
-
-                        const SizedBox(height: AppSpacing.lg),
-
-                        _ResetRow(
-                          rowKey: _itemKeys[SettingsItem.resetToDefaults]!,
-                        ),
-                      ],
+                      children: _rowsFor(texts),
                     ),
                   ),
                 ),
@@ -218,7 +252,20 @@ class _SettingsHeader extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.lg),
-          Text(title, style: AppType.display.copyWith(fontSize: 56)),
+          // Der Titel darf schrumpfen, aber nicht umbrechen: „Wettkampf-
+          // Einstellungen" passt bei 56sp nicht in ein 1280px-Fenster, und auf
+          // den Tunnelmonitoren bleibt es bei der vollen Größe.
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                style: AppType.display.copyWith(fontSize: 56),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -858,26 +905,98 @@ class _MainTimeRow extends ConsumerWidget {
   }
 }
 
+/// Disziplin — Halle oder Freiluft. Die Unterzeile zeigt, was das konkret
+/// heißt, statt einer festen Erklärung.
+class _DisciplineRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _DisciplineRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final discipline = ref.watch(competitionDisciplineProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.competitionDiscipline,
+      rowKey: rowKey,
+      title: texts.discipline,
+      subtitle: texts.getDisciplineDetail(discipline),
+      control: _ValueStepper(
+        item: SettingsItem.competitionDiscipline,
+        value: texts.getDisciplineName(discipline),
+      ),
+    );
+  }
+}
+
+class _EndsRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _EndsRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final ends = ref.watch(competitionEndsProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.competitionEnds,
+      rowKey: rowKey,
+      title: texts.ends,
+      subtitle: texts.endsSubtitle,
+      control: _ValueStepper(
+        item: SettingsItem.competitionEnds,
+        value: '$ends',
+      ),
+    );
+  }
+}
+
+class _LineupRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _LineupRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final lineup = ref.watch(competitionLineupProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.competitionLineup,
+      rowKey: rowKey,
+      title: texts.lineup,
+      subtitle: texts.lineupSubtitle,
+      control: _ValueStepper(
+        item: SettingsItem.competitionLineup,
+        value: texts.getLineupName(lineup),
+      ),
+    );
+  }
+}
+
 /// Reset needs a confirmation, but a modal dialog would be a separate route the
 /// app-wide keyboard scope cannot reach. Instead the row arms itself on the
 /// first confirm and performs the reset on the second — same flow for keyboard
 /// and mouse, and cancellable with Esc or by moving the selection away.
 class _ResetRow extends ConsumerWidget {
+  /// Welche der drei Reset-Zeilen das ist — sie unterscheiden sich nur darin,
+  /// welchen Bereich sie zurücksetzen.
+  final SettingsItem item;
   final GlobalKey rowKey;
 
-  const _ResetRow({required this.rowKey});
+  const _ResetRow({required this.item, required this.rowKey});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final texts = ref.watch(settingsTextsProvider);
     final armed = ref.watch(isResetArmedProvider);
-    final isSelected = ref.watch(
-      isSettingsItemSelectedProvider(SettingsItem.resetToDefaults),
-    );
+    final isSelected = ref.watch(isSettingsItemSelectedProvider(item));
     final navigation = ref.read(settingsNavigationProvider.notifier);
 
     void activate() {
-      navigation.select(SettingsItem.resetToDefaults);
+      navigation.select(item);
       navigation.activate();
     }
 

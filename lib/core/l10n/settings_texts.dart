@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/competition_state.dart';
+import '../../models/settings_section.dart';
 import '../../models/timer_state.dart';
 import 'app_language.dart';
+import 'timer_texts.dart';
 import '../../providers/settings_provider.dart'; // GEÄNDERT
 
 /// Localized texts for the settings screen
@@ -16,6 +19,21 @@ class SettingsTexts {
     en: 'Settings',
   );
 
+  static const _generalTitle = LocalizedText(
+    de: 'Allgemein',
+    en: 'General',
+  );
+
+  static const _timerTitle = LocalizedText(
+    de: 'Ampel-Einstellungen',
+    en: 'Timer Settings',
+  );
+
+  static const _competitionTitle = LocalizedText(
+    de: 'Wettkampf-Einstellungen',
+    en: 'Competition Settings',
+  );
+
   // ===== SECTION HEADERS =====
 
   static const _soundSection = LocalizedText(de: 'Ton', en: 'Sound');
@@ -28,6 +46,48 @@ class SettingsTexts {
   );
 
   static const _languageSection = LocalizedText(de: 'Sprache', en: 'Language');
+
+  static const _roundSection = LocalizedText(de: 'Runde', en: 'Round');
+
+  static const _targetSection = LocalizedText(de: 'Scheibe', en: 'Target');
+
+  // ===== WETTKAMPF =====
+
+  static const _discipline = LocalizedText(de: 'Disziplin', en: 'Discipline');
+
+  static const _disciplineSubtitle = LocalizedText(
+    de: 'Pfeile und Schusszeit einer Passe',
+    en: 'Arrows and shooting time per end',
+  );
+
+  static const _ends = LocalizedText(de: 'Passen', en: 'Ends');
+
+  static const _endsSubtitle = LocalizedText(
+    de: 'Wie viele Passen geschossen werden',
+    en: 'How many ends are shot',
+  );
+
+  static const _lineup = LocalizedText(de: 'Aufstellung', en: 'Lineup');
+
+  static const _lineupSubtitle = LocalizedText(
+    de: 'Wer nacheinander an die Scheibe geht',
+    en: 'Who takes the line one after another',
+  );
+
+  static const _lineupAbcd = LocalizedText(de: 'AB / CD', en: 'AB / CD');
+
+  static const _lineupAb = LocalizedText(de: 'A / B', en: 'A / B');
+
+  static const _lineupSingle = LocalizedText(de: 'Alle', en: 'All');
+
+  static const _arrows = LocalizedText(de: 'Pfeile', en: 'arrows');
+
+  static const _indoorDiscipline = LocalizedText(de: 'Halle', en: 'Indoor');
+
+  static const _outdoorDiscipline = LocalizedText(
+    de: 'Freiluft',
+    en: 'Outdoor',
+  );
 
   // ===== SOUND SETTINGS =====
 
@@ -105,8 +165,11 @@ class SettingsTexts {
 
   static const _resetDialogContent = LocalizedText(
     de:
-        'Möchten Sie wirklich alle Einstellungen auf die Standardwerte zurücksetzen?',
-    en: 'Do you really want to reset all settings to default values?',
+        'Möchten Sie die Einstellungen dieses Bereichs wirklich auf die '
+        'Standardwerte zurücksetzen?',
+    en:
+        'Do you really want to reset the settings on this screen to their '
+        'default values?',
   );
 
   static const _cancel = LocalizedText(de: 'Abbrechen', en: 'Cancel');
@@ -181,10 +244,31 @@ class SettingsTexts {
 
   String get screenTitle => _screenTitle.get(_currentLanguage);
 
+  /// Titel des Einstellungs-Screens eines Bereichs.
+  String sectionTitle(SettingsSection section) {
+    switch (section) {
+      case SettingsSection.general:
+        return _generalTitle.get(_currentLanguage);
+      case SettingsSection.timer:
+        return _timerTitle.get(_currentLanguage);
+      case SettingsSection.competition:
+        return _competitionTitle.get(_currentLanguage);
+    }
+  }
+
   String get soundSection => _soundSection.get(_currentLanguage);
   String get timerSection => _timerSection.get(_currentLanguage);
   String get customTimesSection => _customTimesSection.get(_currentLanguage);
   String get languageSection => _languageSection.get(_currentLanguage);
+  String get roundSection => _roundSection.get(_currentLanguage);
+  String get targetSection => _targetSection.get(_currentLanguage);
+
+  String get discipline => _discipline.get(_currentLanguage);
+  String get disciplineSubtitle => _disciplineSubtitle.get(_currentLanguage);
+  String get ends => _ends.get(_currentLanguage);
+  String get endsSubtitle => _endsSubtitle.get(_currentLanguage);
+  String get lineup => _lineup.get(_currentLanguage);
+  String get lineupSubtitle => _lineupSubtitle.get(_currentLanguage);
 
   String get soundEnabled => _soundEnabled.get(_currentLanguage);
   String get volume => _volume.get(_currentLanguage);
@@ -240,6 +324,38 @@ class SettingsTexts {
   // ===== HELPER METHODS =====
 
   /// Get the display name for a timer mode
+  /// Anzeigename einer Disziplin.
+  String getDisciplineName(CompetitionDiscipline discipline) {
+    switch (discipline) {
+      case CompetitionDiscipline.indoor:
+        return _indoorDiscipline.get(_currentLanguage);
+      case CompetitionDiscipline.outdoor:
+        return _outdoorDiscipline.get(_currentLanguage);
+    }
+  }
+
+  /// Was die Disziplin konkret bedeutet: „3 Pfeile · 2:00".
+  ///
+  /// Steht als Unterzeile unter der Disziplin, statt einer festen Erklärung —
+  /// die Zahlen sind der eigentliche Inhalt der Einstellung, und wer sie sieht,
+  /// muss nicht wissen, was „Halle" in den Regeln bedeutet.
+  String getDisciplineDetail(CompetitionDiscipline discipline) {
+    final arrows = '${discipline.arrowsPerEnd} ${_arrows.get(_currentLanguage)}';
+    return '$arrows · ${TimerTexts.formatTime(discipline.shootingTime)}';
+  }
+
+  /// Anzeigename einer Aufstellung.
+  String getLineupName(CompetitionLineup lineup) {
+    switch (lineup) {
+      case CompetitionLineup.abcd:
+        return _lineupAbcd.get(_currentLanguage);
+      case CompetitionLineup.ab:
+        return _lineupAb.get(_currentLanguage);
+      case CompetitionLineup.single:
+        return _lineupSingle.get(_currentLanguage);
+    }
+  }
+
   String getModeName(TimerMode mode) {
     switch (mode) {
       case TimerMode.indoor:

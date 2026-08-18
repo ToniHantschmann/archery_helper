@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:archery_helper/core/l10n/app_language.dart';
+import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/models/settings.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/repositories/settings_repository.dart';
@@ -32,6 +33,9 @@ void main() {
     showMilliseconds: true,
     language: AppLanguage.english,
     alternatingArrows: 5,
+    competitionDiscipline: CompetitionDiscipline.outdoor,
+    competitionEnds: 9,
+    competitionLineup: CompetitionLineup.ab,
   );
 
   test('saved settings survive a round trip unchanged', () async {
@@ -47,6 +51,9 @@ void main() {
     expect(loaded.showMilliseconds, custom.showMilliseconds);
     expect(loaded.language, custom.language);
     expect(loaded.alternatingArrows, custom.alternatingArrows);
+    expect(loaded.competitionDiscipline, custom.competitionDiscipline);
+    expect(loaded.competitionEnds, custom.competitionEnds);
+    expect(loaded.competitionLineup, custom.competitionLineup);
   });
 
   test('every field is written to the stored json', () {
@@ -62,6 +69,9 @@ void main() {
       'showMilliseconds',
       'language',
       'alternatingArrows',
+      'competitionDiscipline',
+      'competitionEnds',
+      'competitionLineup',
     });
   });
 
@@ -99,6 +109,24 @@ void main() {
 
       final loaded = await repository.loadSettings();
       expect(loaded.alternatingArrows, Settings.maxAlternatingArrows);
+    });
+
+    test('an end count outside the allowed range', () async {
+      SharedPreferences.setMockInitialValues({
+        storageKey: jsonEncode({'competitionEnds': 0}),
+      });
+
+      final loaded = await repository.loadSettings();
+      expect(loaded.competitionEnds, Settings.minCompetitionEnds);
+    });
+
+    test('an out of range lineup index', () async {
+      SharedPreferences.setMockInitialValues({
+        storageKey: jsonEncode({'competitionLineup': 42}),
+      });
+
+      final loaded = await repository.loadSettings();
+      expect(loaded.competitionLineup, CompetitionLineup.abcd);
     });
 
     test('an out of range mode index', () async {

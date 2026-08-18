@@ -1,43 +1,24 @@
-import 'dart:async';
 import 'package:archery_helper/providers/settings_provider.dart';
-import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/timer_state.dart';
+import 'phase_clock.dart';
 
 // Business Logic Klasse
-class TimerNotifier extends Notifier<TimerState> {
-  Timer? _timer;
-
-  /// When the running phase ends, on the wall clock.
-  ///
-  /// The remaining time is always derived from this instead of being counted
-  /// down step by step. A Timer is only a request: if the platform delivers a
-  /// callback late — or drops it, which is what a busy or backgrounded browser
-  /// tab does — then subtracting a fixed amount per callback makes the
-  /// countdown lag behind real time, and a shot clock that runs slow is a shot
-  /// clock that is wrong.
-  ///
-  /// `null` whenever nothing is ticking (idle, paused, ended).
-  DateTime? _phaseEnd;
-
-  /// The grid the shown number changes on: whole seconds, or tenths while the
-  /// settings ask for milliseconds. The countdown is scheduled onto this grid
-  /// (see [_scheduleNextStep]), so it is the update rate as well.
-  Duration get _displayStep =>
-      ref.read(settingsProvider).showMilliseconds
-          ? const Duration(milliseconds: 100)
-          : const Duration(seconds: 1);
+class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
+  @override
+  Duration get storedRemaining => state.remainingTime;
 
   @override
   TimerState build() {
-    ref.onDispose(() => _timer?.cancel());
+    ref.onDispose(stopTicking);
+    watchDisplayStep();
 
     ref.listen(settingsProvider, (previous, next) {
       // Nur reagieren wenn custom Zeiten sich geändert haben und custom Modus aktiv ist
       if (state.mode == TimerMode.custom &&
           (previous?.customPrepTime != next.customPrepTime ||
               previous?.customMainTime != next.customMainTime)) {
-        _stopTicking();
+        stopTicking();
         state = _stateForMode(TimerMode.custom);
         return;
       }
@@ -48,17 +29,9 @@ class TimerNotifier extends Notifier<TimerState> {
       if (state.mode.isAlternating &&
           (previous?.customPrepTime != next.customPrepTime ||
               previous?.alternatingArrows != next.alternatingArrows)) {
-        _stopTicking();
+        stopTicking();
         state = _stateForMode(TimerMode.alternating);
         return;
-      }
-
-      // Das Anzeigeraster hängt an showMilliseconds. Wird es umgeschaltet
-      // während der Countdown läuft, muss sofort auf dem neuen Raster neu
-      // armiert werden — sonst käme das nächste Update erst zur alten Kante.
-      if (previous?.showMilliseconds != next.showMilliseconds &&
-          _phaseEnd != null) {
-        _onStep();
       }
     });
 
@@ -86,13 +59,12 @@ class TimerNotifier extends Notifier<TimerState> {
     // Im Ampel-Modus gibt es nichts anzuhalten — das Signal steht ohnehin.
     if (state.mode.isManual) return;
 
-    _timer?.cancel();
     // Freeze on the clock-derived value, not on the last tick: pausing between
     // two callbacks would otherwise hand back up to 100ms of shooting time.
-    final remaining = _remaining();
-    _phaseEnd = null;
+    final left = remaining();
+    stopTicking();
     state = state.copyWith(
-      remainingTime: remaining,
+      remainingTime: left,
       isPaused: true,
       isRunning: false,
     );
@@ -138,13 +110,13 @@ class TimerNotifier extends Notifier<TimerState> {
     if (state.mode.isManual) return;
 
     if (state.isRunning) {
-      _stopTicking();
-      _handlePhaseTransition();
+      stopTicking();
+      onPhaseElapsed();
     }
   }
 
   void setMode(TimerMode mode) {
-    _stopTicking();
+    stopTicking();
     state = _stateForMode(mode);
   }
 
@@ -210,7 +182,7 @@ class TimerNotifier extends Notifier<TimerState> {
       isRunning: true,
       isPaused: false,
     );
-    _startTicking();
+    startTicking(state.remainingTime);
   }
 
   void _startMainPhase({DateTime? anchor}) {
@@ -218,7 +190,7 @@ class TimerNotifier extends Notifier<TimerState> {
       phase: TimerPhase.active,
       remainingTime: state.mainTime,
     );
-    _startTicking(anchor: anchor);
+    startTicking(state.remainingTime, anchor: anchor);
   }
 
   /// Gibt die Schusszeit an den nächsten Schützen weiter.
@@ -241,7 +213,7 @@ class TimerNotifier extends Notifier<TimerState> {
   }
 
   void _endTimer() {
-    _stopTicking();
+    stopTicking();
     state = state.copyWith(
       phase: TimerPhase.ended,
       isRunning: false,
@@ -251,80 +223,16 @@ class TimerNotifier extends Notifier<TimerState> {
 
   void _resumeTimer() {
     state = state.copyWith(isRunning: true, isPaused: false);
-    _startTicking();
+    startTicking(state.remainingTime);
   }
 
-  /// Anchors the phase on the wall clock and arms the first update.
-  ///
-  /// [anchor] is the moment the phase conceptually starts. It is only passed
-  /// when one phase follows another on its own: the callback that ends the
-  /// preparation can arrive a few milliseconds late, and anchoring the main
-  /// phase on the planned end instead of on "now" keeps that lateness from
-  /// being added to the round. A skipped phase has no such anchor — there
-  /// "now" is exactly right.
-  void _startTicking({DateTime? anchor}) {
-    _phaseEnd = (anchor ?? clock.now()).add(state.remainingTime);
-    _scheduleNextStep(_remaining());
-  }
-
-  /// Arms a single timer for the exact moment the shown number changes.
-  ///
-  /// The countdown used to poll on a fixed 100ms grid and round the measured
-  /// remainder onto the same grid — which is where the display changes too.
-  /// A callback that arrived a few milliseconds late therefore rounded a whole
-  /// step too far down and flipped the second early, leaving the next one on
-  /// screen too long. Waiting for the boundary itself cannot make that error:
-  /// a timer never fires *before* its deadline. And because the delay is
-  /// recomputed from [_phaseEnd] at every step, lateness never accumulates.
-  void _scheduleNextStep(Duration remaining) {
-    _timer?.cancel();
-
-    if (remaining <= Duration.zero) {
-      _handlePhaseTransition();
-      return;
-    }
-
-    // The delay is always within (0, step] and never longer than [remaining],
-    // so the timer cannot overshoot the end of the phase: once less than one
-    // step is left it fires exactly on [_phaseEnd]. The phase therefore still
-    // lasts exactly as long as it is configured for.
-    final step = _displayStep;
-    final steps = (remaining.inMicroseconds / step.inMicroseconds).ceil();
-    _timer = Timer(remaining - step * (steps - 1), _onStep);
-  }
-
-  void _onStep() {
-    final remaining = _remaining();
-
-    if (remaining <= Duration.zero) {
-      _handlePhaseTransition(anchor: _phaseEnd);
-      return;
-    }
-
+  @override
+  void onRemainingChanged(Duration remaining) {
     state = state.copyWith(remainingTime: remaining);
-    _scheduleNextStep(remaining);
   }
 
-  void _stopTicking() {
-    _timer?.cancel();
-    _phaseEnd = null;
-  }
-
-  /// Time left in the running phase, straight off the clock.
-  ///
-  /// Deliberately not quantised: the update is already scheduled onto the
-  /// display grid, and rounding the measured value onto that same grid is what
-  /// used to let a late callback jump a step early. Falls back to the stored
-  /// value when nothing is running.
-  Duration _remaining() {
-    final end = _phaseEnd;
-    if (end == null) return state.remainingTime;
-
-    final left = end.difference(clock.now());
-    return left <= Duration.zero ? Duration.zero : left;
-  }
-
-  void _handlePhaseTransition({DateTime? anchor}) {
+  @override
+  void onPhaseElapsed({DateTime? anchor}) {
     switch (state.phase) {
       case TimerPhase.preparation:
         _startMainPhase(anchor: anchor);

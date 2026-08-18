@@ -17,12 +17,18 @@ import '../providers/ui_providers.dart';
 ///
 /// Im Ampel-Modus gibt es keine Zeit: dort rückt das Signalwort an die Stelle
 /// der Uhr und ist damit die ganze Anzeige.
+///
+/// Der Zustand kommt als Provider herein statt fest aus [timerUIStateProvider]:
+/// Ampel und Wettkampf zeigen dieselbe Anzeige aus verschiedenen Quellen, und
+/// zwei Kopien dieses Aufbaus würden zwangsläufig auseinanderlaufen.
 class TimerDisplay extends ConsumerWidget {
-  const TimerDisplay({super.key});
+  final Provider<TimerUIState> uiStateProvider;
+
+  const TimerDisplay({super.key, required this.uiStateProvider});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final uiState = ref.watch(timerUIStateProvider);
+    final uiState = ref.watch(uiStateProvider);
 
     // Ampel-Modus: es gibt keine Zeit, also übernimmt das Signalwort den
     // Uhren-Platz und wird so groß wie die Fläche es zulässt. Ein zweites,

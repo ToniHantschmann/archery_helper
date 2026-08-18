@@ -1,7 +1,10 @@
 import 'package:archery_helper/app/app.dart';
+import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/models/settings.dart';
+import 'package:archery_helper/models/settings_section.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/app_state_provider.dart';
+import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/settings_navigation_provider.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
@@ -28,6 +31,7 @@ void main() {
   Future<void> pumpApp(
     WidgetTester tester, {
     Size size = const Size(1920, 1080),
+    AppScreen startAt = AppScreen.timer,
   }) async {
     // The default 800x600 test surface is far smaller than the tunnel monitors
     // and makes the timer button row overflow, which would fail every test.
@@ -35,6 +39,10 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+
+    // The app itself starts on the menu; most tests here exercise the timer
+    // path, so they open it explicitly instead of tapping through the menu.
+    container.read(appStateProvider.notifier).navigateToScreen(startAt);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -45,6 +53,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// S opens the settings of the screen you are on — from the timer screen that
+  /// is the Ampel section.
   Future<void> openSettings(WidgetTester tester) async {
     await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
     await tester.pumpAndSettle();
@@ -79,14 +89,36 @@ void main() {
       expect(currentScreen(), AppScreen.timer);
 
       await openSettings(tester);
-      expect(currentScreen(), AppScreen.settings);
+      expect(
+        currentScreen(),
+        AppScreen.timerSettings,
+        reason: 'S means "set up what I am looking at"',
+      );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(
         currentScreen(),
-        AppScreen.timer,
+        AppScreen.menu,
         reason: 'a kiosk without a mouse must be able to leave every screen',
+      );
+    });
+
+    testWidgets('M returns to the menu, and Esc there does nothing', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyM);
+      await tester.pumpAndSettle();
+      expect(currentScreen(), AppScreen.menu);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(
+        currentScreen(),
+        AppScreen.menu,
+        reason: 'the menu is the home screen — there is nothing above it',
       );
     });
 
@@ -151,10 +183,62 @@ void main() {
     });
   });
 
+  /// Der Wettkampfschirm hat seine eigene Uhr. Die Uhr-Tasten müssen deshalb
+  /// die meinen, die man vor sich hat — nicht die Ampel, die im Hintergrund
+  /// weiterläuft.
+  group('competition screen', () {
+    CompetitionState round() => container.read(competitionProvider);
+
+    testWidgets('space starts the round, not the Ampel timer', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+
+      expect(round().phase, TimerPhase.preparation);
+      expect(round().isRunning, isTrue);
+      expect(
+        timer().isRunning,
+        isFalse,
+        reason: 'the Ampel timer is a different clock',
+      );
+
+      container.read(competitionProvider.notifier).reset();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('P pauses the round and R resets it', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+
+      container.read(competitionProvider.notifier).start();
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyP);
+      await tester.pumpAndSettle();
+      expect(round().isPaused, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+      await tester.pumpAndSettle();
+      expect(round().phase, TimerPhase.idle);
+      expect(round().isPaused, isFalse);
+    });
+
+    testWidgets('S opens the competition settings', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+
+      await openSettings(tester);
+      expect(currentScreen(), AppScreen.competitionSettings);
+      expect(selectedItem(), SettingsItem.competitionDiscipline);
+
+      // Und dieselbe Taste führt wieder heraus.
+      await openSettings(tester);
+      expect(currentScreen(), AppScreen.menu);
+    });
+  });
+
   group('settings selection', () {
     testWidgets('arrow down and up move the selection', (tester) async {
-      await pumpApp(tester);
-      await openSettings(tester);
+      await pumpApp(tester, startAt: AppScreen.generalSettings);
 
       expect(selectedItem(), SettingsItem.language);
 
@@ -167,9 +251,26 @@ void main() {
       expect(selectedItem(), SettingsItem.language);
     });
 
+    /// Jeder Screen zeigt nur seinen Bereich, also darf das Durchsteppen auch
+    /// nur in ihm kreisen — eine Zeile eines anderen Bereichs wäre auf diesem
+    /// Screen gar nicht sichtbar und die Auswahl damit verschwunden.
+    testWidgets('stepping stays inside the open section', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.competitionSettings);
+
+      expect(selectedItem(), SettingsItem.competitionDiscipline);
+
+      final seen = <SettingsItem>{};
+      for (var i = 0; i < SettingsItem.values.length; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+        seen.add(selectedItem());
+      }
+
+      expect(seen, SettingsItem.of(SettingsSection.competition).toSet());
+    });
+
     testWidgets('volume is skipped while sound is off', (tester) async {
-      await pumpApp(tester);
-      await openSettings(tester);
+      await pumpApp(tester, startAt: AppScreen.generalSettings);
 
       container.read(settingsProvider.notifier).toggleSound();
       expect(settings().soundEnabled, isFalse);
@@ -180,7 +281,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         selectedItem(),
-        SettingsItem.defaultMode,
+        SettingsItem.resetGeneral,
         reason: 'the disabled volume slider would be a dead stop',
       );
 
@@ -212,7 +313,7 @@ void main() {
       // between them must leave the scroll offset alone.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(selectedItem(), SettingsItem.soundEnabled);
+      expect(selectedItem(), SettingsItem.autoStart);
       expect(
         position.pixels,
         offsetAtTop,
@@ -223,7 +324,7 @@ void main() {
       // along. Done key by key on purpose: the list builds its children lazily,
       // so a row far outside the viewport has no context to scroll to yet —
       // walking there is what the keyboard actually does.
-      while (selectedItem() != SettingsItem.resetToDefaults) {
+      while (selectedItem() != SettingsItem.resetTimer) {
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
         await tester.pumpAndSettle();
       }
@@ -398,7 +499,7 @@ void main() {
       container.read(settingsProvider.notifier).toggleAutoStart();
       expect(settings().autoStart, isTrue);
 
-      select(SettingsItem.resetToDefaults);
+      select(SettingsItem.resetTimer);
 
       // First confirm only arms the row.
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -422,7 +523,7 @@ void main() {
       await openSettings(tester);
 
       container.read(settingsProvider.notifier).toggleAutoStart();
-      select(SettingsItem.resetToDefaults);
+      select(SettingsItem.resetTimer);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
@@ -434,14 +535,14 @@ void main() {
       expect(settings().autoStart, isTrue, reason: 'nothing was reset');
       expect(
         currentScreen(),
-        AppScreen.settings,
+        AppScreen.timerSettings,
         reason: 'the first Esc is consumed by the confirmation',
       );
 
       // Only the next Esc leaves.
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
-      expect(currentScreen(), AppScreen.timer);
+      expect(currentScreen(), AppScreen.menu);
 
       await flushPendingSaves(tester);
     });
@@ -452,7 +553,7 @@ void main() {
       await pumpApp(tester);
       await openSettings(tester);
 
-      select(SettingsItem.resetToDefaults);
+      select(SettingsItem.resetTimer);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       expect(resetArmed(), isTrue);
@@ -461,7 +562,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(resetArmed(), isFalse);
-      expect(selectedItem(), isNot(SettingsItem.resetToDefaults));
+      expect(selectedItem(), isNot(SettingsItem.resetTimer));
     });
   });
 }

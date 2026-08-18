@@ -1,5 +1,6 @@
 import 'package:archery_helper/core/l10n/app_language.dart';
 
+import 'competition_state.dart';
 import 'timer_state.dart';
 
 class Settings {
@@ -16,6 +17,16 @@ class Settings {
   /// 2 × [alternatingArrows] Passagen.
   final int alternatingArrows;
 
+  /// Halle oder Freiluft im Wettkampfmodus — bestimmt Pfeilzahl und Schusszeit
+  /// einer Passe, siehe [CompetitionDiscipline].
+  final CompetitionDiscipline competitionDiscipline;
+
+  /// Wie viele Passen eine Wettkampfrunde hat.
+  final int competitionEnds;
+
+  /// Wie die Schützen an der Scheibe aufgeteilt sind.
+  final CompetitionLineup competitionLineup;
+
   const Settings({
     this.soundEnabled = true,
     this.volume = 0.8,
@@ -26,12 +37,20 @@ class Settings {
     this.showMilliseconds = false,
     this.language = AppLanguage.german,
     this.alternatingArrows = 3,
+    this.competitionDiscipline = CompetitionDiscipline.indoor,
+    this.competitionEnds = 20,
+    this.competitionLineup = CompetitionLineup.abcd,
   });
 
   /// Grenzen für [alternatingArrows]. Drei Pfeile sind der Wettkampf-Fall,
   /// alles darüber ist Training.
   static const minAlternatingArrows = 1;
   static const maxAlternatingArrows = 6;
+
+  /// Grenzen für [competitionEnds]. 20 Passen sind die Hallenrunde, 12 die
+  /// Freiluftrunde; darunter liegt jedes kürzere Vereinsformat.
+  static const minCompetitionEnds = 1;
+  static const maxCompetitionEnds = 30;
 
   Settings copyWith({
     bool? soundEnabled,
@@ -43,6 +62,9 @@ class Settings {
     bool? showMilliseconds,
     AppLanguage? language,
     int? alternatingArrows,
+    CompetitionDiscipline? competitionDiscipline,
+    int? competitionEnds,
+    CompetitionLineup? competitionLineup,
   }) {
     return Settings(
       soundEnabled: soundEnabled ?? this.soundEnabled,
@@ -54,6 +76,10 @@ class Settings {
       showMilliseconds: showMilliseconds ?? this.showMilliseconds,
       language: language ?? this.language,
       alternatingArrows: alternatingArrows ?? this.alternatingArrows,
+      competitionDiscipline:
+          competitionDiscipline ?? this.competitionDiscipline,
+      competitionEnds: competitionEnds ?? this.competitionEnds,
+      competitionLineup: competitionLineup ?? this.competitionLineup,
     );
   }
 
@@ -69,6 +95,9 @@ class Settings {
       "showMilliseconds": showMilliseconds,
       "language": language.code,
       "alternatingArrows": alternatingArrows,
+      "competitionDiscipline": competitionDiscipline.index,
+      "competitionEnds": competitionEnds,
+      "competitionLineup": competitionLineup.index,
     };
   }
 
@@ -84,6 +113,17 @@ class Settings {
       showMilliseconds: json['showMilliseconds'] as bool? ?? false,
       language: _parseLanguage(json['language'] as String?),
       alternatingArrows: _parseArrows(json['alternatingArrows'] as int?),
+      competitionDiscipline: _parseEnum(
+        CompetitionDiscipline.values,
+        json['competitionDiscipline'] as int?,
+        CompetitionDiscipline.indoor,
+      ),
+      competitionEnds: _parseEnds(json['competitionEnds'] as int?),
+      competitionLineup: _parseEnum(
+        CompetitionLineup.values,
+        json['competitionLineup'] as int?,
+        CompetitionLineup.abcd,
+      ),
     );
   }
 
@@ -99,6 +139,18 @@ class Settings {
   static int _parseArrows(int? arrows) {
     if (arrows == null) return 3;
     return arrows.clamp(minAlternatingArrows, maxAlternatingArrows);
+  }
+
+  /// Helper: keep the end count inside its range (with fallback)
+  static int _parseEnds(int? ends) {
+    if (ends == null) return const Settings().competitionEnds;
+    return ends.clamp(minCompetitionEnds, maxCompetitionEnds);
+  }
+
+  /// Helper: convert a stored index back to an enum value (with fallback)
+  static T _parseEnum<T>(List<T> values, int? index, T fallback) {
+    if (index == null || index < 0 || index >= values.length) return fallback;
+    return values[index];
   }
 
   /// Helper: convert string to AppLanguage

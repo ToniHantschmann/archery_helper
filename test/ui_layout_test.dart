@@ -1,7 +1,9 @@
 import 'package:archery_helper/app/app.dart';
 import 'package:archery_helper/core/theme/timer_theme.dart';
+import 'package:archery_helper/models/signal_state.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/app_state_provider.dart';
+import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/menu_navigation_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
 import 'package:flutter/services.dart';
@@ -61,7 +63,7 @@ void main() {
   /// Leaves the current screen so widgets holding a timer (the idle clock) are
   /// disposed before the test ends.
   Future<void> leaveScreen(WidgetTester tester) async {
-    container.read(appStateProvider.notifier).navigateToScreen(AppScreen.timer);
+    container.read(appStateProvider.notifier).navigateToScreen(AppScreen.menu);
     await tester.pump();
   }
 
@@ -138,6 +140,33 @@ void main() {
         await tester.pump();
       });
     }
+
+    for (final entry in sizes.entries) {
+      testWidgets('the competition screen fits mid-round at ${entry.key}', (
+        tester,
+      ) async {
+        // Widest case: the group rail only has content once a round is running,
+        // and the status rail carries the end counter next to the discipline.
+        await pumpScreen(tester, entry.value, AppScreen.competition);
+
+        container.read(competitionProvider.notifier).start();
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+
+        expect(tester.takeException(), isNull);
+
+        // And on the second group of the end, after the changeover.
+        container.read(competitionProvider.notifier).skipPhase();
+        container.read(competitionProvider.notifier).skipPhase();
+        await tester.pump(const Duration(milliseconds: 600));
+
+        expect(container.read(competitionProvider).groupIndex, 1);
+        expect(tester.takeException(), isNull);
+
+        container.read(competitionProvider.notifier).reset();
+        await tester.pump();
+      });
+    }
   });
 
   group('menu keyboard wiring', () {
@@ -148,27 +177,94 @@ void main() {
 
       expect(container.read(menuNavigationProvider), MenuItem.timer);
 
+      // At 1920px the grid is three wide, so down lands on the second row —
+      // the settings tile below the timer tile.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.settings);
+      expect(container.read(menuNavigationProvider), MenuItem.timerSettings);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
-      expect(container.read(currentScreenProvider), AppScreen.settings);
+      expect(container.read(currentScreenProvider), AppScreen.timerSettings);
     });
 
-    testWidgets('Esc returns to the timer', (tester) async {
+    testWidgets('Esc does nothing — the menu is the home screen', (
+      tester,
+    ) async {
       await pumpScreen(tester, const Size(1920, 1080), AppScreen.menu);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pump();
 
-      expect(container.read(currentScreenProvider), AppScreen.timer);
+      expect(container.read(currentScreenProvider), AppScreen.menu);
+    });
+
+    testWidgets('left and right step through a three-column grid', (
+      tester,
+    ) async {
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.menu);
+
+      expect(
+        container.read(menuColumnsProvider),
+        3,
+        reason: '1920px is wide enough for three tiles in one row',
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(container.read(menuNavigationProvider), MenuItem.competition);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(container.read(menuNavigationProvider), MenuItem.timer);
+
+      // Right wraps around the flat order, so the last tile is reachable from
+      // the first without going through the grid.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(container.read(menuNavigationProvider), MenuItem.generalSettings);
+    });
+
+    testWidgets('down moves a whole row once the grid wraps', (tester) async {
+      await pumpScreen(tester, const Size(1280, 720), AppScreen.menu);
+
+      expect(
+        container.read(menuColumnsProvider),
+        2,
+        reason: '1280px is too narrow for three readable tiles',
+      );
+
+      // Two columns: the tile below the timer is the third entry, not the
+      // second.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(container.read(menuNavigationProvider), MenuItem.idle);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pump();
+      expect(container.read(menuNavigationProvider), MenuItem.timer);
+    });
+
+    /// Kein Pfeil darf ins Leere gehen: hoch aus der ersten Zeile landet in der
+    /// letzten — in derselben Spalte, so wie links/rechts in der Reihenfolge
+    /// herumläuft.
+    testWidgets('up from the first row wraps within the column', (
+      tester,
+    ) async {
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.menu);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pump();
+      expect(container.read(menuNavigationProvider), MenuItem.timerSettings);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(container.read(menuNavigationProvider), MenuItem.timer);
     });
   });
 
   group('signal semantics', () {
-    TimerState stateFor(
+    SignalState stateFor(
       TimerPhase phase, {
       Duration remaining = const Duration(seconds: 60),
     }) {
@@ -178,7 +274,7 @@ void main() {
         mode: TimerMode.indoor,
         preparationTime: const Duration(seconds: 10),
         mainTime: const Duration(seconds: 120),
-      );
+      ).signal;
     }
 
     test('red while nobody may shoot', () {
@@ -211,13 +307,13 @@ void main() {
     });
 
     test('the hand-switched signal is only ever red or green', () {
-      TimerState manual(TimerPhase phase) => TimerState(
+      SignalState manual(TimerPhase phase) => TimerState(
         remainingTime: Duration.zero,
         phase: phase,
         mode: TimerMode.trafficLight,
         preparationTime: Duration.zero,
         mainTime: Duration.zero,
-      );
+      ).signal;
 
       expect(
         TimerTheme.signalFor(manual(TimerPhase.preparation)),

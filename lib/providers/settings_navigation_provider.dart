@@ -1,21 +1,51 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/l10n/app_language.dart';
+import '../models/competition_state.dart';
+import '../models/settings_section.dart';
 import '../models/timer_state.dart';
+import 'app_state_provider.dart';
 import 'settings_provider.dart';
 
-/// All keyboard-selectable rows of the settings screen, in visual order.
-/// The order defines what navigateUp/navigateDown step through.
+/// All keyboard-selectable rows of the settings screens, in visual order,
+/// grouped by the screen they appear on.
+///
+/// The order defines what navigateUp/navigateDown step through — within one
+/// [SettingsSection], because a screen only ever shows its own rows. Jeder
+/// Eintrag gehört zu genau einem Bereich; deshalb hat jeder Bereich auch seine
+/// eigene Reset-Zeile.
 enum SettingsItem {
-  language,
-  soundEnabled,
-  volume,
-  defaultMode,
-  autoStart,
-  showMilliseconds,
-  alternatingArrows,
-  customPrepTime,
-  customMainTime,
-  resetToDefaults,
+  // ── Allgemein ──────────────────────────────────────────
+  language(SettingsSection.general),
+  soundEnabled(SettingsSection.general),
+  volume(SettingsSection.general),
+  resetGeneral(SettingsSection.general),
+  // ── Ampel ──────────────────────────────────────────────
+  defaultMode(SettingsSection.timer),
+  autoStart(SettingsSection.timer),
+  showMilliseconds(SettingsSection.timer),
+  alternatingArrows(SettingsSection.timer),
+  customPrepTime(SettingsSection.timer),
+  customMainTime(SettingsSection.timer),
+  resetTimer(SettingsSection.timer),
+  // ── Wettkampf ──────────────────────────────────────────
+  competitionDiscipline(SettingsSection.competition),
+  competitionEnds(SettingsSection.competition),
+  competitionLineup(SettingsSection.competition),
+  resetCompetition(SettingsSection.competition);
+
+  const SettingsItem(this.section);
+
+  /// Auf welchem Einstellungs-Screen die Zeile steht.
+  final SettingsSection section;
+
+  /// Ob die Zeile den Bereich zurücksetzt. Die drei Reset-Zeilen verhalten sich
+  /// gleich und unterscheiden sich nur darin, welchen Bereich sie anfassen.
+  bool get isReset =>
+      this == resetGeneral || this == resetTimer || this == resetCompetition;
+
+  /// Alle Zeilen eines Bereichs, in Anzeigereihenfolge.
+  static List<SettingsItem> of(SettingsSection section) =>
+      values.where((item) => item.section == section).toList();
 }
 
 /// Step widths used when adjusting a duration with navigateLeft/navigateRight,
@@ -54,6 +84,10 @@ class SettingsNavState {
     this.resetArmed = false,
   });
 
+  /// Welcher Bereich offen ist. Keine eigene Angabe: jede Zeile gehört zu genau
+  /// einem Bereich, also sagt die ausgewählte Zeile es schon.
+  SettingsSection get section => selected.section;
+
   SettingsNavState copyWith({SettingsItem? selected, bool? resetArmed}) {
     return SettingsNavState(
       selected: selected ?? this.selected,
@@ -78,14 +112,31 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
   int _repeatDelta = 0;
 
   @override
-  SettingsNavState build() => const SettingsNavState();
+  SettingsNavState build() {
+    // Welcher Bereich offen ist, entscheidet der Screen — der Notifier folgt
+    // ihm, statt dass der Screen es ihm nach dem ersten Frame nachreicht.
+    // Damit ist die Auswahl schon im ersten Frame die richtige, und es gibt
+    // keinen Moment, in dem hier die Zeilen eines anderen Bereichs stehen.
+    ref.listen(openSettingsSectionProvider, (previous, next) {
+      if (next != null) _openSection(next);
+    });
 
-  /// Called when the settings screen is entered, so navigation always starts
-  /// at the top instead of wherever it was left last time.
-  void reset() {
-    _endRepeatRun();
-    state = const SettingsNavState();
+    return SettingsNavState(
+      selected: _firstItemOf(
+        ref.read(openSettingsSectionProvider) ?? SettingsSection.general,
+      ),
+    );
   }
+
+  /// Ein Einstellungs-Screen wurde betreten: oben anfangen, statt dort, wo der
+  /// letzte Screen verlassen wurde.
+  void _openSection(SettingsSection section) {
+    _endRepeatRun();
+    state = SettingsNavState(selected: _firstItemOf(section));
+  }
+
+  SettingsItem _firstItemOf(SettingsSection section) =>
+      SettingsItem.of(section).first;
 
   void select(SettingsItem item) {
     if (item != state.selected) _endRepeatRun();
@@ -120,9 +171,11 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.showMilliseconds:
         notifier.toggleShowMilliseconds();
 
-      case SettingsItem.resetToDefaults:
+      case SettingsItem.resetGeneral:
+      case SettingsItem.resetTimer:
+      case SettingsItem.resetCompetition:
         if (state.resetArmed) {
-          notifier.resetToDefaults();
+          notifier.resetSection(state.selected.section);
           state = state.copyWith(resetArmed: false);
         } else {
           state = state.copyWith(resetArmed: true);
@@ -135,6 +188,9 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.alternatingArrows:
       case SettingsItem.customPrepTime:
       case SettingsItem.customMainTime:
+      case SettingsItem.competitionDiscipline:
+      case SettingsItem.competitionEnds:
+      case SettingsItem.competitionLineup:
         _adjust(1);
     }
   }
@@ -164,12 +220,13 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
     select(items[nextIndex]);
   }
 
-  /// Rows that can currently hold focus. Volume is skipped while sound is off,
-  /// because its slider is disabled and would be a dead stop.
+  /// Rows that can currently hold focus: the ones on the open screen, minus the
+  /// ones that cannot be used. Volume is skipped while sound is off, because its
+  /// slider is disabled and would be a dead stop.
   List<SettingsItem> _selectableItems() {
     final soundEnabled = ref.read(settingsProvider).soundEnabled;
 
-    return SettingsItem.values
+    return SettingsItem.of(state.section)
         .where((item) => item != SettingsItem.volume || soundEnabled)
         .toList();
   }
@@ -223,8 +280,29 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.customMainTime:
         notifier.setCustomMainTime(_step(settings.customMainTime, delta));
 
-      case SettingsItem.resetToDefaults:
-        // Nothing to adjust — only confirm acts on this row.
+      // Ohne Beschleunigung: der Bereich ist klein genug, und eine wachsende
+      // Schrittweite würde die 20 der Halle nur überspringen.
+      case SettingsItem.competitionEnds:
+        notifier.setCompetitionEnds(settings.competitionEnds + delta);
+
+      case SettingsItem.competitionDiscipline:
+        notifier.setCompetitionDiscipline(
+          _cycle(
+            CompetitionDiscipline.values,
+            settings.competitionDiscipline,
+            delta,
+          ),
+        );
+
+      case SettingsItem.competitionLineup:
+        notifier.setCompetitionLineup(
+          _cycle(CompetitionLineup.values, settings.competitionLineup, delta),
+        );
+
+      case SettingsItem.resetGeneral:
+      case SettingsItem.resetTimer:
+      case SettingsItem.resetCompetition:
+        // Nothing to adjust — only confirm acts on these rows.
         break;
     }
   }
@@ -269,6 +347,20 @@ final settingsNavigationProvider =
     NotifierProvider<SettingsNavigationNotifier, SettingsNavState>(
       () => SettingsNavigationNotifier(),
     );
+
+/// Welcher Einstellungsbereich gerade offen ist, oder `null`, wenn gar keiner
+/// offen ist.
+///
+/// Abgeleitet aus dem aktuellen Screen, nicht daneben gehalten: die drei
+/// Einstellungs-Screens *sind* die drei Bereiche.
+final openSettingsSectionProvider = Provider<SettingsSection?>((ref) {
+  return switch (ref.watch(currentScreenProvider)) {
+    AppScreen.generalSettings => SettingsSection.general,
+    AppScreen.timerSettings => SettingsSection.timer,
+    AppScreen.competitionSettings => SettingsSection.competition,
+    _ => null,
+  };
+});
 
 /// Convenience provider: the currently focused row.
 final selectedSettingsItemProvider = Provider<SettingsItem>((ref) {

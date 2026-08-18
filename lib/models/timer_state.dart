@@ -1,3 +1,5 @@
+import 'signal_state.dart';
+
 enum TimerPhase {
   idle,
   preparation,
@@ -129,6 +131,14 @@ class TimerState {
   bool get hasNextPassage =>
       mode.isAlternating &&
       (currentArcher == Archer.a || currentArrow < arrowsPerArcher);
+
+  /// Was der Schirm daraus macht — siehe [SignalState].
+  SignalState get signal => SignalState(
+    phase: phase,
+    isWarning: isInWarningPeriod,
+    isPaused: isPaused,
+    isManual: mode.isManual,
+  );
 
   bool get canStart => phase == TimerPhase.idle;
   bool get canPause => isRunning && !isPaused;

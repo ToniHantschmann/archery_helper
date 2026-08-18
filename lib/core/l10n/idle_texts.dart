@@ -17,8 +17,8 @@ class IdleTexts {
   );
 
   static const _wakeHint = LocalizedText(
-    de: 'Taste drücken zum Starten',
-    en: 'Press a key to start',
+    de: 'Taste drücken zum Fortfahren',
+    en: 'Press a key to continue',
   );
 
   String get title => _title.get(_language);

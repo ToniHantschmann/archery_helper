@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/signal_state.dart';
 import '../../models/timer_state.dart';
 import 'app_palette.dart';
 
@@ -25,10 +26,12 @@ enum TrafficSignal {
   final Color onTint;
 }
 
-/// Maps timer state to the look of the timer screen.
+/// Maps the signal state to the look of the timer and competition screens.
 ///
 /// Pure functions only: no widget, no ref. Everything here is exposed to the
-/// UI through the providers in `lib/providers/ui_providers.dart`.
+/// UI through the providers in `lib/providers/ui_providers.dart` and
+/// `lib/providers/competition_ui_providers.dart` — beide Schirme sind derselbe
+/// Ampelschirm und teilen sich deshalb diese Farbregeln.
 class TimerTheme {
   const TimerTheme._();
 
@@ -37,8 +40,8 @@ class TimerTheme {
   /// Idle and ended both show red: in both cases nobody may shoot, and a
   /// screen with no signal at all would read as "display broken" from the
   /// shooting line.
-  static TrafficSignal signalFor(TimerState state) {
-    if (state.isInWarningPeriod) return TrafficSignal.amber;
+  static TrafficSignal signalFor(SignalState state) {
+    if (state.isWarning) return TrafficSignal.amber;
 
     switch (state.phase) {
       case TimerPhase.idle:
@@ -56,7 +59,7 @@ class TimerTheme {
   /// the signal, which is why the tint is much stronger than a decorative
   /// background would be. It stays a deep gradient rather than a flat block of
   /// signal colour, so the white countdown on top keeps its contrast.
-  static LinearGradient backgroundGradient(TimerState state) {
+  static LinearGradient backgroundGradient(SignalState state) {
     final tint = signalFor(state);
     final isIdle = state.phase == TimerPhase.idle;
 
@@ -81,8 +84,8 @@ class TimerTheme {
   /// Countdown colour. White while there is time left, the signal colour once
   /// the state is one you must react to — a paused or warning clock should be
   /// distinguishable without reading the label.
-  static Color timeColor(TimerState state) {
-    if (state.isInWarningPeriod) return AppPalette.amberOnTint;
+  static Color timeColor(SignalState state) {
+    if (state.isWarning) return AppPalette.amberOnTint;
     if (state.isPaused) return AppPalette.textSecondary;
     if (state.phase == TimerPhase.ended) return AppPalette.redOnTint;
     return AppPalette.textPrimary;
@@ -94,8 +97,8 @@ class TimerTheme {
   /// füllt allein den Schirm. Es bleibt deshalb weiß: die Signalfarbe steht
   /// schon flächig dahinter, und ein rotes Wort auf rotem Grund verliert genau
   /// den Kontrast, von dem es auf die Distanz lebt.
-  static Color phaseColor(TimerState state) {
-    if (state.mode.isManual) return AppPalette.textOnSignal;
+  static Color phaseColor(SignalState state) {
+    if (state.isManual) return AppPalette.textOnSignal;
     if (state.phase == TimerPhase.idle) return AppPalette.textSecondary;
     return signalFor(state).onTint;
   }

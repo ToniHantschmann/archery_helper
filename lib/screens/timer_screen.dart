@@ -7,7 +7,7 @@ import '../core/theme/app_dimens.dart';
 import '../core/theme/app_palette.dart';
 import '../models/keyboard_config.dart';
 import '../providers/app_actions_provider.dart';
-import '../providers/timer_hint_navigation_provider.dart';
+import '../providers/hint_navigation_provider.dart';
 import '../providers/timer_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/debug_panel.dart';
@@ -44,13 +44,15 @@ class TimerScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   const _StatusRail(),
-                  const Expanded(
+                  Expanded(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.xl,
                         vertical: AppSpacing.md,
                       ),
-                      child: TimerDisplay(),
+                      child: TimerDisplay(
+                        uiStateProvider: timerUIStateProvider,
+                      ),
                     ),
                   ),
                   const _TimerHintRail(),
