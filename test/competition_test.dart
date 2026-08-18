@@ -259,6 +259,127 @@ void main() {
     });
   });
 
+  group('rewinding', () {
+    testWidgets('goes back to the start of the previous passage', (
+      tester,
+    ) async {
+      setEnds(2);
+      notifier().start();
+
+      // Bis mitten in die Schusszeit der zweiten Gruppe.
+      await tester.pump(const Duration(seconds: 200));
+      expect(round().groupIndex, 1);
+      expect(round().phase, TimerPhase.active);
+
+      notifier().rewind();
+
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 0);
+      expect(round().currentGroup, 'AB');
+      expect(round().phase, TimerPhase.idle);
+      expect(round().isRunning, isFalse);
+      expect(round().isPaused, isFalse);
+      expect(round().remainingTime, const Duration(seconds: 120));
+      expect(
+        round().isWaitingBetweenEnds,
+        isFalse,
+        reason: 'the arrows of the first end are still in the target',
+      );
+    });
+
+    testWidgets('the rewound passage stands still until the start signal', (
+      tester,
+    ) async {
+      setEnds(2);
+      notifier().start();
+      await tester.pump(const Duration(seconds: 200));
+      notifier().rewind();
+
+      // Zurückspulen ist noch kein Startsignal.
+      await tester.pump(const Duration(minutes: 1));
+      expect(round().phase, TimerPhase.idle);
+      expect(round().remainingTime, const Duration(seconds: 120));
+
+      notifier().advance();
+      expect(round().phase, TimerPhase.preparation);
+      expect(round().currentGroup, 'AB');
+
+      stop();
+    });
+
+    testWidgets('crosses back into the previous end in its own order', (
+      tester,
+    ) async {
+      setEnds(3);
+      notifier().start();
+
+      // Passe 1 komplett, dann Passe 2 starten.
+      await tester.pump(const Duration(seconds: 260));
+      expect(round().currentEnd, 2);
+      expect(round().isWaitingBetweenEnds, isTrue);
+
+      // Aus dem Warten heraus zurück: die letzte Gruppe der ersten Passe.
+      notifier().rewind();
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 1);
+      expect(
+        round().currentGroup,
+        'CD',
+        reason: 'end 1 shoots AB then CD, so its last passage is CD',
+      );
+      expect(round().phase, TimerPhase.idle);
+
+      // Und weiter zurück bis zum Anfang der Runde.
+      notifier().rewind();
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 0);
+      expect(round().currentGroup, 'AB');
+    });
+
+    testWidgets('stops at the beginning of the round', (tester) async {
+      notifier().start();
+      await tester.pump(const Duration(seconds: 5));
+
+      notifier().rewind();
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 0);
+      expect(round().phase, TimerPhase.idle);
+
+      // Ein weiterer Druck kann nicht vor den Rundenanfang laufen.
+      notifier().rewind();
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 0);
+      expect(round().remainingTime, const Duration(seconds: 120));
+    });
+
+    testWidgets('repeats the last passage after the round is over', (
+      tester,
+    ) async {
+      setEnds(1);
+      notifier().start();
+      await tester.pump(const Duration(seconds: 260));
+      expect(round().isFinished, isTrue);
+
+      notifier().rewind();
+
+      expect(round().phase, TimerPhase.idle);
+      expect(round().currentEnd, 1);
+      expect(
+        round().groupIndex,
+        1,
+        reason: 'the step back from the end of the round repeats its last '
+            'passage, it does not skip one',
+      );
+      expect(round().currentGroup, 'CD');
+      expect(round().remainingTime, const Duration(seconds: 120));
+
+      notifier().advance();
+      expect(round().phase, TimerPhase.preparation);
+
+      stop();
+    });
+  });
+
   group('settings changes', () {
     testWidgets('changing the round setup starts a fresh round', (
       tester,

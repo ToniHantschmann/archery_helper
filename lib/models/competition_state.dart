@@ -128,6 +128,11 @@ class CompetitionState {
 
   bool get hasNextEnd => currentEnd < totalEnds;
 
+  /// Ob in dieser Passe vor der laufenden Gruppe schon eine dran war.
+  bool get hasPreviousGroup => groupIndex > 0;
+
+  bool get hasPreviousEnd => currentEnd > 1;
+
   /// Ob die laufende Vorbereitungszeit ein Gruppenwechsel ist und nicht der
   /// Anfang einer Passe. Derselbe Zeitwert, andere Ansage.
   bool get isChangeover => groupIndex > 0;
@@ -136,10 +141,15 @@ class CompetitionState {
   ///
   /// Derselbe Zustand wie vor der ersten Passe — `idle` heißt immer „wartet auf
   /// den Schießleiter". Dass es hier ums Pfeileholen geht und nicht um den
-  /// Rundenstart, steht allein daran, dass die Passe nicht mehr die erste ist:
-  /// ein eigenes Feld dafür wäre eine zweite Darstellung derselben Tatsache.
+  /// Rundenstart, steht allein daran, wo in der Runde gewartet wird: nicht in
+  /// der ersten Passe, und am Anfang einer Passe und nicht mitten drin. Ein
+  /// eigenes Feld dafür wäre eine zweite Darstellung derselben Tatsache.
+  ///
+  /// Vor einem zurückgespulten Gruppenwechsel wartet die Runde ebenfalls, aber
+  /// die Pfeile stecken noch in der Scheibe — deshalb der Blick auf
+  /// [groupIndex].
   bool get isWaitingBetweenEnds =>
-      phase == TimerPhase.idle && currentEnd > 1;
+      phase == TimerPhase.idle && currentEnd > 1 && groupIndex == 0;
 
   /// Ob überhaupt zwischen Gruppen unterschieden wird. Schießen alle zusammen,
   /// gibt es keine Gruppenanzeige — es gäbe nichts zu unterscheiden.

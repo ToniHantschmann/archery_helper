@@ -171,6 +171,7 @@ class _CompetitionHintRail extends ConsumerWidget {
         AppAction.next => ref.watch(competitionNextLabelProvider),
         // Label follows the state (Start / Pause / Fortsetzen) — the binding is
         // a toggle, so a fixed word would be wrong half the time.
+        AppAction.previous => texts.hintPrevious,
         AppAction.toggleTimer => ref.watch(competitionToggleLabelProvider),
         AppAction.resetTimer => texts.hintReset,
         AppAction.toggleSettings => texts.hintSettings,

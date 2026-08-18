@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:archery_helper/core/l10n/app_language.dart';
 import 'package:archery_helper/models/competition_state.dart';
+import 'package:archery_helper/models/keyboard_config.dart';
 import 'package:archery_helper/models/settings.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/repositories/settings_repository.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -145,5 +147,39 @@ void main() {
 
     final loaded = await repository.loadSettings();
     expect(loaded.defaultMode, const Settings().defaultMode);
+  });
+
+  group('a stored keyboard config', () {
+    /// Eine gespeicherte Belegung kennt nur, was es zur Zeit des Speicherns
+    /// gab. Eine später hinzugekommene Aktion wäre ohne Ergänzung dauerhaft
+    /// ohne Taste — erreichbar nur noch über die Maus.
+    test('gets the default key of an action it cannot know', () {
+      final old = KeyboardConfig(
+        keyBindings: {LogicalKeyboardKey.space: AppAction.next},
+      );
+
+      final loaded = KeyboardConfig.fromJson(old.toJson());
+
+      expect(loaded.getAction(LogicalKeyboardKey.space), AppAction.next);
+      expect(
+        loaded.getAction(LogicalKeyboardKey.backspace),
+        AppAction.previous,
+      );
+    });
+
+    test('keeps a remapped key instead of restoring its default', () {
+      final remapped = KeyboardConfig.defaults()
+          .removeKeyBinding(LogicalKeyboardKey.backspace)
+          .addKeyBinding(LogicalKeyboardKey.keyB, AppAction.previous);
+
+      final loaded = KeyboardConfig.fromJson(remapped.toJson());
+
+      expect(loaded.getAction(LogicalKeyboardKey.keyB), AppAction.previous);
+      expect(
+        loaded.getAction(LogicalKeyboardKey.backspace),
+        isNull,
+        reason: 'the action already has a key, so its default stays free',
+      );
+    });
   });
 }

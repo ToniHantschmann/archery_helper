@@ -46,6 +46,10 @@ abstract class ScreenActionHandler {
   /// Context-sensitive "further": advance the timer, activate a row, ...
   KeyEventResult next() => KeyEventResult.ignored;
 
+  /// The step back through whatever [next] steps through. Only screens with a
+  /// position to return to implement it.
+  KeyEventResult previous() => KeyEventResult.ignored;
+
   /// Leave / close.
   KeyEventResult back() => KeyEventResult.ignored;
 
@@ -178,6 +182,14 @@ class CompetitionScreenActions extends ScreenActionHandler {
   @override
   KeyEventResult next() {
     _competition.advance();
+    return KeyEventResult.handled;
+  }
+
+  /// Die Korrekturtaste dazu: einen Schießabschnitt zurück, falls einmal zu oft
+  /// weitergedrückt wurde oder eine Gruppe wiederholen muss.
+  @override
+  KeyEventResult previous() {
+    _competition.rewind();
     return KeyEventResult.handled;
   }
 
@@ -408,6 +420,8 @@ class AppActionsNotifier {
         return screen.confirm();
       case AppAction.next:
         return screen.next();
+      case AppAction.previous:
+        return screen.previous();
       case AppAction.back:
         return screen.back();
       case AppAction.resetTimer:

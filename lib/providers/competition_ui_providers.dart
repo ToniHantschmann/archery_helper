@@ -82,6 +82,10 @@ final competitionToggleLabelProvider = Provider<String>((ref) {
 final competitionHintActionsProvider = Provider<List<AppAction>>((ref) {
   return const [
     AppAction.next,
+    // Direkt hinter der Weiter-Taste, aber nicht davor: die Auswahl steht ohne
+    // Zutun auf dem ersten Eintrag, und Enter soll dort die Runde weiterführen
+    // und nicht zurückspulen.
+    AppAction.previous,
     AppAction.toggleTimer,
     AppAction.resetTimer,
     AppAction.toggleSettings,

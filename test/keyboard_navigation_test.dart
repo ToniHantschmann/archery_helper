@@ -223,6 +223,40 @@ void main() {
       expect(round().isPaused, isFalse);
     });
 
+    testWidgets('backspace rewinds one passage', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+
+      // Bis in die Schusszeit der zweiten Gruppe: Vorbereitung, Schusszeit,
+      // Wechsel.
+      container.read(competitionProvider.notifier).start();
+      await tester.pump(const Duration(seconds: 140));
+      await tester.pumpAndSettle();
+      expect(round().groupIndex, 1);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await tester.pumpAndSettle();
+
+      expect(round().groupIndex, 0);
+      expect(round().phase, TimerPhase.idle);
+      expect(round().isRunning, isFalse);
+    });
+
+    testWidgets('backspace does nothing on the Ampel screen', (tester) async {
+      await pumpApp(tester);
+
+      container.read(timerProvider.notifier).startTimer();
+      await tester.pumpAndSettle();
+      final phase = timer().phase;
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await tester.pumpAndSettle();
+
+      expect(timer().phase, phase);
+      expect(timer().isRunning, isTrue);
+
+      await stopTimer(tester);
+    });
+
     testWidgets('S opens the competition settings', (tester) async {
       await pumpApp(tester, startAt: AppScreen.competition);
 

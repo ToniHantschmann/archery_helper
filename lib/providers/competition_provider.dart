@@ -101,6 +101,42 @@ class CompetitionNotifier extends Notifier<CompetitionState>
     onPhaseElapsed();
   }
 
+  /// Einen Schießabschnitt zurück: an den Anfang des vorigen Durchgangs, und
+  /// dort angehalten.
+  ///
+  /// Die Umkehrung von [_handOver] — wer einmal zu oft weitergedrückt hat oder
+  /// eine Gruppe wiederholen lassen muss, soll dafür nicht die ganze Runde
+  /// zurücksetzen müssen. Die Runde bleibt danach stehen wie beim Pfeileholen:
+  /// zurückspulen ist noch kein Startsignal.
+  void rewind() {
+    // Nach dem Rundenende ist der zuletzt verlassene Abschnitt der aktuelle —
+    // der Schritt zurück ist hier, ihn zu wiederholen.
+    if (state.isFinished) {
+      _awaitSlot();
+      return;
+    }
+
+    if (state.hasPreviousGroup) {
+      _awaitSlot(groupIndex: state.groupIndex - 1);
+      return;
+    }
+
+    if (state.hasPreviousEnd) {
+      _awaitSlot(
+        currentEnd: state.currentEnd - 1,
+        // Die Gruppenzahl ist über die ganze Runde konstant, nur ihre
+        // Reihenfolge dreht sich — der letzte Durchgang einer Passe hat also
+        // immer denselben Index.
+        groupIndex: state.lineup.groupLabels.length - 1,
+      );
+      return;
+    }
+
+    // Vor der ersten Gruppe der ersten Passe liegt nichts mehr. Die Runde geht
+    // an ihren Anfang, statt die Taste ins Leere laufen zu lassen.
+    _awaitSlot();
+  }
+
   void reset() {
     stopTicking();
     state = _initialState();
@@ -168,16 +204,22 @@ class CompetitionNotifier extends Notifier<CompetitionState>
   }
 
   /// Setzt die nächste Passe auf und wartet auf das Startsignal.
-  void _awaitNextEnd() {
+  void _awaitNextEnd() =>
+      _awaitSlot(currentEnd: state.currentEnd + 1, groupIndex: 0);
+
+  /// Stellt die Runde an den Anfang eines Schießabschnitts und hält sie dort
+  /// an — die eine Wartestellung, die sowohl das Pfeileholen als auch das
+  /// Zurückspulen herstellt. Ohne Angabe bleibt der Abschnitt, wo er ist.
+  void _awaitSlot({int? currentEnd, int? groupIndex}) {
     stopTicking();
     state = state.copyWith(
-      currentEnd: state.currentEnd + 1,
-      groupIndex: 0,
+      currentEnd: currentEnd,
+      groupIndex: groupIndex,
       phase: TimerPhase.idle,
       isRunning: false,
       isPaused: false,
       // Wie vor der ersten Passe steht die Schusszeit auf dem Schirm: sie ist
-      // die Zahl, um die es in der kommenden Passe geht.
+      // die Zahl, um die es im kommenden Durchgang geht.
       remainingTime: state.shootingTime,
     );
   }

@@ -7,6 +7,7 @@ enum AppAction {
   resetTimer, // reset timer
   skipTimer, // skip current timer phase
   next, // context-sensitive next action
+  previous, // context-sensitive step back
   // ── Modi ───────────────────────────────────────────────
   nextMode, // next timer mode
   previousMode, // previous timer mode
@@ -34,6 +35,8 @@ class KeyboardConfig {
       keyBindings: {
         // Timer controls
         LogicalKeyboardKey.space: AppAction.next,
+        // Das Spiegelbild der Leertaste: sie geht vor, Backspace zurück.
+        LogicalKeyboardKey.backspace: AppAction.previous,
         LogicalKeyboardKey.enter: AppAction.confirm,
         LogicalKeyboardKey.keyR: AppAction.resetTimer,
         LogicalKeyboardKey.keyN: AppAction.nextMode,
@@ -93,6 +96,8 @@ class KeyboardConfig {
         return 'Timer überspringen';
       case AppAction.next:
         return 'Timer weiter';
+      case AppAction.previous:
+        return 'Eine Position zurück';
       case AppAction.nextMode:
         return 'Nächster Modus';
       case AppAction.previousMode:
@@ -121,6 +126,7 @@ class KeyboardConfig {
   /// returns display name for a key
   static String getKeyName(LogicalKeyboardKey key) {
     if (key == LogicalKeyboardKey.space) return 'Leertaste';
+    if (key == LogicalKeyboardKey.backspace) return '⌫';
     if (key == LogicalKeyboardKey.enter) return 'Enter';
     if (key == LogicalKeyboardKey.escape) return 'Esc';
     if (key == LogicalKeyboardKey.f11) return 'F11';
@@ -171,7 +177,30 @@ class KeyboardConfig {
       return KeyboardConfig.defaults();
     }
 
-    return KeyboardConfig(keyBindings: bindings);
+    return KeyboardConfig(keyBindings: _withMissingDefaults(bindings));
+  }
+
+  /// Ergänzt Standardbelegungen, die in einer gespeicherten Konfiguration noch
+  /// gar nicht vorkommen konnten.
+  ///
+  /// Eine vor einer neuen [AppAction] gespeicherte Konfiguration kennt deren
+  /// Taste nicht, und ohne diesen Schritt bliebe die Aktion für den Nutzer für
+  /// immer unerreichbar. Ergänzt wird nur, wo weder die Taste noch die Aktion
+  /// belegt ist — eine bewusst umgelegte oder entfernte Belegung bleibt damit,
+  /// wie sie ist.
+  static Map<LogicalKeyboardKey, AppAction> _withMissingDefaults(
+    Map<LogicalKeyboardKey, AppAction> stored,
+  ) {
+    final merged = Map<LogicalKeyboardKey, AppAction>.from(stored);
+    final boundActions = stored.values.toSet();
+
+    KeyboardConfig.defaults().keyBindings.forEach((key, action) {
+      if (!merged.containsKey(key) && !boundActions.contains(action)) {
+        merged[key] = action;
+      }
+    });
+
+    return merged;
   }
 
   /// helper method to convert strings to appActions

@@ -50,6 +50,10 @@ class CompetitionTexts {
 
   static const _hintNext = LocalizedText(de: 'Weiter', en: 'Next');
 
+  /// Der Schritt zurück. Bewusst nicht „Zurücksetzen" — der spult nur einen
+  /// Schießabschnitt zurück, statt die Runde von vorn zu beginnen.
+  static const _hintPrevious = LocalizedText(de: 'Zurück', en: 'Back');
+
   static const _hintStart = LocalizedText(de: 'Start', en: 'Start');
 
   static const _hintPause = LocalizedText(de: 'Pause', en: 'Pause');
@@ -76,6 +80,7 @@ class CompetitionTexts {
   String nextLabel(CompetitionState state) =>
       state.canStart ? _hintStart.get(_language) : _hintNext.get(_language);
 
+  String get hintPrevious => _hintPrevious.get(_language);
   String get hintReset => _hintReset.get(_language);
   String get hintSettings => _hintSettings.get(_language);
   String get hintMenu => _hintMenu.get(_language);
