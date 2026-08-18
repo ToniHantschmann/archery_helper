@@ -8,6 +8,7 @@ enum AppAction {
   skipTimer, // skip current timer phase
   next, // context-sensitive next action
   previous, // context-sensitive step back
+  forward, // context-sensitive step ahead, without starting anything
   // ── Modi ───────────────────────────────────────────────
   nextMode, // next timer mode
   previousMode, // previous timer mode
@@ -37,6 +38,11 @@ class KeyboardConfig {
         LogicalKeyboardKey.space: AppAction.next,
         // Das Spiegelbild der Leertaste: sie geht vor, Backspace zurück.
         LogicalKeyboardKey.backspace: AppAction.previous,
+        // Und das Spiegelbild von Backspace. ⌫/⌦ sind das Tastenpaar zum
+        // Umstellen der Runde — beide bewegen nur die Position und lassen die
+        // Uhr stehen. Die Leertaste ist deshalb kein Ersatz dafür: sie ist das
+        // Startsignal und lässt die Phase wirklich ablaufen.
+        LogicalKeyboardKey.delete: AppAction.forward,
         LogicalKeyboardKey.enter: AppAction.confirm,
         LogicalKeyboardKey.keyR: AppAction.resetTimer,
         LogicalKeyboardKey.keyN: AppAction.nextMode,
@@ -98,6 +104,8 @@ class KeyboardConfig {
         return 'Timer weiter';
       case AppAction.previous:
         return 'Eine Position zurück';
+      case AppAction.forward:
+        return 'Eine Position vor';
       case AppAction.nextMode:
         return 'Nächster Modus';
       case AppAction.previousMode:
@@ -127,6 +135,7 @@ class KeyboardConfig {
   static String getKeyName(LogicalKeyboardKey key) {
     if (key == LogicalKeyboardKey.space) return 'Leertaste';
     if (key == LogicalKeyboardKey.backspace) return '⌫';
+    if (key == LogicalKeyboardKey.delete) return '⌦';
     if (key == LogicalKeyboardKey.enter) return 'Enter';
     if (key == LogicalKeyboardKey.escape) return 'Esc';
     if (key == LogicalKeyboardKey.f11) return 'F11';

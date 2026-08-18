@@ -380,6 +380,97 @@ void main() {
     });
   });
 
+  /// Das Gegenstück zum Zurückspulen: die Runde vorstellen, ohne dass dabei
+  /// eine Phase abläuft — der Weg zurück in eine laufende Runde, nachdem der
+  /// Rechner mitten darin neu gestartet werden musste.
+  group('fast-forwarding', () {
+    test('hands over to the next group without starting it', () {
+      notifier().fastForward();
+
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 1);
+      expect(round().currentGroup, 'CD');
+      expect(round().phase, TimerPhase.idle);
+      expect(round().isRunning, isFalse);
+      expect(round().remainingTime, const Duration(seconds: 120));
+    });
+
+    testWidgets('the forwarded passage stands still until the start signal', (
+      tester,
+    ) async {
+      notifier().fastForward();
+
+      // Vorspulen ist so wenig ein Startsignal wie Zurückspulen.
+      await tester.pump(const Duration(minutes: 1));
+      expect(round().phase, TimerPhase.idle);
+      expect(round().groupIndex, 1);
+
+      notifier().advance();
+      expect(round().phase, TimerPhase.preparation);
+
+      stop();
+    });
+
+    test('crosses into the next end in its own order', () {
+      // Über die letzte Gruppe der ersten Passe hinaus: die zweite Passe
+      // beginnt mit CD.
+      notifier().fastForward();
+      notifier().fastForward();
+
+      expect(round().currentEnd, 2);
+      expect(round().groupIndex, 0);
+      expect(round().currentGroup, 'CD');
+      expect(round().phase, TimerPhase.idle);
+      expect(
+        round().isWaitingBetweenEnds,
+        isTrue,
+        reason: 'the round waits between two ends, forwarded or shot',
+      );
+    });
+
+    testWidgets('stops out of a running phase', (tester) async {
+      notifier().start();
+      await tester.pump(const Duration(seconds: 5));
+      expect(round().isRunning, isTrue);
+
+      notifier().fastForward();
+
+      expect(round().phase, TimerPhase.idle);
+      expect(round().isRunning, isFalse);
+      expect(round().groupIndex, 1);
+
+      stop();
+    });
+
+    test('stops at the end of the round instead of finishing it', () {
+      setEnds(1);
+
+      notifier().fastForward();
+      expect(round().groupIndex, 1);
+
+      // Hinter der letzten Gruppe der letzten Passe liegt nichts mehr — eine
+      // Runde beendet man, indem man sie schießt, nicht durch Vorspulen.
+      notifier().fastForward();
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 1);
+      expect(round().phase, TimerPhase.idle);
+      expect(round().isFinished, isFalse);
+    });
+
+    testWidgets('does nothing once the round is over', (tester) async {
+      setEnds(1);
+      notifier().start();
+      await tester.pump(const Duration(seconds: 260));
+      expect(round().isFinished, isTrue);
+
+      notifier().fastForward();
+
+      expect(round().isFinished, isTrue);
+      expect(round().currentEnd, 1);
+      expect(round().groupIndex, 1);
+    });
+  });
+
   group('settings changes', () {
     testWidgets('changing the round setup starts a fresh round', (
       tester,

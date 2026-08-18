@@ -54,6 +54,10 @@ class CompetitionTexts {
   /// Schießabschnitt zurück, statt die Runde von vorn zu beginnen.
   static const _hintPrevious = LocalizedText(de: 'Zurück', en: 'Back');
 
+  /// Der Schritt vor. Bewusst nicht „Weiter" — das ist die Leertaste, die die
+  /// Runde auch startet; diese hier stellt nur die Position um.
+  static const _hintForward = LocalizedText(de: 'Vor', en: 'Forward');
+
   static const _hintStart = LocalizedText(de: 'Start', en: 'Start');
 
   static const _hintPause = LocalizedText(de: 'Pause', en: 'Pause');
@@ -81,6 +85,7 @@ class CompetitionTexts {
       state.canStart ? _hintStart.get(_language) : _hintNext.get(_language);
 
   String get hintPrevious => _hintPrevious.get(_language);
+  String get hintForward => _hintForward.get(_language);
   String get hintReset => _hintReset.get(_language);
   String get hintSettings => _hintSettings.get(_language);
   String get hintMenu => _hintMenu.get(_language);

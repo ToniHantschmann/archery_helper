@@ -241,7 +241,23 @@ void main() {
       expect(round().isRunning, isFalse);
     });
 
-    testWidgets('backspace does nothing on the Ampel screen', (tester) async {
+    testWidgets('delete forwards one passage without starting it', (
+      tester,
+    ) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+      expect(round().groupIndex, 0);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+      await tester.pumpAndSettle();
+
+      expect(round().groupIndex, 1);
+      expect(round().phase, TimerPhase.idle);
+      expect(round().isRunning, isFalse);
+    });
+
+    testWidgets('backspace and delete do nothing on the Ampel screen', (
+      tester,
+    ) async {
       await pumpApp(tester);
 
       container.read(timerProvider.notifier).startTimer();
@@ -249,6 +265,12 @@ void main() {
       final phase = timer().phase;
 
       await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await tester.pumpAndSettle();
+
+      expect(timer().phase, phase);
+      expect(timer().isRunning, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.delete);
       await tester.pumpAndSettle();
 
       expect(timer().phase, phase);

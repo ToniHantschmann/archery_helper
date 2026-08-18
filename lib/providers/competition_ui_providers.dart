@@ -86,6 +86,7 @@ final competitionHintActionsProvider = Provider<List<AppAction>>((ref) {
     // Zutun auf dem ersten Eintrag, und Enter soll dort die Runde weiterführen
     // und nicht zurückspulen.
     AppAction.previous,
+    AppAction.forward,
     AppAction.toggleTimer,
     AppAction.resetTimer,
     AppAction.toggleSettings,

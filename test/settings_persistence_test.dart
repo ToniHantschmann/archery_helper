@@ -165,6 +165,7 @@ void main() {
         loaded.getAction(LogicalKeyboardKey.backspace),
         AppAction.previous,
       );
+      expect(loaded.getAction(LogicalKeyboardKey.delete), AppAction.forward);
     });
 
     test('keeps a remapped key instead of restoring its default', () {

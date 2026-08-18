@@ -50,6 +50,10 @@ abstract class ScreenActionHandler {
   /// position to return to implement it.
   KeyEventResult previous() => KeyEventResult.ignored;
 
+  /// Der Schritt vor durch dieselbe Reihe — ohne zu starten, anders als [next].
+  /// Nur Schirme mit einer Position, auf die man vorstellen kann, setzen ihn um.
+  KeyEventResult forward() => KeyEventResult.ignored;
+
   /// Leave / close.
   KeyEventResult back() => KeyEventResult.ignored;
 
@@ -190,6 +194,14 @@ class CompetitionScreenActions extends ScreenActionHandler {
   @override
   KeyEventResult previous() {
     _competition.rewind();
+    return KeyEventResult.handled;
+  }
+
+  /// Und in die andere Richtung: die Runde vorstellen, ohne sie laufen zu
+  /// lassen — für den Wiederanlauf nach einem Absturz.
+  @override
+  KeyEventResult forward() {
+    _competition.fastForward();
     return KeyEventResult.handled;
   }
 
@@ -422,6 +434,8 @@ class AppActionsNotifier {
         return screen.next();
       case AppAction.previous:
         return screen.previous();
+      case AppAction.forward:
+        return screen.forward();
       case AppAction.back:
         return screen.back();
       case AppAction.resetTimer:

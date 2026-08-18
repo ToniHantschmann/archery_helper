@@ -137,6 +137,38 @@ class CompetitionNotifier extends Notifier<CompetitionState>
     _awaitSlot();
   }
 
+  /// Einen Schießabschnitt vor — lautlos, ohne dass eine Phase dabei abläuft.
+  ///
+  /// Das Gegenstück zu [rewind] und ausdrücklich *nicht* dasselbe wie
+  /// [advance]: weiterdrücken ist das Startsignal und lässt die Uhr laufen.
+  /// Gebraucht wird das beim Wiederanlauf — stürzt der Rechner mitten in einer
+  /// Runde ab, muss die Runde nach dem Neustart auf die laufende Passe gestellt
+  /// werden, und dabei darf weder Zeit vergehen noch (später) ein Signalton in
+  /// die Halle gehen.
+  ///
+  /// Wie [rewind] bleibt die Runde danach stehen: vorspulen ist kein
+  /// Startsignal.
+  void fastForward() {
+    // Nach dem Rundenende liegt nichts mehr vor uns.
+    if (state.isFinished) return;
+
+    if (state.hasNextGroup) {
+      _awaitSlot(groupIndex: state.groupIndex + 1);
+      return;
+    }
+
+    if (state.hasNextEnd) {
+      _awaitNextEnd();
+      return;
+    }
+
+    // Hinter der letzten Gruppe der letzten Passe liegt nur das Rundenende, und
+    // das ist kein Ziel zum Hinspulen — eine Runde beendet man, indem man sie
+    // schießt. Dieselbe Klammer wie in [rewind] am Rundenanfang: die Runde
+    // bleibt stehen, wo sie ist.
+    _awaitSlot();
+  }
+
   void reset() {
     stopTicking();
     state = _initialState();
