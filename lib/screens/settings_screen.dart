@@ -55,7 +55,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   // Kein Zurücksetzen der Auswahl von hier aus: welcher Bereich offen ist,
   // leitet SettingsNavigationNotifier selbst aus dem Screen ab
-  // (openSettingsSectionProvider) und fängt dabei oben an.
+  // (openSettingsSectionProvider) und fängt dabei oben an. Von hier aus wäre es
+  // ohnehin zu spät — dieser Screen baut sich gerade auf, und ein
+  // Zustandswechsel mittendrin ist ein Fehler.
 
   /// Scrolls the selected row into view — but only when it is not already
   /// there.

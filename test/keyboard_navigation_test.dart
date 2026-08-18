@@ -102,6 +102,13 @@ void main() {
         AppScreen.timer,
         reason: 'Esc leads back to the tool the settings belong to',
       );
+
+      // Und wieder hinein: der zweite Besuch ist die Stelle, an der ein
+      // Auswahlzustand auffliegt, der das Verlassen überlebt hat und erst im
+      // Aufbau des Screens nachgezogen wird (siehe settingsNavigationProvider).
+      await openSettings(tester);
+      expect(currentScreen(), AppScreen.timerSettings);
+      expect(selectedItem(), SettingsItem.defaultMode);
     });
 
     testWidgets('M returns to the menu, and Esc there does nothing', (
@@ -622,5 +629,28 @@ void main() {
       expect(selectedItem(), isNot(SettingsItem.resetTimer));
     });
 
+    testWidgets('leaving the screen cancels the pending reset', (tester) async {
+      await pumpApp(tester);
+      await openSettings(tester);
+
+      select(SettingsItem.resetTimer);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(resetArmed(), isTrue);
+
+      // S verlässt den Screen, ohne die Bestätigung anzufassen — anders als
+      // Esc, das sie selbst wegräumt. Trotzdem darf sie den Wechsel nicht
+      // überleben.
+      await openSettings(tester);
+      expect(currentScreen(), AppScreen.timer);
+
+      await openSettings(tester);
+      expect(
+        resetArmed(),
+        isFalse,
+        reason: 'a half-given confirmation must not survive a screen change',
+      );
+      expect(selectedItem(), SettingsItem.defaultMode, reason: 'back on top');
+    });
   });
 }

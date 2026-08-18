@@ -111,28 +111,32 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
   /// The direction the current run is going in, so reversing starts over.
   int _repeatDelta = 0;
 
+  /// Welcher Bereich offen ist, entscheidet der Screen — der Notifier folgt
+  /// ihm, statt dass der Screen es ihm nach dem ersten Frame nachreicht. Damit
+  /// ist die Auswahl schon im ersten Frame die richtige, und es gibt keinen
+  /// Moment, in dem hier die Zeilen eines anderen Bereichs stehen.
+  ///
+  /// Der Bereich wird *beobachtet* und nicht in einem `ref.listen` nachgezogen:
+  /// ein Listener, der `state` setzt, feuert genau dann, wenn der neue Screen
+  /// diesen Provider zum ersten Mal liest — also mitten im Aufbau des
+  /// Widget-Baums, was Riverpod zu Recht als Fehler meldet. Ein neuer Build ist
+  /// derselbe Neustart, nur an der Stelle, an der er erlaubt ist: ein
+  /// Bereichswechsel fängt oben an, statt dort, wo der letzte Screen verlassen
+  /// wurde. Beobachten allein reicht aber nicht — siehe die Begründung für
+  /// `autoDispose` bei [settingsNavigationProvider], ohne die das Verlassen
+  /// dieselbe Meldung erzeugt, nur einen Screenwechsel später.
   @override
   SettingsNavState build() {
-    // Welcher Bereich offen ist, entscheidet der Screen — der Notifier folgt
-    // ihm, statt dass der Screen es ihm nach dem ersten Frame nachreicht.
-    // Damit ist die Auswahl schon im ersten Frame die richtige, und es gibt
-    // keinen Moment, in dem hier die Zeilen eines anderen Bereichs stehen.
-    ref.listen(openSettingsSectionProvider, (previous, next) {
-      if (next != null) _openSection(next);
-    });
+    final section = ref.watch(openSettingsSectionProvider);
+    // Die einzige Stelle, an der dieser Build etwas außerhalb seines
+    // Rückgabewerts anfasst: bei einem Bereichswechsel im laufenden Betrieb
+    // überlebt das Notifier-Objekt den Rebuild, also muss eine angefangene
+    // Wiederholungsserie hier von Hand enden.
+    _endRepeatRun();
 
     return SettingsNavState(
-      selected: _firstItemOf(
-        ref.read(openSettingsSectionProvider) ?? SettingsSection.general,
-      ),
+      selected: _firstItemOf(section ?? SettingsSection.general),
     );
-  }
-
-  /// Ein Einstellungs-Screen wurde betreten: oben anfangen, statt dort, wo der
-  /// letzte Screen verlassen wurde.
-  void _openSection(SettingsSection section) {
-    _endRepeatRun();
-    state = SettingsNavState(selected: _firstItemOf(section));
   }
 
   SettingsItem _firstItemOf(SettingsSection section) =>
@@ -343,8 +347,24 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
   }
 }
 
+/// Die Auswahl lebt genau so lange wie der Einstellungs-Screen, der sie zeigt.
+///
+/// `autoDispose` ist hier kein Aufräumen, sondern Notwehr: ohne es überlebt der
+/// Provider das Verlassen des Screens, sein Bereich wird dabei `null`, und der
+/// fällige Rebuild wird erst beim nächsten Lesen nachgeholt — beim nächsten
+/// Betreten also mitten im Aufbau des Screens. Ändert sich dabei ein
+/// abgeleiteter Wert (die ausgewählte Zeile, die geöffnete Reset-Bestätigung),
+/// meldet Riverpod den Provider-Scope während eines Builds als „muss neu
+/// bauen", und Flutter bricht ab. Wird der Provider stattdessen mit dem Screen
+/// weggeräumt, gibt es nichts Veraltetes mehr nachzuholen: der nächste Besuch
+/// baut ihn frisch auf, mit dem Bereich, der dann offen ist.
+///
+/// Die drei Provider, die davon *abgeleitet* sind, hängen deshalb mit dran: ein
+/// dauerhafter Provider, der einen `autoDispose`-Provider beobachtet, würde ihn
+/// am Leben halten. [openSettingsSectionProvider] steht oberhalb und bleibt
+/// dauerhaft — es hängt nur am Screen und hält hier nichts fest.
 final settingsNavigationProvider =
-    NotifierProvider<SettingsNavigationNotifier, SettingsNavState>(
+    NotifierProvider.autoDispose<SettingsNavigationNotifier, SettingsNavState>(
       () => SettingsNavigationNotifier(),
     );
 
@@ -363,20 +383,18 @@ final openSettingsSectionProvider = Provider<SettingsSection?>((ref) {
 });
 
 /// Convenience provider: the currently focused row.
-final selectedSettingsItemProvider = Provider<SettingsItem>((ref) {
+final selectedSettingsItemProvider = Provider.autoDispose<SettingsItem>((ref) {
   return ref.watch(settingsNavigationProvider).selected;
 });
 
 /// Whether a single row is focused. Used per row so that moving the selection
 /// only rebuilds the two rows involved instead of the whole screen.
-final isSettingsItemSelectedProvider = Provider.family<bool, SettingsItem>((
-  ref,
-  item,
-) {
-  return ref.watch(selectedSettingsItemProvider) == item;
-});
+final isSettingsItemSelectedProvider = Provider.autoDispose
+    .family<bool, SettingsItem>((ref, item) {
+      return ref.watch(selectedSettingsItemProvider) == item;
+    });
 
 /// Whether the reset row currently awaits confirmation.
-final isResetArmedProvider = Provider<bool>((ref) {
+final isResetArmedProvider = Provider.autoDispose<bool>((ref) {
   return ref.watch(settingsNavigationProvider).resetArmed;
 });
