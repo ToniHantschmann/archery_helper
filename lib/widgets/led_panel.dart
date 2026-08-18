@@ -57,7 +57,17 @@ class LedPanelSpec {
   /// Alle Gruppenkürzel, die es gibt (siehe `CompetitionLineup`).
   static const groupSamples = ['AB', 'CD'];
 
+  /// Beide Stile erben **nicht** vom umgebenden `DefaultTextStyle`.
+  ///
+  /// Das Panel muss überall gleich aussehen: im eigenen Schirm, in der Vorschau
+  /// und als Ecke über der Bedienansicht — dort hängt es außerhalb jedes
+  /// `Material`, und `MaterialApp` schiebt in dem Fall seinen Fallback-Stil
+  /// unter, mitsamt gelber Unterstreichung und `monospace`. Eine andere Schrift
+  /// als die, an der [timeFontSize] ausgemessen wurde, würde die Uhr aber
+  /// abschneiden statt sie überlaufen zu lassen — und das sieht man nur auf der
+  /// Wand. `inherit: false` macht Messung und Anzeige zur selben Sache.
   static const _timeBase = TextStyle(
+    inherit: false,
     color: AppPalette.ledWhite,
     fontWeight: FontWeight.w700,
     height: 1.0,
@@ -69,6 +79,7 @@ class LedPanelSpec {
   );
 
   static const _groupBase = TextStyle(
+    inherit: false,
     color: AppPalette.ledWhite,
     fontWeight: FontWeight.w700,
     height: 1.0,

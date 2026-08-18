@@ -80,4 +80,36 @@ void main() {
     expect(find.byKey(ledTimeKey), findsOneWidget);
     expect(find.byKey(ledGroupKey), findsOneWidget);
   });
+
+  /// Die Ecke hängt außerhalb jedes [Material] — dort schiebt `MaterialApp`
+  /// seinen Fallback-Stil unter, mitsamt gelber Unterstreichung und
+  /// `monospace`. Eine andere Schrift als die, an der die Größe ausgemessen
+  /// wurde, schneidet die Uhr ab, und das fällt nur auf der Wand auf. Der Text
+  /// darf deshalb nichts von seiner Umgebung übernehmen.
+  group('the panel ignores the text style around it', () {
+    testWidgets('no ancestor decoration leaks into the panel', (tester) async {
+      await pumpCorner(tester, ratio: 1);
+
+      for (final key in [ledTimeKey, ledGroupKey]) {
+        final style = tester.widget<Text>(find.byKey(key)).style!;
+        expect(style.inherit, isFalse, reason: '$key erbt vom Umfeld');
+        expect(style.decoration ?? TextDecoration.none, TextDecoration.none);
+      }
+    });
+
+    testWidgets('the rendered clock still fits its cell', (tester) async {
+      await pumpCorner(tester, ratio: 1);
+
+      // Nicht die Messung aus [LedPanelSpec], sondern was wirklich gezeichnet
+      // wurde: nur so schlägt der Test an, wenn die Schrift eine andere ist.
+      expect(
+        tester.getSize(find.byKey(ledTimeKey)).width,
+        lessThanOrEqualTo(LedPanelSpec.timeWidth),
+      );
+      expect(
+        tester.getSize(find.byKey(ledGroupKey)).width,
+        lessThanOrEqualTo(LedPanelSpec.groupWidth),
+      );
+    });
+  });
 }
