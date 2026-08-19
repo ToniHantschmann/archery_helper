@@ -1,5 +1,6 @@
 import 'package:archery_helper/app/app.dart';
 import 'package:archery_helper/core/l10n/menu_texts.dart';
+import 'package:archery_helper/core/l10n/settings_texts.dart';
 import 'package:archery_helper/core/l10n/timer_texts.dart';
 import 'package:archery_helper/core/theme/timer_theme.dart';
 import 'package:archery_helper/core/window/window_service.dart';
@@ -583,6 +584,59 @@ void main() {
 
     await leaveScreen(tester);
     await tester.pump(const Duration(milliseconds: 400));
+  });
+
+  /// Der Tastenhinweis erscheint erst, wenn eine LED-Variante gewählt ist — er
+  /// wächst also in einen Bereich hinein, der ohne ihn schon gemessen war. Die
+  /// Zeile ist Fließtext und damit die einzige im Bereich, die mit der Sprache
+  /// länger wird; geprüft wird deshalb auf allen drei Größen und mit der
+  /// Sichtprüfung, dass der Satz wirklich hängt und der Test nicht ins Leere
+  /// läuft.
+  group('the LED key note grows the competition settings', () {
+    for (final entry in sizes.entries) {
+      testWidgets('the note fits below the output row at ${entry.key}', (
+        tester,
+      ) async {
+        container
+            .read(settingsProvider.notifier)
+            .setCompetitionDisplay(CompetitionDisplay.led);
+
+        await pumpScreen(tester, entry.value, AppScreen.competitionSettings);
+
+        // Auf dem kleinen Fenster liegt die Zeile unter dem Rand und ist damit
+        // gar nicht gebaut — die Liste muss erst hin, sonst prüft der Test auf
+        // der Größe, auf der es am ehesten klemmt, überhaupt nichts.
+        await tester.scrollUntilVisible(
+          find.text(container.read(settingsTextsProvider).ledKeysNote),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pump(const Duration(milliseconds: 400));
+
+        expect(tester.takeException(), isNull);
+
+        await leaveScreen(tester);
+        await tester.pump(const Duration(milliseconds: 400));
+      });
+    }
+
+    // Auf 1080p passt der Bereich ohne Scrollen, ein Fehlen ist dort also
+    // wirklich ein Fehlen und nicht bloß eine ungebaute Zeile.
+    testWidgets('and stays away on the monitor', (tester) async {
+      await pumpScreen(
+        tester,
+        const Size(1920, 1080),
+        AppScreen.competitionSettings,
+      );
+
+      expect(
+        find.text(container.read(settingsTextsProvider).ledKeysNote),
+        findsNothing,
+      );
+
+      await leaveScreen(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+    });
   });
 
   /// Das Panel bemisst seine Schriftgrößen selbst und rechnet dabei mit einer

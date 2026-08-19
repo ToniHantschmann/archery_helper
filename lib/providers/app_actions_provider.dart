@@ -245,6 +245,38 @@ class CompetitionScreenActions extends ScreenActionHandler {
   }
 }
 
+/// Derselbe Wettkampf, aber auf der LED-Wand.
+///
+/// Der Schirm zeigt dort nur das Panel — die Tastenleiste, durch die links und
+/// rechts sonst laufen, ist gar nicht da. Statt eine unsichtbare Auswahl zu
+/// bewegen, spulen die Pfeiltasten hier selbst: dieselben zwei stillen
+/// Korrekturen wie Rücktaste und Entf, nur auf den Tasten, die unter der Hand
+/// liegen. Alles andere — Space, P, R, S, Esc — erbt unverändert.
+class CompetitionLedScreenActions extends CompetitionScreenActions {
+  const CompetitionLedScreenActions(super.ref);
+
+  @override
+  KeyEventResult navigate(
+    NavigationDirection direction, {
+    bool isRepeat = false,
+  }) {
+    switch (direction) {
+      case NavigationDirection.left:
+        return previous();
+      case NavigationDirection.right:
+        return forward();
+      case NavigationDirection.up:
+      case NavigationDirection.down:
+        return KeyEventResult.ignored;
+    }
+  }
+
+  /// Ohne Leiste gibt es nichts zu bestätigen — und ein Enter, das einen
+  /// ungesehenen Eintrag auslöst, wäre schlimmer als eines, das nichts tut.
+  @override
+  KeyEventResult confirm() => KeyEventResult.ignored;
+}
+
 class SettingsScreenActions extends ScreenActionHandler {
   const SettingsScreenActions(super.ref);
 
@@ -447,7 +479,13 @@ final screenActionHandlerProvider = Provider<ScreenActionHandler>((ref) {
     case AppScreen.timer:
       return TimerScreenActions(ref);
     case AppScreen.competition:
-      return CompetitionScreenActions(ref);
+      // Die Ausgabeart tauscht den Schirm (siehe `CompetitionScreen.build`)
+      // und damit auch seine Tasten: ohne Tastenleiste bedeuten die
+      // Pfeiltasten etwas anderes. `watch`, damit ein Umschalten in den
+      // Einstellungen sofort gilt und nicht erst beim nächsten Screenwechsel.
+      return ref.watch(competitionDisplayProvider).ledFit == null
+          ? CompetitionScreenActions(ref)
+          : CompetitionLedScreenActions(ref);
     case AppScreen.trafficLight:
       return TrafficLightScreenActions(ref);
     case AppScreen.generalSettings:

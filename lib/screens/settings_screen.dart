@@ -165,6 +165,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _SectionHeader(texts.displaySection),
           _DisplayRow(rowKey: _itemKeys[SettingsItem.competitionDisplay]!),
+          const _LedKeysNote(),
           _TimeFormatRow(
             item: SettingsItem.competitionTimeFormat,
             rowKey: _itemKeys[SettingsItem.competitionTimeFormat]!,
@@ -1086,6 +1087,36 @@ class _DisplayRow extends ConsumerWidget {
       control: _ValueStepper(
         item: SettingsItem.competitionDisplay,
         value: texts.getDisplayName(display),
+      ),
+    );
+  }
+}
+
+/// Der Hinweis, dass die Pfeiltasten auf der LED-Wand etwas anderes tun.
+///
+/// Steht unter der Ausgabe-Zeile und nur, solange eine LED-Variante gewählt
+/// ist: dort fehlt die Tastenleiste, die es sonst selbst zeigen würde, also
+/// muss die Einstellung es sagen, die den Schirm umschaltet. Keine eigene
+/// [SettingsItem] — es ist nichts zum Auswählen, nur ein Satz.
+class _LedKeysNote extends ConsumerWidget {
+  const _LedKeysNote();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(competitionDisplayProvider).ledFit == null) {
+      return const SizedBox.shrink();
+    }
+
+    final texts = ref.watch(settingsTextsProvider);
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: AppSpacing.xs,
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+      ),
+      child: Text(
+        texts.ledKeysNote,
+        style: AppType.bodySecondary.copyWith(color: AppPalette.accentSoft),
       ),
     );
   }

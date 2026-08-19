@@ -94,6 +94,13 @@ class SettingsTexts {
         'if the wall squeezes the image',
   );
 
+  /// Auf der Wand gibt es keine Tastenleiste, die das zeigen könnte — also
+  /// steht es hier, an der Einstellung, die den Schirm umschaltet.
+  static const _ledKeysNote = LocalizedText(
+    de: 'Auf der LED-Wand: ← und → spulen still zurück und vor',
+    en: 'On the LED panel: ← and → step silently back and ahead',
+  );
+
   static const _displayStandard = LocalizedText(de: 'Monitor', en: 'Monitor');
 
   static const _displayLed = LocalizedText(de: 'LED-Wand', en: 'LED panel');
@@ -331,6 +338,7 @@ class SettingsTexts {
   String get lineupSubtitle => _lineupSubtitle.get(_currentLanguage);
   String get display => _display.get(_currentLanguage);
   String get displaySubtitle => _displaySubtitle.get(_currentLanguage);
+  String get ledKeysNote => _ledKeysNote.get(_currentLanguage);
 
   String get soundEnabled => _soundEnabled.get(_currentLanguage);
   String get signalTone => _signalTone.get(_currentLanguage);
