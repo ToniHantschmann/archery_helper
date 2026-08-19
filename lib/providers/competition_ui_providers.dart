@@ -149,13 +149,28 @@ final competitionLedTimeProvider = Provider<String>((ref) {
 /// Das Kürzel der Gruppe, die gerade dran ist — oder `null`, wenn alle
 /// zusammen schießen.
 ///
-/// Auf 38 Pixel Spaltenbreite ist für die ganze Leiste kein Platz, und was
-/// auf der Schießlinie zählt, ist ohnehin nur „wer ist dran".
+/// Auf 46 Pixel Beschriftungsbreite ist für die ganze Leiste kein Platz, und
+/// was auf der Schießlinie zählt, ist ohnehin nur „wer ist dran".
 final competitionLedGroupProvider = Provider<String?>((ref) {
   final rail = ref.watch(competitionGroupRailProvider);
   if (rail.lineup.groupLabels.length < 2) return null;
 
   return rail.lineup.orderedLabels(reversed: rail.reversed)[rail.groupIndex];
+});
+
+/// Der Passenzähler auf der Wand: „3/20".
+///
+/// Bewusst nicht über [CompetitionTexts.endCounter]: dessen „Passe 3/20" hat
+/// ein Wort, und dafür ist in der Spalte kein Platz. Was ohne das Wort übrig
+/// bleibt, ist in jeder Sprache dasselbe — hier gibt es also nichts zu
+/// übersetzen.
+///
+/// Hängt am ganzen [competitionProvider] und rechnet damit im Sekundentakt neu,
+/// meldet aber nur bei geändertem String: ein `Provider` benachrichtigt auf
+/// `!=`, und zwei gleiche Zähler sind gleich.
+final competitionLedEndProvider = Provider<String>((ref) {
+  final state = ref.watch(competitionProvider);
+  return '${state.currentEnd}/${state.totalEnds}';
 });
 
 // ===== COMBINED =====

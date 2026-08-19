@@ -74,11 +74,14 @@ void main() {
     );
   });
 
-  testWidgets('the clock and the group label are there', (tester) async {
+  testWidgets('the clock, the group label and the end counter are there', (
+    tester,
+  ) async {
     await pumpCorner(tester, ratio: 1);
 
     expect(find.byKey(ledTimeKey), findsOneWidget);
     expect(find.byKey(ledGroupKey), findsOneWidget);
+    expect(find.byKey(ledEndKey), findsOneWidget);
   });
 
   /// Die Ecke hängt außerhalb jedes [Material] — dort schiebt `MaterialApp`
@@ -90,7 +93,7 @@ void main() {
     testWidgets('no ancestor decoration leaks into the panel', (tester) async {
       await pumpCorner(tester, ratio: 1);
 
-      for (final key in [ledTimeKey, ledGroupKey]) {
+      for (final key in [ledTimeKey, ledGroupKey, ledEndKey]) {
         final style = tester.widget<Text>(find.byKey(key)).style!;
         expect(style.inherit, isFalse, reason: '$key erbt vom Umfeld');
         expect(style.decoration ?? TextDecoration.none, TextDecoration.none);
@@ -108,7 +111,11 @@ void main() {
       );
       expect(
         tester.getSize(find.byKey(ledGroupKey)).width,
-        lessThanOrEqualTo(LedPanelSpec.groupWidth),
+        lessThanOrEqualTo(LedPanelSpec.labelWidth),
+      );
+      expect(
+        tester.getSize(find.byKey(ledEndKey)).width,
+        lessThanOrEqualTo(LedPanelSpec.labelWidth),
       );
     });
   });

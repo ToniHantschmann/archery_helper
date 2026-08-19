@@ -61,7 +61,7 @@ enum CompetitionLineup {
 ///
 /// Am Außenstand hängt eine LED-Wand mit 96×64 cm bei 5 mm Pixelabstand, also
 /// **192×128 Pixel**. Darauf passt der normale Wettkampfschirm nicht — dort
-/// bleibt nur Restzeit, Gruppe und Ampelfarbe, und der Hintergrund muss
+/// bleiben nur Restzeit, Gruppe, Passe und Ampelfarbe, und der Hintergrund muss
 /// schwarz sein, damit die Dioden an diesen Stellen einfach aus bleiben.
 ///
 /// Das ist eine Eigenschaft des *Aufstellungsorts*, nicht der Runde: der
@@ -84,7 +84,7 @@ enum CompetitionDisplay {
   /// Für den Turnierbetrieb, mit **gespiegelten** Bildschirmen: der Player
   /// sieht nur das Rechteck (0, 0, 192, 128) des Bildes, alles daneben existiert
   /// für die Wand nicht. Also kann dort dieselbe Ansicht stehen, die der
-  /// Schießleiter am Laptop ohnehin braucht — Passe, Gruppen und Tastenleiste,
+  /// Schießleiter am Laptop ohnehin braucht — Gruppenleiste und Tastenleiste,
   /// die [led] gerade wegnimmt.
   ///
   /// Ein Fenster, eine Uhr, keine Fensterverwaltung: die Wand hängt nicht daran,

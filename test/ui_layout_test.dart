@@ -318,11 +318,40 @@ void main() {
         for (final label in lineup.groupLabels) {
           expect(
             widthOf(label, LedPanelSpec.groupStyle),
-            lessThanOrEqualTo(LedPanelSpec.groupWidth + 0.01),
+            lessThanOrEqualTo(LedPanelSpec.labelWidth + 0.01),
             reason: '"$label" muss in die Seitenspalte passen',
           );
         }
       }
+    });
+
+    test('every end counter the round can reach fits the side column', () {
+      // Nicht nur die Samples, sondern jede Kombination, die eine Runde
+      // annehmen kann: die Zahl mit der breitesten Ziffernfolge ist nicht
+      // zwingend die größte.
+      for (var total = 1; total <= Settings.maxCompetitionEnds; total++) {
+        for (var current = 1; current <= total; current++) {
+          final text = '$current/$total';
+
+          expect(
+            widthOf(text, LedPanelSpec.endStyle),
+            lessThanOrEqualTo(LedPanelSpec.labelWidth + 0.01),
+            reason: '"$text" muss in die Seitenspalte passen',
+          );
+        }
+      }
+    });
+
+    test('the end sample stays tied to the settings limit', () {
+      // Die Schriftgröße ist an [endSamples] bemessen. Wird die Obergrenze in
+      // den Einstellungen heraufgesetzt, muss der Zähler mitschrumpfen — der
+      // Test schlägt an, wenn das Sample stattdessen stehen bleibt.
+      expect(
+        LedPanelSpec.endSamples,
+        contains(
+          '${Settings.maxCompetitionEnds}/${Settings.maxCompetitionEnds}',
+        ),
+      );
     });
 
     test('the nudged clock keeps its digits inside the panel', () {
@@ -366,6 +395,7 @@ void main() {
           expect(tester.takeException(), isNull);
           expect(find.byKey(ledTimeKey), findsOneWidget);
           expect(find.byKey(ledGroupKey), findsOneWidget);
+          expect(find.byKey(ledEndKey), findsOneWidget);
 
           container.read(competitionProvider.notifier).reset();
           // Der Debounce der Einstellungen darf den Test nicht überleben.
@@ -386,6 +416,9 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byKey(ledTimeKey), findsOneWidget);
       expect(find.byKey(ledGroupKey), findsNothing);
+      // Der Passenzähler bleibt: die freigewordene Zelle fällt an die
+      // Ampelfläche, sie schiebt nicht die ganze Spalte hoch.
+      expect(find.byKey(ledEndKey), findsOneWidget);
 
       await tester.pump(const Duration(milliseconds: 400));
     });
@@ -409,6 +442,7 @@ void main() {
         // Die Wand.
         expect(find.byKey(ledTimeKey), findsOneWidget);
         expect(find.byKey(ledGroupKey), findsOneWidget);
+        expect(find.byKey(ledEndKey), findsOneWidget);
         expect(tester.getTopLeft(find.byType(LedPanel)), Offset.zero);
 
         // Und daneben genau das, was der reine LED-Modus wegnimmt.
