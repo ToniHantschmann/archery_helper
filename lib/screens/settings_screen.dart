@@ -129,7 +129,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return [
           _SectionHeader(texts.timerSection),
           _DefaultModeRow(rowKey: _itemKeys[SettingsItem.defaultMode]!),
-          _AutoStartRow(rowKey: _itemKeys[SettingsItem.autoStart]!),
           _ShowMillisecondsRow(
             rowKey: _itemKeys[SettingsItem.showMilliseconds]!,
           ),
@@ -839,26 +838,6 @@ class _DefaultModeRow extends ConsumerWidget {
         item: SettingsItem.defaultMode,
         value: texts.getModeName(mode),
       ),
-    );
-  }
-}
-
-class _AutoStartRow extends ConsumerWidget {
-  final GlobalKey rowKey;
-
-  const _AutoStartRow({required this.rowKey});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final texts = ref.watch(settingsTextsProvider);
-    final autoStart = ref.watch(autoStartProvider);
-
-    return _SettingsRow(
-      item: SettingsItem.autoStart,
-      rowKey: rowKey,
-      title: texts.autoStart,
-      subtitle: texts.autoStartSubtitle,
-      control: _TogglePill(item: SettingsItem.autoStart, value: autoStart),
     );
   }
 }

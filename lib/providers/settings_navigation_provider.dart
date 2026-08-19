@@ -27,7 +27,6 @@ enum SettingsItem {
   resetGeneral(SettingsSection.general),
   // ── Ampel ──────────────────────────────────────────────
   defaultMode(SettingsSection.timer),
-  autoStart(SettingsSection.timer),
   showMilliseconds(SettingsSection.timer),
   timeFormat(SettingsSection.timer),
   timerScale(SettingsSection.timer),
@@ -191,9 +190,6 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         notifier.toggleSound();
         _previewSound();
 
-      case SettingsItem.autoStart:
-        notifier.toggleAutoStart();
-
       case SettingsItem.showMilliseconds:
         notifier.toggleShowMilliseconds();
 
@@ -319,11 +315,6 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         notifier.setDefaultMode(
           _cycle(TimerMode.values, settings.defaultMode, delta),
         );
-
-      case SettingsItem.autoStart:
-        if (settings.autoStart != (delta > 0)) {
-          notifier.toggleAutoStart();
-        }
 
       case SettingsItem.showMilliseconds:
         if (settings.showMilliseconds != (delta > 0)) {

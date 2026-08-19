@@ -120,11 +120,6 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
-  void toggleAutoStart() {
-    state = state.copyWith(autoStart: !state.autoStart);
-    _save();
-  }
-
   /// Vollbild an/aus. Das Fenster folgt diesem Wert (siehe `main.dart`), F11
   /// und die Einstellungszeile schalten beide hier.
   void toggleFullscreen() {
@@ -195,7 +190,6 @@ class SettingsNotifier extends Notifier<Settings> {
       ),
       SettingsSection.timer => state.copyWith(
         defaultMode: defaults.defaultMode,
-        autoStart: defaults.autoStart,
         showMilliseconds: defaults.showMilliseconds,
         timeFormat: defaults.timeFormat,
         alternatingArrows: defaults.alternatingArrows,
@@ -247,10 +241,6 @@ final showMillisecondsProvider = Provider<bool>((ref) {
 
 final timeFormatProvider = Provider<TimeFormat>((ref) {
   return ref.watch(settingsProvider).timeFormat;
-});
-
-final autoStartProvider = Provider<bool>((ref) {
-  return ref.watch(settingsProvider).autoStart;
 });
 
 final languageProvider = Provider<AppLanguage>((ref) {

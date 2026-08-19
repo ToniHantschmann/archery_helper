@@ -142,13 +142,6 @@ class SettingsTexts {
     en: 'Default Mode',
   );
 
-  static const _autoStart = LocalizedText(de: 'Auto-Start', en: 'Auto-Start');
-
-  static const _autoStartSubtitle = LocalizedText(
-    de: 'Timer automatisch starten',
-    en: 'Start timer automatically',
-  );
-
   static const _showMilliseconds = LocalizedText(
     de: 'Millisekunden anzeigen',
     en: 'Show Milliseconds',
@@ -347,8 +340,6 @@ class SettingsTexts {
   String get volume => _volume.get(_currentLanguage);
 
   String get defaultMode => _defaultMode.get(_currentLanguage);
-  String get autoStart => _autoStart.get(_currentLanguage);
-  String get autoStartSubtitle => _autoStartSubtitle.get(_currentLanguage);
   String get showMilliseconds => _showMilliseconds.get(_currentLanguage);
   String get timeFormat => _timeFormat.get(_currentLanguage);
 

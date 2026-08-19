@@ -450,7 +450,7 @@ void main() {
       // between them must leave the scroll offset alone.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(selectedItem(), SettingsItem.autoStart);
+      expect(selectedItem(), SettingsItem.showMilliseconds);
       expect(
         position.pixels,
         offsetAtTop,
@@ -544,13 +544,13 @@ void main() {
       await pumpApp(tester);
       await openSettings(tester);
 
-      select(SettingsItem.autoStart);
-      expect(settings().autoStart, isFalse);
+      select(SettingsItem.showMilliseconds);
+      expect(settings().showMilliseconds, isFalse);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.space);
       await tester.pumpAndSettle();
 
-      expect(settings().autoStart, isTrue);
+      expect(settings().showMilliseconds, isTrue);
       expect(
         timer().isRunning,
         isFalse,
@@ -660,8 +660,8 @@ void main() {
       await pumpApp(tester);
       await openSettings(tester);
 
-      select(SettingsItem.autoStart);
-      expect(settings().autoStart, isFalse);
+      select(SettingsItem.showMilliseconds);
+      expect(settings().showMilliseconds, isFalse);
 
       await tester.sendKeyDownEvent(LogicalKeyboardKey.space);
       await tester.sendKeyRepeatEvent(LogicalKeyboardKey.space);
@@ -670,7 +670,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        settings().autoStart,
+        settings().showMilliseconds,
         isTrue,
         reason: 'repeats must be ignored, otherwise the switch flips back',
       );
@@ -707,8 +707,9 @@ void main() {
       await pumpApp(tester);
       await openSettings(tester);
 
-      container.read(settingsProvider.notifier).toggleAutoStart();
-      expect(settings().autoStart, isTrue);
+      container.read(settingsProvider.notifier).setAlternatingArrows(6);
+      await tester.pumpAndSettle();
+      expect(settings().alternatingArrows, 6);
 
       select(SettingsItem.resetTimer);
 
@@ -716,13 +717,13 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       expect(resetArmed(), isTrue);
-      expect(settings().autoStart, isTrue);
+      expect(settings().alternatingArrows, 6);
 
       // Second confirm performs the reset.
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       expect(resetArmed(), isFalse);
-      expect(settings().autoStart, isFalse);
+      expect(settings().alternatingArrows, const Settings().alternatingArrows);
 
       await flushPendingSaves(tester);
     });
@@ -733,7 +734,8 @@ void main() {
       await pumpApp(tester);
       await openSettings(tester);
 
-      container.read(settingsProvider.notifier).toggleAutoStart();
+      container.read(settingsProvider.notifier).setAlternatingArrows(6);
+      await tester.pumpAndSettle();
       select(SettingsItem.resetTimer);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -743,7 +745,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(resetArmed(), isFalse);
-      expect(settings().autoStart, isTrue, reason: 'nothing was reset');
+      expect(settings().alternatingArrows, 6, reason: 'nothing was reset');
       expect(
         currentScreen(),
         AppScreen.timerSettings,

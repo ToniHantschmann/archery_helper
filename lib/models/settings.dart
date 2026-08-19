@@ -22,7 +22,6 @@ class Settings {
   final TimerMode defaultMode;
   final Duration customPrepTime;
   final Duration customMainTime;
-  final bool autoStart;
   final bool showMilliseconds;
   final AppLanguage language;
 
@@ -71,7 +70,6 @@ class Settings {
     this.defaultMode = TimerMode.indoor,
     this.customPrepTime = const Duration(seconds: 10),
     this.customMainTime = const Duration(seconds: 120),
-    this.autoStart = false,
     this.showMilliseconds = false,
     this.language = AppLanguage.german,
     this.timeFormat = TimeFormat.minutesSeconds,
@@ -108,7 +106,6 @@ class Settings {
     TimerMode? defaultMode,
     Duration? customPrepTime,
     Duration? customMainTime,
-    bool? autoStart,
     bool? showMilliseconds,
     AppLanguage? language,
     TimeFormat? timeFormat,
@@ -127,7 +124,6 @@ class Settings {
       defaultMode: defaultMode ?? this.defaultMode,
       customPrepTime: customPrepTime ?? this.customPrepTime,
       customMainTime: customMainTime ?? this.customMainTime,
-      autoStart: autoStart ?? this.autoStart,
       showMilliseconds: showMilliseconds ?? this.showMilliseconds,
       language: language ?? this.language,
       timeFormat: timeFormat ?? this.timeFormat,
@@ -151,7 +147,6 @@ class Settings {
       "defaultMode": defaultMode.index,
       "customPrepTime": customPrepTime.inSeconds,
       "customMainTime": customMainTime.inSeconds,
-      "autoStart": autoStart,
       "showMilliseconds": showMilliseconds,
       "language": language.code,
       "timeFormat": timeFormat.index,
@@ -178,7 +173,6 @@ class Settings {
       defaultMode: _parseTimerMode(json['defaultMode'] as int?),
       customPrepTime: Duration(seconds: json['customPrepTime'] as int? ?? 10),
       customMainTime: Duration(seconds: json['customMainTime'] as int? ?? 120),
-      autoStart: json['autoStart'] as bool? ?? false,
       showMilliseconds: json['showMilliseconds'] as bool? ?? false,
       language: _parseLanguage(json['language'] as String?),
       timeFormat: _parseEnum(

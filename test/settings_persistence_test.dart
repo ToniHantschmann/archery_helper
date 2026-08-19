@@ -36,7 +36,6 @@ void main() {
     defaultMode: TimerMode.alternating,
     customPrepTime: Duration(seconds: 7),
     customMainTime: Duration(seconds: 45),
-    autoStart: true,
     showMilliseconds: true,
     timeFormat: TimeFormat.seconds,
     language: AppLanguage.english,
@@ -63,7 +62,6 @@ void main() {
     expect(loaded.defaultMode, custom.defaultMode);
     expect(loaded.customPrepTime, custom.customPrepTime);
     expect(loaded.customMainTime, custom.customMainTime);
-    expect(loaded.autoStart, custom.autoStart);
     expect(loaded.showMilliseconds, custom.showMilliseconds);
     expect(loaded.timeFormat, custom.timeFormat);
     expect(loaded.language, custom.language);
@@ -86,7 +84,6 @@ void main() {
       'defaultMode',
       'customPrepTime',
       'customMainTime',
-      'autoStart',
       'showMilliseconds',
       'timeFormat',
       'language',
