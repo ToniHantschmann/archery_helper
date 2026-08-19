@@ -1,12 +1,31 @@
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/audio/audio_signal.dart';
 import '../models/timer_state.dart';
 import 'phase_clock.dart';
+import 'sound_provider.dart';
 
 // Business Logic Klasse
 class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
   @override
   Duration get storedRemaining => state.remainingTime;
+
+  /// Die letzte Sekunde, die auf dem Schirm gestanden hat.
+  ///
+  /// Gebraucht für das Ticken der letzten Sekunden: [onRemainingChanged] kommt
+  /// im Millisekundenmodus zehnmal pro Sekunde, der Tick soll aber einmal pro
+  /// Sekunde fallen. `null`, solange keine Zahl gestanden hat.
+  int? _lastShownSecond;
+
+  /// Die letzten Sekunden, in denen die Trainingsampel vorwarnt.
+  ///
+  /// Nur sie: im Wettkampf ist die Warnung nach WA-Regel rein optisch (gelb in
+  /// den letzten 30 Sekunden, ohne Ton), und daran soll das Training nichts
+  /// anderes gewöhnen.
+  static const _warningTicks = 3;
+
+  void _playSignal(AudioSignal signal) =>
+      ref.read(signalSoundsProvider).play(signal);
 
   @override
   TimerState build() {
@@ -167,12 +186,14 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
   /// einzigen Aufruf bis `ended` durchreichen. Hier wird nie ein Timer
   /// armiert — die Phase ist der ganze Zustand.
   void _toggleSignal() {
+    final toGreen = state.phase != TimerPhase.active;
+
     state = state.copyWith(
-      phase:
-          state.phase == TimerPhase.active
-              ? TimerPhase.preparation
-              : TimerPhase.active,
+      phase: toGreen ? TimerPhase.active : TimerPhase.preparation,
     );
+    // Auch von Hand geschaltet geht ein Signal an die Linie: dass keine Uhr
+    // läuft, ändert nichts an der Aussage.
+    _playSignal(toGreen ? AudioSignal.start : AudioSignal.stop);
   }
 
   void _startPreparationPhase() {
@@ -182,6 +203,7 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
       isRunning: true,
       isPaused: false,
     );
+    _playSignal(AudioSignal.toTheLine);
     startTicking(state.remainingTime);
   }
 
@@ -190,6 +212,8 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
       phase: TimerPhase.active,
       remainingTime: state.mainTime,
     );
+    _lastShownSecond = null;
+    _playSignal(AudioSignal.start);
     startTicking(state.remainingTime, anchor: anchor);
   }
 
@@ -219,6 +243,7 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
       isRunning: false,
       remainingTime: Duration.zero,
     );
+    _playSignal(AudioSignal.stop);
   }
 
   void _resumeTimer() {
@@ -229,6 +254,21 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
   @override
   void onRemainingChanged(Duration remaining) {
     state = state.copyWith(remainingTime: remaining);
+
+    // Genau die Rundung aus [TimerTexts.formatTime]: der Tick soll in dem
+    // Moment fallen, in dem die Zahl auf dem Schirm umspringt, und nicht
+    // daneben. Der Vergleich mit der zuletzt gezeigten Sekunde ist nötig, weil
+    // dieser Haken im Millisekundenmodus zehnmal pro Sekunde kommt.
+    final shown = (remaining.inMilliseconds / 1000).ceil();
+    if (shown == _lastShownSecond) return;
+    _lastShownSecond = shown;
+
+    // Kein Ton bei 0 — dort läuft [onPhaseElapsed], und die 0 ist schon der
+    // Schlusston beziehungsweise die Übergabe an den nächsten Schützen.
+    final isTicking = shown >= 1 && shown <= _warningTicks;
+    if (state.phase == TimerPhase.active && isTicking) {
+      _playSignal(AudioSignal.warningTick);
+    }
   }
 
   @override

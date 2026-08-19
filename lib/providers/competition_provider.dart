@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/audio/audio_signal.dart';
 import '../models/competition_state.dart';
 import '../models/timer_state.dart';
 import 'phase_clock.dart';
 import 'settings_provider.dart';
+import 'sound_provider.dart';
 
 /// Die Uhr einer Qualifikationsrunde.
 ///
@@ -22,6 +24,9 @@ class CompetitionNotifier extends Notifier<CompetitionState>
     with PhaseClock<CompetitionState> {
   @override
   Duration get storedRemaining => state.remainingTime;
+
+  void _playSignal(AudioSignal signal) =>
+      ref.read(signalSoundsProvider).play(signal);
 
   /// Auf der LED-Wand immer ganze Sekunden.
   ///
@@ -218,6 +223,9 @@ class CompetitionNotifier extends Notifier<CompetitionState>
       isRunning: true,
       isPaused: false,
     );
+    // Zwei Töne — im Turnier heißt das "an die Schießlinie", und am
+    // Gruppenwechsel gleichzeitig "die vorige Gruppe hört auf".
+    _playSignal(AudioSignal.toTheLine);
     startTicking(state.remainingTime, anchor: anchor);
   }
 
@@ -226,6 +234,7 @@ class CompetitionNotifier extends Notifier<CompetitionState>
       phase: TimerPhase.active,
       remainingTime: state.shootingTime,
     );
+    _playSignal(AudioSignal.start);
     startTicking(state.remainingTime, anchor: anchor);
   }
 
@@ -240,12 +249,20 @@ class CompetitionNotifier extends Notifier<CompetitionState>
   /// das nächste Startsignal des Schießleiters — dieselbe Wartestellung wie vor
   /// der ersten Passe, nur mit der neuen Passe schon aufgesetzt, damit auf dem
   /// Schirm steht, wer nach dem Pfeileholen dran ist.
+  /// Die drei Töne für das Pfeileholen stehen hier und nicht in [_awaitNextEnd]
+  /// oder [_end]: die werden auch von [fastForward] aufgerufen, und Spulen darf
+  /// keinen Ton in die Halle schicken. Hier kommt nur eine abgelaufene oder
+  /// abgebrochene Schusszeit vorbei.
   void _handOver({DateTime? anchor}) {
     if (state.hasNextGroup) {
       state = state.copyWith(groupIndex: state.groupIndex + 1);
+      // Kein Schlusston für die vorige Gruppe: das leistet das Signal an die
+      // nächste, das gleich folgt.
       _startPreparation(anchor: anchor);
       return;
     }
+
+    _playSignal(AudioSignal.collect);
 
     if (state.hasNextEnd) {
       _awaitNextEnd();

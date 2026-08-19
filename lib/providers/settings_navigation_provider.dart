@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/audio/audio_signal.dart';
 import '../core/l10n/app_language.dart';
 import '../models/competition_state.dart';
 import '../models/settings.dart';
@@ -6,6 +7,7 @@ import '../models/settings_section.dart';
 import '../models/timer_state.dart';
 import 'app_state_provider.dart';
 import 'settings_provider.dart';
+import 'sound_provider.dart';
 
 /// All keyboard-selectable rows of the settings screens, in visual order,
 /// grouped by the screen they appear on.
@@ -181,6 +183,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
 
       case SettingsItem.soundEnabled:
         notifier.toggleSound();
+        _previewSound();
 
       case SettingsItem.autoStart:
         notifier.toggleAutoStart();
@@ -252,6 +255,15 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         .toList();
   }
 
+  /// Lässt hören, was gerade eingestellt wird.
+  ///
+  /// Zehn Kästchen für die Lautstärke sind ohne Rückmeldung nur zehn Kästchen —
+  /// und dass der Ton wieder an ist, merkt man am besten daran, dass es tönt.
+  /// Läuft absichtlich durch [SignalSounds], also mit der eben gesetzten
+  /// Lautstärke und still, sobald der Ton aus ist.
+  void _previewSound() =>
+      ref.read(signalSoundsProvider).play(AudioSignal.warningTick);
+
   void _adjust(int delta, {bool isRepeat = false}) {
     _trackRepeatRun(delta, isRepeat: isRepeat);
 
@@ -272,13 +284,19 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.soundEnabled:
         if (settings.soundEnabled != (delta > 0)) {
           notifier.toggleSound();
+          _previewSound();
         }
 
       case SettingsItem.volume:
         if (!settings.soundEnabled) return;
         // Work in whole slider steps to avoid floating point drift.
         final steps = (settings.volume * _volumeSteps).round() + delta;
-        notifier.setVolume(steps.clamp(0, _volumeSteps) / _volumeSteps);
+        final volume = steps.clamp(0, _volumeSteps) / _volumeSteps;
+        // Am Anschlag nichts tun: sonst tickt ein gehaltener Pfeil weiter, ohne
+        // dass sich etwas ändert.
+        if (volume == settings.volume) return;
+        notifier.setVolume(volume);
+        _previewSound();
 
       case SettingsItem.defaultMode:
         notifier.setDefaultMode(

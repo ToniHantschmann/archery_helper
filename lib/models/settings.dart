@@ -158,7 +158,7 @@ class Settings {
   factory Settings.fromJson(Map<String, dynamic> json) {
     return Settings(
       soundEnabled: json['soundEnabled'] as bool? ?? true,
-      volume: json['volume'] as double? ?? 0.8,
+      volume: _parseVolume(json['volume']),
       defaultMode: _parseTimerMode(json['defaultMode'] as int?),
       customPrepTime: Duration(seconds: json['customPrepTime'] as int? ?? 10),
       customMainTime: Duration(seconds: json['customMainTime'] as int? ?? 120),
@@ -220,6 +220,17 @@ class Settings {
   static double _parseScale(Object? scale) {
     if (scale is! num) return 1.0;
     return scale.toDouble().clamp(minTimerScale, maxTimerScale);
+  }
+
+  /// Helper: keep the volume inside its range (with fallback)
+  ///
+  /// Dieselbe Falle wie in [_parseScale]: eine glatte 1 oder 0 kann als `int`
+  /// im JSON stehen, und ein `as double?` würde daran mit einem Cast-Fehler die
+  /// ganze gespeicherte Konfiguration verwerfen — jetzt, wo die Lautstärke
+  /// wirklich etwas tut, wäre das ein stummer Tunnel.
+  static double _parseVolume(Object? volume) {
+    if (volume is! num) return 0.8;
+    return volume.toDouble().clamp(0.0, 1.0);
   }
 
   /// Helper: convert a stored index back to an enum value (with fallback)

@@ -23,3 +23,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    # Erzeugt von tool/generate_signal_sounds.dart
+    - assets/sounds/
