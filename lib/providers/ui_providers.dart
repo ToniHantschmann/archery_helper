@@ -46,6 +46,7 @@ final formattedTimeProvider = Provider<String>((ref) {
   return TimerTexts.formatTime(
     remainingTime,
     showMilliseconds: settings.showMilliseconds,
+    format: settings.timeFormat,
   );
 });
 

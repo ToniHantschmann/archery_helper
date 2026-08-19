@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/l10n/app_language.dart';
 import '../models/competition_state.dart';
+import '../models/settings.dart';
 import '../models/settings_section.dart';
 import '../models/timer_state.dart';
 import 'app_state_provider.dart';
@@ -24,6 +25,7 @@ enum SettingsItem {
   defaultMode(SettingsSection.timer),
   autoStart(SettingsSection.timer),
   showMilliseconds(SettingsSection.timer),
+  timeFormat(SettingsSection.timer),
   alternatingArrows(SettingsSection.timer),
   customPrepTime(SettingsSection.timer),
   customMainTime(SettingsSection.timer),
@@ -33,6 +35,11 @@ enum SettingsItem {
   competitionEnds(SettingsSection.competition),
   competitionLineup(SettingsSection.competition),
   competitionDisplay(SettingsSection.competition),
+  // Zweite Zeile auf dasselbe Feld wie [timeFormat]: ein SettingsItem ist eine
+  // Zeile, keine Einstellung. Das Zeitformat gilt für beide Uhren, und wer vor
+  // der Wettkampfampel steht, soll es dort umstellen können, ohne erst in die
+  // Ampel-Einstellungen zu wechseln. Beide Zeilen rufen setTimeFormat.
+  competitionTimeFormat(SettingsSection.competition),
   resetCompetition(SettingsSection.competition);
 
   const SettingsItem(this.section);
@@ -193,6 +200,8 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       // Enums and numbers cycle forward, so confirm behaves like navigateRight.
       case SettingsItem.language:
       case SettingsItem.defaultMode:
+      case SettingsItem.timeFormat:
+      case SettingsItem.competitionTimeFormat:
       case SettingsItem.volume:
       case SettingsItem.alternatingArrows:
       case SettingsItem.customPrepTime:
@@ -283,6 +292,13 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         if (settings.showMilliseconds != (delta > 0)) {
           notifier.toggleShowMilliseconds();
         }
+
+      // Beide Zeilen, ein Feld — deshalb derselbe Zweig.
+      case SettingsItem.timeFormat:
+      case SettingsItem.competitionTimeFormat:
+        notifier.setTimeFormat(
+          _cycle(TimeFormat.values, settings.timeFormat, delta),
+        );
 
       // Ohne Beschleunigung: bei einem Bereich von 1 bis 6 wäre eine
       // wachsende Schrittweite nur im Weg.

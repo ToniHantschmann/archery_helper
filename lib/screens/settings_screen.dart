@@ -132,6 +132,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _ShowMillisecondsRow(
             rowKey: _itemKeys[SettingsItem.showMilliseconds]!,
           ),
+          _TimeFormatRow(
+            item: SettingsItem.timeFormat,
+            rowKey: _itemKeys[SettingsItem.timeFormat]!,
+          ),
           _AlternatingArrowsRow(
             rowKey: _itemKeys[SettingsItem.alternatingArrows]!,
           ),
@@ -160,6 +164,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _SectionHeader(texts.displaySection),
           _DisplayRow(rowKey: _itemKeys[SettingsItem.competitionDisplay]!),
+          _TimeFormatRow(
+            item: SettingsItem.competitionTimeFormat,
+            rowKey: _itemKeys[SettingsItem.competitionTimeFormat]!,
+          ),
 
           const SizedBox(height: AppSpacing.lg),
           _ResetRow(
@@ -855,6 +863,35 @@ class _ShowMillisecondsRow extends ConsumerWidget {
       control: _TogglePill(
         item: SettingsItem.showMilliseconds,
         value: showMilliseconds,
+      ),
+    );
+  }
+}
+
+/// Ob die Uhr „4:00" oder „240" zeigt.
+///
+/// Steht in beiden Uhr-Bereichen, weil die Einstellung für beide gilt und man
+/// sie dort erwartet, wo man gerade ist. [item] sagt nur, welche der beiden
+/// Zeilen gerade gebaut wird — der Wert kommt in beiden Fällen aus demselben
+/// Provider, ein Wechsel hier steht also sofort auch drüben.
+class _TimeFormatRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+  final SettingsItem item;
+
+  const _TimeFormatRow({required this.rowKey, required this.item});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final format = ref.watch(timeFormatProvider);
+
+    return _SettingsRow(
+      item: item,
+      rowKey: rowKey,
+      title: texts.timeFormat,
+      control: _ValueStepper(
+        item: item,
+        value: texts.getTimeFormatName(format),
       ),
     );
   }

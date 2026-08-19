@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/settings.dart';
 import '../../models/timer_state.dart';
 import 'app_language.dart';
 import '../../providers/settings_provider.dart';
@@ -232,10 +233,22 @@ class TimerTexts {
   }
 
   /// Format time duration
-  static String formatTime(Duration duration, {bool showMilliseconds = false}) {
+  ///
+  /// [format] entscheidet nur über die Schreibweise ("4:00" oder "240"), nicht
+  /// über die Rundung: beide Zweige zeigen dieselbe Sekunde zum selben
+  /// Zeitpunkt.
+  static String formatTime(
+    Duration duration, {
+    bool showMilliseconds = false,
+    TimeFormat format = TimeFormat.minutesSeconds,
+  }) {
     if (showMilliseconds) {
       // Hier wird abgeschnitten, denn die Zehntel werden ja mit angezeigt.
       final milliseconds = (duration.inMilliseconds % 1000) ~/ 100;
+      if (format == TimeFormat.seconds) {
+        return '${duration.inSeconds}.$milliseconds';
+      }
+
       final seconds = duration.inSeconds % 60;
       return '${duration.inMinutes}:${seconds.toString().padLeft(2, '0')}'
           '.$milliseconds';
@@ -248,6 +261,10 @@ class TimerTexts {
     // sein nächstes Update plant — wer hier die Rundung ändert, verschiebt den
     // Zeitpunkt des Wechsels mit.
     final totalSeconds = (duration.inMilliseconds / 1000).ceil();
+    if (format == TimeFormat.seconds) {
+      return '$totalSeconds';
+    }
+
     final minutes = totalSeconds ~/ 60;
     final seconds = totalSeconds % 60;
 

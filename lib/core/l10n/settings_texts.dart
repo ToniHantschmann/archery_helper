@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/competition_state.dart';
+import '../../models/settings.dart';
 import '../../models/settings_section.dart';
 import '../../models/timer_state.dart';
 import 'app_language.dart';
@@ -141,6 +142,20 @@ class SettingsTexts {
   static const _showMilliseconds = LocalizedText(
     de: 'Millisekunden anzeigen',
     en: 'Show Milliseconds',
+  );
+
+  static const _timeFormat = LocalizedText(de: 'Zeitformat', en: 'Time Format');
+
+  // Das Beispiel steht im Namen: von der Schießlinie aus ist „Minuten (4:00)"
+  // sofort zu verstehen, „Minuten" allein nicht.
+  static const _timeFormatMinutes = LocalizedText(
+    de: 'Minuten (4:00)',
+    en: 'Minutes (4:00)',
+  );
+
+  static const _timeFormatSeconds = LocalizedText(
+    de: 'Sekunden (240)',
+    en: 'Seconds (240)',
   );
 
   static const _arrowsPerArcher = LocalizedText(
@@ -315,6 +330,7 @@ class SettingsTexts {
   String get autoStart => _autoStart.get(_currentLanguage);
   String get autoStartSubtitle => _autoStartSubtitle.get(_currentLanguage);
   String get showMilliseconds => _showMilliseconds.get(_currentLanguage);
+  String get timeFormat => _timeFormat.get(_currentLanguage);
 
   String get language => _language.get(_currentLanguage);
   String get german => _german.get(_currentLanguage);
@@ -423,6 +439,16 @@ class SettingsTexts {
         return _alternating.get(_currentLanguage);
       case TimerMode.trafficLight:
         return _trafficLight.get(_currentLanguage);
+    }
+  }
+
+  /// Wie die Uhr ihre Zahl schreibt — das Beispiel steht im Namen.
+  String getTimeFormatName(TimeFormat format) {
+    switch (format) {
+      case TimeFormat.minutesSeconds:
+        return _timeFormatMinutes.get(_currentLanguage);
+      case TimeFormat.seconds:
+        return _timeFormatSeconds.get(_currentLanguage);
     }
   }
 

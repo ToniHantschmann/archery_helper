@@ -478,6 +478,36 @@ void main() {
 
       await flushPendingSaves(tester);
     });
+
+    /// Das Zeitformat steht in beiden Uhr-Bereichen, hängt aber an einem Feld.
+    /// Zwei Zeilen auf zwei Zustände wären genau der Fehler, den dieser Test
+    /// verhindert.
+    testWidgets('both time format rows drive the same setting', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+      await openSettings(tester);
+      expect(settings().timeFormat, TimeFormat.minutesSeconds);
+
+      select(SettingsItem.competitionTimeFormat);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(settings().timeFormat, TimeFormat.seconds);
+
+      // Die Ampel-Zeile zeigt denselben Wert und schaltet ihn zurück.
+      container
+          .read(appStateProvider.notifier)
+          .navigateToScreen(AppScreen.timer);
+      await tester.pumpAndSettle();
+      await openSettings(tester);
+      expect(currentScreen(), AppScreen.timerSettings);
+      expect(settings().timeFormat, TimeFormat.seconds);
+
+      select(SettingsItem.timeFormat);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(settings().timeFormat, TimeFormat.minutesSeconds);
+
+      await flushPendingSaves(tester);
+    });
   });
 
   group('key repeat', () {

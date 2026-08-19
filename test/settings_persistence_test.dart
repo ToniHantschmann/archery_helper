@@ -36,6 +36,7 @@ void main() {
     customMainTime: Duration(seconds: 45),
     autoStart: true,
     showMilliseconds: true,
+    timeFormat: TimeFormat.seconds,
     language: AppLanguage.english,
     // Der Default ist true, also prüft nur false, dass der Wert wirklich
     // gespeichert und nicht bloß wieder auf den Default gesetzt wird.
@@ -60,6 +61,7 @@ void main() {
     expect(loaded.customMainTime, custom.customMainTime);
     expect(loaded.autoStart, custom.autoStart);
     expect(loaded.showMilliseconds, custom.showMilliseconds);
+    expect(loaded.timeFormat, custom.timeFormat);
     expect(loaded.language, custom.language);
     expect(loaded.fullscreen, custom.fullscreen);
     expect(loaded.alternatingArrows, custom.alternatingArrows);
@@ -80,6 +82,7 @@ void main() {
       'customMainTime',
       'autoStart',
       'showMilliseconds',
+      'timeFormat',
       'language',
       'fullscreen',
       'alternatingArrows',

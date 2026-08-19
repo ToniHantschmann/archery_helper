@@ -80,6 +80,11 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  void setTimeFormat(TimeFormat format) {
+    state = state.copyWith(timeFormat: format);
+    _save();
+  }
+
   void setCustomPrepTime(Duration duration) {
     state = state.copyWith(customPrepTime: duration);
     _save();
@@ -176,11 +181,17 @@ class SettingsNotifier extends Notifier<Settings> {
         defaultMode: defaults.defaultMode,
         autoStart: defaults.autoStart,
         showMilliseconds: defaults.showMilliseconds,
+        timeFormat: defaults.timeFormat,
         alternatingArrows: defaults.alternatingArrows,
         customPrepTime: defaults.customPrepTime,
         customMainTime: defaults.customMainTime,
       ),
       SettingsSection.competition => state.copyWith(
+        // Auch hier, obwohl das Feld beiden Uhren gehört: die Zeile steht auf
+        // diesem Schirm, also muss die Reset-Zeile darunter sie auch treffen.
+        // Beide Bereiche setzen denselben Default — es kann nichts auseinander
+        // laufen.
+        timeFormat: defaults.timeFormat,
         competitionDiscipline: defaults.competitionDiscipline,
         competitionEnds: defaults.competitionEnds,
         competitionLineup: defaults.competitionLineup,
@@ -211,6 +222,10 @@ final defaultTimerModeProvider = Provider<TimerMode>((ref) {
 
 final showMillisecondsProvider = Provider<bool>((ref) {
   return ref.watch(settingsProvider).showMilliseconds;
+});
+
+final timeFormatProvider = Provider<TimeFormat>((ref) {
+  return ref.watch(settingsProvider).timeFormat;
 });
 
 final autoStartProvider = Provider<bool>((ref) {

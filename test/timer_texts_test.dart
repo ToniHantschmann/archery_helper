@@ -1,5 +1,6 @@
 import 'package:archery_helper/core/l10n/app_language.dart';
 import 'package:archery_helper/core/l10n/timer_texts.dart';
+import 'package:archery_helper/models/settings.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -53,6 +54,46 @@ void main() {
       expect(formatWithMillis(const Duration(milliseconds: 119900)), '1:59.9');
       expect(formatWithMillis(const Duration(milliseconds: 100)), '0:00.1');
       expect(formatWithMillis(Duration.zero), '0:00.0');
+    });
+  });
+
+  /// „240" statt „4:00" ist reine Schreibweise: dieselbe Zahl wechselt zum
+  /// selben Zeitpunkt, sonst würde die Einstellung die Kante verschieben, auf
+  /// die der Timer sein nächstes Update plant.
+  group('seconds-only format', () {
+    String formatSeconds(Duration d) =>
+        TimerTexts.formatTime(d, format: TimeFormat.seconds);
+
+    String formatSecondsWithMillis(Duration d) => TimerTexts.formatTime(
+      d,
+      showMilliseconds: true,
+      format: TimeFormat.seconds,
+    );
+
+    test('drops the minute part and never pads', () {
+      expect(formatSeconds(const Duration(seconds: 240)), '240');
+      expect(formatSeconds(const Duration(seconds: 65)), '65');
+      expect(formatSeconds(const Duration(seconds: 9)), '9');
+      expect(formatSeconds(Duration.zero), '0');
+    });
+
+    test('rounds up on exactly the same boundaries as the minute format', () {
+      for (final ms in [120000, 119900, 119100, 119000, 1000, 100, 0]) {
+        final d = Duration(milliseconds: ms);
+        final minutes = format(d).split(':');
+        final expected = int.parse(minutes[0]) * 60 + int.parse(minutes[1]);
+        expect(formatSeconds(d), '$expected', reason: '$ms ms');
+      }
+    });
+
+    test('keeps the tenths when milliseconds are on', () {
+      expect(formatSecondsWithMillis(const Duration(seconds: 120)), '120.0');
+      expect(
+        formatSecondsWithMillis(const Duration(milliseconds: 119900)),
+        '119.9',
+      );
+      expect(formatSecondsWithMillis(const Duration(milliseconds: 100)), '0.1');
+      expect(formatSecondsWithMillis(Duration.zero), '0.0');
     });
   });
 

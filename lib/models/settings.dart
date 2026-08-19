@@ -3,6 +3,12 @@ import 'package:archery_helper/core/l10n/app_language.dart';
 import 'competition_state.dart';
 import 'timer_state.dart';
 
+/// Wie die laufende Uhr ihre Zahl schreibt — „4:00" oder „240".
+///
+/// Betrifft nur die Darstellung, nicht die Rundung: beide Formate zeigen
+/// dieselbe Sekunde, sie setzen sie nur anders zusammen.
+enum TimeFormat { minutesSeconds, seconds }
+
 class Settings {
   final bool soundEnabled;
   final double volume;
@@ -12,6 +18,10 @@ class Settings {
   final bool autoStart;
   final bool showMilliseconds;
   final AppLanguage language;
+
+  /// Ob die Uhr „4:00" oder „240" zeigt. Gilt für Ampel und Wettkampf — es ist
+  /// dieselbe Frage an dieselbe Zahl, deshalb gibt es sie nur einmal.
+  final TimeFormat timeFormat;
 
   /// Ob die App das Fenster füllt. Der Tunnelrechner läuft als Kiosk, deshalb
   /// ist Vollbild der Normalfall; F11 und die Zeile in den allgemeinen
@@ -44,6 +54,7 @@ class Settings {
     this.autoStart = false,
     this.showMilliseconds = false,
     this.language = AppLanguage.german,
+    this.timeFormat = TimeFormat.minutesSeconds,
     this.fullscreen = true,
     this.alternatingArrows = 3,
     this.competitionDiscipline = CompetitionDiscipline.indoor,
@@ -71,6 +82,7 @@ class Settings {
     bool? autoStart,
     bool? showMilliseconds,
     AppLanguage? language,
+    TimeFormat? timeFormat,
     bool? fullscreen,
     int? alternatingArrows,
     CompetitionDiscipline? competitionDiscipline,
@@ -87,6 +99,7 @@ class Settings {
       autoStart: autoStart ?? this.autoStart,
       showMilliseconds: showMilliseconds ?? this.showMilliseconds,
       language: language ?? this.language,
+      timeFormat: timeFormat ?? this.timeFormat,
       fullscreen: fullscreen ?? this.fullscreen,
       alternatingArrows: alternatingArrows ?? this.alternatingArrows,
       competitionDiscipline:
@@ -108,6 +121,7 @@ class Settings {
       "autoStart": autoStart,
       "showMilliseconds": showMilliseconds,
       "language": language.code,
+      "timeFormat": timeFormat.index,
       "fullscreen": fullscreen,
       "alternatingArrows": alternatingArrows,
       "competitionDiscipline": competitionDiscipline.index,
@@ -128,6 +142,11 @@ class Settings {
       autoStart: json['autoStart'] as bool? ?? false,
       showMilliseconds: json['showMilliseconds'] as bool? ?? false,
       language: _parseLanguage(json['language'] as String?),
+      timeFormat: _parseEnum(
+        TimeFormat.values,
+        json['timeFormat'] as int?,
+        TimeFormat.minutesSeconds,
+      ),
       fullscreen: json['fullscreen'] as bool? ?? true,
       alternatingArrows: _parseArrows(json['alternatingArrows'] as int?),
       competitionDiscipline: _parseEnum(

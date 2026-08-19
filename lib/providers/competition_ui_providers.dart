@@ -27,6 +27,7 @@ final competitionFormattedTimeProvider = Provider<String>((ref) {
   return TimerTexts.formatTime(
     ref.watch(competitionRemainingProvider),
     showMilliseconds: ref.watch(showMillisecondsProvider),
+    format: ref.watch(timeFormatProvider),
   );
 });
 
@@ -132,12 +133,14 @@ final competitionLedTimeColorProvider = Provider<Color>((ref) {
 /// Die Zahl auf der Wand — die einzige Stelle, die sie formatiert.
 ///
 /// Bewusst nicht [competitionFormattedTimeProvider] mitbenutzt: dessen
-/// Millisekunden („1:59.8", sechs Zeichen) passen auf 120 Pixel nicht. Und
-/// hier soll später eine Einstellung zwischen „4:00" und der reinen
-/// Sekundenzahl „240" umschalten können — dass es dafür genau einen Ort gibt,
-/// ist der halbe Aufwand dieser Ergänzung.
+/// Millisekunden („1:59.8", sechs Zeichen) passen auf 120 Pixel nicht. Das
+/// Zeitformat („4:00" oder „240") folgt dagegen der Einstellung wie überall
+/// sonst — dass es dafür genau einen Ort gibt, war der halbe Aufwand.
 final competitionLedTimeProvider = Provider<String>((ref) {
-  return TimerTexts.formatTime(ref.watch(competitionRemainingProvider));
+  return TimerTexts.formatTime(
+    ref.watch(competitionRemainingProvider),
+    format: ref.watch(timeFormatProvider),
+  );
 });
 
 /// Das Kürzel der Gruppe, die gerade dran ist — oder `null`, wenn alle
