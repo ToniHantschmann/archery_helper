@@ -40,17 +40,20 @@ final trafficLightProvider = NotifierProvider<TrafficLightNotifier, bool>(
 
 /// Das Signal als das, was [TimerTheme] versteht.
 ///
+/// Die Anzeige-Provider sind `autoDispose` wie die der beiden Uhren — die
+/// Begründung steht in `ui_providers.dart`.
+///
 /// Rot ist bewusst `preparation` und nicht `idle`: `idle` heißt „noch nichts
 /// los" und wird deshalb nur ganz schwach getönt. Hier ist Rot aber schon die
 /// Aussage — nicht schießen.
-final trafficLightSignalProvider = Provider<SignalState>((ref) {
+final trafficLightSignalProvider = Provider.autoDispose<SignalState>((ref) {
   final isGreen = ref.watch(trafficLightProvider);
   return SignalState(
     phase: isGreen ? TimerPhase.active : TimerPhase.preparation,
   );
 });
 
-final trafficLightGradientProvider = Provider<LinearGradient>((ref) {
+final trafficLightGradientProvider = Provider.autoDispose<LinearGradient>((ref) {
   return TimerTheme.backgroundGradient(ref.watch(trafficLightSignalProvider));
 });
 
@@ -60,7 +63,7 @@ final trafficLightGradientProvider = Provider<LinearGradient>((ref) {
 /// das Signalwort an ihre Stelle und ist die ganze Anzeige. Es bleibt weiß —
 /// die Signalfarbe steht schon flächig dahinter, und ein rotes Wort auf rotem
 /// Grund verliert genau den Kontrast, von dem es auf die Distanz lebt.
-final trafficLightUIStateProvider = Provider<TimerUIState>((ref) {
+final trafficLightUIStateProvider = Provider.autoDispose<TimerUIState>((ref) {
   final isGreen = ref.watch(trafficLightProvider);
   final texts = ref.watch(trafficLightTextsProvider);
 

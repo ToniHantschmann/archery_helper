@@ -10,15 +10,36 @@ import 'keyboard_config_provider.dart';
 import 'settings_provider.dart';
 import 'timer_provider.dart';
 
+/// Die Anzeige-Provider des Ampelschirms — abgeleitete Werte, sonst nichts.
+///
+/// Alle sind `autoDispose`, und das ist wie beim `settingsNavigationProvider`
+/// kein Aufräumen, sondern Notwehr. Ein dauerhafter Provider, den niemand mehr
+/// hört, holt eine Änderung erst beim nächsten Lesen nach — und das nächste
+/// Lesen ist der Aufbau des Schirms, der ihn wieder braucht. Meldet er dabei
+/// einem anderen dauerhaften Provider einen neuen Wert (die Kette hier ist
+/// zwei Ebenen tief: [timerUIStateProvider] → [formattedTimeProvider] →
+/// [remainingTimeProvider]), wird der Provider-Scope mitten im Build dirty und
+/// Flutter wirft `setState() called during build`. Genau das ist passiert, wenn
+/// man in den Ampel-Einstellungen die Millisekunden umgeschaltet hat und mit
+/// Esc zur Uhr zurückgegangen ist.
+///
+/// Mit dem Schirm entsorgt gibt es nichts Verspätetes mehr nachzuholen: die
+/// Provider entstehen beim nächsten Aufbau neu und rechnen ihren Wert aus dem
+/// aktuellen Zustand. Kosten hat das keine — es sind reine Rechnungen auf
+/// Zustand, der ohnehin am Leben bleibt. `test/settings_change_test.dart` geht
+/// den Weg für jede Einstellung ab.
+///
+/// Neue Anzeige-Provider gehören genauso angelegt.
+
 // ===== TEXT PROVIDERS =====
 
-final timerPhaseTextProvider = Provider<String>((ref) {
+final timerPhaseTextProvider = Provider.autoDispose<String>((ref) {
   final timerState = ref.watch(timerProvider);
   final texts = ref.watch(timerTextsProvider);
   return texts.getPhaseTextEnhanced(timerState);
 });
 
-final timerModeTextProvider = Provider<String>((ref) {
+final timerModeTextProvider = Provider.autoDispose<String>((ref) {
   final timerState = ref.watch(timerProvider);
   final texts = ref.watch(timerTextsProvider);
   return texts.getModeText(timerState.mode);
@@ -29,7 +50,7 @@ final timerModeTextProvider = Provider<String>((ref) {
 /// Liest den ganzen Timer-Zustand, liefert aber innerhalb einer Passage immer
 /// denselben String — und ein [Provider] meldet sich nur bei einem geänderten
 /// Wert. Der Chip hängt also am Wechsel und nicht am Sekundentakt.
-final alternatingArrowTextProvider = Provider<String?>((ref) {
+final alternatingArrowTextProvider = Provider.autoDispose<String?>((ref) {
   final timerState = ref.watch(timerProvider);
   if (!timerState.mode.isAlternating) return null;
 
@@ -40,7 +61,7 @@ final alternatingArrowTextProvider = Provider<String?>((ref) {
   );
 });
 
-final formattedTimeProvider = Provider<String>((ref) {
+final formattedTimeProvider = Provider.autoDispose<String>((ref) {
   final remainingTime = ref.watch(remainingTimeProvider);
   final settings = ref.watch(settingsProvider);
   return TimerTexts.formatTime(
@@ -51,7 +72,7 @@ final formattedTimeProvider = Provider<String>((ref) {
 });
 
 /// Label of the start/pause control in the hint rail.
-final startButtonTextProvider = Provider<String>((ref) {
+final startButtonTextProvider = Provider.autoDispose<String>((ref) {
   final timerState = ref.watch(timerProvider);
   final texts = ref.watch(timerTextsProvider);
 
@@ -69,7 +90,7 @@ final startButtonTextProvider = Provider<String>((ref) {
 /// `hint_navigation_provider.dart`. Kept next to the other hint-rail
 /// providers so the two stay in sync; `_TimerHintRail` builds its [KeyHint]s
 /// from this list rather than duplicating the order.
-final timerHintActionsProvider = Provider<List<AppAction>>((ref) {
+final timerHintActionsProvider = Provider.autoDispose<List<AppAction>>((ref) {
   return const [
     AppAction.next,
     AppAction.toggleTimer,
@@ -88,7 +109,7 @@ final timerHintActionsProvider = Provider<List<AppAction>>((ref) {
 /// The hint rails read the binding instead of hard-coding letters, so a
 /// remapped key stays honest on screen. The space bar is special-cased: its
 /// proper name ("Leertaste") does not fit on a cap.
-final actionKeyLabelProvider = Provider.family<String, AppAction>((
+final actionKeyLabelProvider = Provider.autoDispose.family<String, AppAction>((
   ref,
   action,
 ) {
@@ -105,19 +126,19 @@ final actionKeyLabelProvider = Provider.family<String, AppAction>((
 
 // ===== THEME PROVIDERS =====
 
-final timerBackgroundGradientProvider = Provider<LinearGradient>((ref) {
+final timerBackgroundGradientProvider = Provider.autoDispose<LinearGradient>((ref) {
   return TimerTheme.backgroundGradient(ref.watch(timerProvider).signal);
 });
 
-final timerTextColorProvider = Provider<Color>((ref) {
+final timerTextColorProvider = Provider.autoDispose<Color>((ref) {
   return TimerTheme.timeColor(ref.watch(timerProvider).signal);
 });
 
-final timerPhaseColorProvider = Provider<Color>((ref) {
+final timerPhaseColorProvider = Provider.autoDispose<Color>((ref) {
   return TimerTheme.phaseColor(ref.watch(timerProvider).signal);
 });
 
-final timerPhaseProvider = Provider<TimerPhase>((ref) {
+final timerPhaseProvider = Provider.autoDispose<TimerPhase>((ref) {
   return ref.watch(timerProvider).phase;
 });
 
@@ -150,7 +171,7 @@ class TimerUIState {
   });
 }
 
-final timerUIStateProvider = Provider<TimerUIState>((ref) {
+final timerUIStateProvider = Provider.autoDispose<TimerUIState>((ref) {
   return TimerUIState(
     formattedTime: ref.watch(formattedTimeProvider),
     phaseText: ref.watch(timerPhaseTextProvider),

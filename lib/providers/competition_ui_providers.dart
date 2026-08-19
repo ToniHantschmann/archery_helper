@@ -17,13 +17,16 @@ import 'ui_providers.dart';
 /// Das ist hier keine Kosmetik: die Uhr aktualisiert sekündlich, und ein
 /// Provider, der sich dabei jedes Mal für „geändert" hält, würde den ganzen
 /// getönten Schirm im Sekundentakt neu zeichnen lassen.
+///
+/// `autoDispose` gilt hier aus demselben Grund wie dort — siehe die Erklärung
+/// in `ui_providers.dart`.
 
-final competitionPhaseTextProvider = Provider<String>((ref) {
+final competitionPhaseTextProvider = Provider.autoDispose<String>((ref) {
   final state = ref.watch(competitionProvider);
   return ref.watch(competitionTextsProvider).phaseText(state);
 });
 
-final competitionFormattedTimeProvider = Provider<String>((ref) {
+final competitionFormattedTimeProvider = Provider.autoDispose<String>((ref) {
   return TimerTexts.formatTime(
     ref.watch(competitionRemainingProvider),
     showMilliseconds: ref.watch(showMillisecondsProvider),
@@ -32,7 +35,7 @@ final competitionFormattedTimeProvider = Provider<String>((ref) {
 });
 
 /// „Passe 3/20".
-final competitionEndTextProvider = Provider<String>((ref) {
+final competitionEndTextProvider = Provider.autoDispose<String>((ref) {
   final state = ref.watch(competitionProvider);
   return ref
       .watch(competitionTextsProvider)
@@ -50,7 +53,7 @@ typedef CompetitionGroupRail = ({
   int groupIndex,
 });
 
-final competitionGroupRailProvider = Provider<CompetitionGroupRail>((ref) {
+final competitionGroupRailProvider = Provider.autoDispose<CompetitionGroupRail>((ref) {
   final state = ref.watch(competitionProvider);
   return (
     lineup: state.lineup,
@@ -61,26 +64,26 @@ final competitionGroupRailProvider = Provider<CompetitionGroupRail>((ref) {
 
 /// Ob es überhaupt eine Gruppenleiste gibt. Schießen alle zusammen, gäbe es
 /// nichts zu unterscheiden.
-final competitionHasGroupsProvider = Provider<bool>((ref) {
+final competitionHasGroupsProvider = Provider.autoDispose<bool>((ref) {
   return ref.watch(competitionProvider).hasGroups;
 });
 
 /// Beschriftung der Weiter-Taste — sie ist das Startsignal, solange die Runde
 /// steht (vor der ersten Passe und beim Pfeileholen).
-final competitionNextLabelProvider = Provider<String>((ref) {
+final competitionNextLabelProvider = Provider.autoDispose<String>((ref) {
   final state = ref.watch(competitionProvider);
   return ref.watch(competitionTextsProvider).nextLabel(state);
 });
 
 /// Beschriftung der Start/Pause-Taste in der Hinweisleiste.
-final competitionToggleLabelProvider = Provider<String>((ref) {
+final competitionToggleLabelProvider = Provider.autoDispose<String>((ref) {
   final state = ref.watch(competitionProvider);
   return ref.watch(competitionTextsProvider).toggleLabel(state);
 });
 
 /// Die Einträge der unteren Hinweisleiste, in der Reihenfolge, in der
 /// links/rechts durch sie läuft.
-final competitionHintActionsProvider = Provider<List<AppAction>>((ref) {
+final competitionHintActionsProvider = Provider.autoDispose<List<AppAction>>((ref) {
   return const [
     AppAction.next,
     // Direkt hinter der Weiter-Taste, aber nicht davor: die Auswahl steht ohne
@@ -98,22 +101,22 @@ final competitionHintActionsProvider = Provider<List<AppAction>>((ref) {
 
 // ===== THEME =====
 
-final competitionBackgroundGradientProvider = Provider<LinearGradient>((ref) {
+final competitionBackgroundGradientProvider = Provider.autoDispose<LinearGradient>((ref) {
   return TimerTheme.backgroundGradient(ref.watch(competitionProvider).signal);
 });
 
-final competitionTimeColorProvider = Provider<Color>((ref) {
+final competitionTimeColorProvider = Provider.autoDispose<Color>((ref) {
   return TimerTheme.timeColor(ref.watch(competitionProvider).signal);
 });
 
-final competitionPhaseColorProvider = Provider<Color>((ref) {
+final competitionPhaseColorProvider = Provider.autoDispose<Color>((ref) {
   return TimerTheme.phaseColor(ref.watch(competitionProvider).signal);
 });
 
 /// Die Signalfarbe der laufenden Phase — die Gruppenleiste hebt die aktive
 /// Gruppe damit hervor, damit „wer ist dran" und „darf geschossen werden" auf
 /// dieselbe Farbe hinauslaufen.
-final competitionSignalColorProvider = Provider<Color>((ref) {
+final competitionSignalColorProvider = Provider.autoDispose<Color>((ref) {
   return TimerTheme.signalFor(ref.watch(competitionProvider).signal).onTint;
 });
 
@@ -123,11 +126,11 @@ final competitionSignalColorProvider = Provider<Color>((ref) {
 // braucht (voll gesättigt statt getönt) und ein anderes Zeitformat. Die
 // *Entscheidung*, welches Signal gilt, kommt weiterhin aus derselben Quelle.
 
-final competitionLedSignalColorProvider = Provider<Color>((ref) {
+final competitionLedSignalColorProvider = Provider.autoDispose<Color>((ref) {
   return TimerTheme.signalFor(ref.watch(competitionProvider).signal).led;
 });
 
-final competitionLedTimeColorProvider = Provider<Color>((ref) {
+final competitionLedTimeColorProvider = Provider.autoDispose<Color>((ref) {
   return TimerTheme.ledTimeColor(ref.watch(competitionProvider).signal);
 });
 
@@ -140,7 +143,7 @@ final competitionLedTimeColorProvider = Provider<Color>((ref) {
 /// Qualifikationsrunde auch gar nicht kennt. Das Zeitformat („4:00" oder
 /// „240") folgt dagegen der Einstellung wie überall sonst — dass es dafür genau
 /// einen Ort gibt, war der halbe Aufwand.
-final competitionLedTimeProvider = Provider<String>((ref) {
+final competitionLedTimeProvider = Provider.autoDispose<String>((ref) {
   return TimerTexts.formatTime(
     ref.watch(competitionRemainingProvider),
     format: ref.watch(timeFormatProvider),
@@ -152,7 +155,7 @@ final competitionLedTimeProvider = Provider<String>((ref) {
 ///
 /// Auf 46 Pixel Beschriftungsbreite ist für die ganze Leiste kein Platz, und
 /// was auf der Schießlinie zählt, ist ohnehin nur „wer ist dran".
-final competitionLedGroupProvider = Provider<String?>((ref) {
+final competitionLedGroupProvider = Provider.autoDispose<String?>((ref) {
   final rail = ref.watch(competitionGroupRailProvider);
   if (rail.lineup.groupLabels.length < 2) return null;
 
@@ -172,7 +175,7 @@ final competitionLedGroupProvider = Provider<String?>((ref) {
 /// Hängt am ganzen [competitionProvider] und rechnet damit im Sekundentakt neu,
 /// meldet aber nur bei geändertem String: ein `Provider` benachrichtigt auf
 /// `!=`, und zwei gleiche Zähler sind gleich.
-final competitionLedEndProvider = Provider<String>((ref) {
+final competitionLedEndProvider = Provider.autoDispose<String>((ref) {
   return '${ref.watch(competitionProvider).currentEnd}';
 });
 
@@ -180,7 +183,7 @@ final competitionLedEndProvider = Provider<String>((ref) {
 
 /// Derselbe Anzeigezustand wie bei der Ampel, damit [TimerDisplay] für beide
 /// Schirme reicht.
-final competitionUIStateProvider = Provider<TimerUIState>((ref) {
+final competitionUIStateProvider = Provider.autoDispose<TimerUIState>((ref) {
   return TimerUIState(
     formattedTime: ref.watch(competitionFormattedTimeProvider),
     phaseText: ref.watch(competitionPhaseTextProvider),
