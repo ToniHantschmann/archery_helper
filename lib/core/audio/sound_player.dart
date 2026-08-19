@@ -13,6 +13,13 @@ import 'audio_signal.dart';
 abstract class SoundPlayer {
   Future<void> play(AudioSignal signal, double volume);
 
+  /// Bereitet alle Signale vor, damit der erste Ton nicht der langsamste ist.
+  ///
+  /// Standardmäßig nichts zu tun: Vorladen ist eine Beschleunigung, die diese
+  /// Schnittstelle erlaubt und nicht verlangt — eine Attrappe im Test hat
+  /// nichts zu laden.
+  Future<void> preload() async {}
+
   Future<void> dispose();
 }
 
@@ -24,7 +31,28 @@ class AudioPlayersSoundPlayer extends SoundPlayer {
   /// Ein gemeinsamer Player müsste bei jedem Ton die Quelle wechseln, und genau
   /// das Nachladen ist die Verzögerung, die man nicht haben will: ein
   /// Startsignal, das 300ms nach dem Grün kommt, ist ein falsches Startsignal.
-  final _players = <AudioSignal, AudioPlayer>{};
+  ///
+  /// Gemerkt wird der *Future*, nicht der fertige Player: [preload] und ein
+  /// früher Ton laufen sonst nebeneinander in `_prepare` und legen zwei Player
+  /// mit derselben `playerId` an.
+  final _players = <AudioSignal, Future<AudioPlayer>>{};
+
+  @override
+  Future<void> preload() async {
+    // Nacheinander und nicht mit `Future.wait`: das sind fünf kleine Dateien,
+    // und der Start soll die Audio-Ausgabe nicht mit fünf gleichzeitigen
+    // Anläufen begrüßen. Fehler landen im Log, nicht im Aufrufer — wer nicht
+    // vorladen kann, kann es beim ersten Ton nochmal versuchen.
+    for (final signal in AudioSignal.values) {
+      try {
+        await _player(signal);
+      } catch (error) {
+        debugPrint(
+          'Signalton ${signal.name} konnte nicht vorgeladen werden: $error',
+        );
+      }
+    }
+  }
 
   @override
   Future<void> play(AudioSignal signal, double volume) async {
@@ -32,7 +60,7 @@ class AudioPlayersSoundPlayer extends SoundPlayer {
     // GStreamer-Plugin oder eine stumme Soundkarte darf im Tunnel niemals den
     // Ablauf der Schusszeit anhalten, deshalb endet hier jeder Fehler.
     try {
-      final player = _players[signal] ??= await _prepare(signal);
+      final player = await _player(signal);
       await player.setVolume(volume);
       // Zurück an den Anfang statt abzuwarten: die Ticks der letzten Sekunden
       // sollen sich ablösen, nicht anstehen.
@@ -42,6 +70,20 @@ class AudioPlayersSoundPlayer extends SoundPlayer {
       debugPrint(
         'Signalton ${signal.name} konnte nicht abgespielt werden: $error',
       );
+    }
+  }
+
+  Future<AudioPlayer> _player(AudioSignal signal) async {
+    final pending = _players[signal] ??= _prepare(signal);
+    try {
+      return await pending;
+    } catch (_) {
+      // Ein gescheiterter Versuch darf sich nicht einbrennen: sonst wäre ein
+      // Signal, dessen Vorladen beim Start schiefging, für die ganze Laufzeit
+      // stumm. Nur den eigenen Versuch wegräumen, nicht einen inzwischen neu
+      // begonnenen.
+      if (identical(_players[signal], pending)) _players.remove(signal);
+      rethrow;
     }
   }
 
@@ -59,9 +101,9 @@ class AudioPlayersSoundPlayer extends SoundPlayer {
 
   @override
   Future<void> dispose() async {
-    for (final player in _players.values) {
+    for (final pending in _players.values) {
       try {
-        await player.dispose();
+        await (await pending).dispose();
       } catch (_) {
         // Beim Herunterfahren ist ein nicht freigegebener Player kein Problem,
         // das jemanden noch erreichen würde.

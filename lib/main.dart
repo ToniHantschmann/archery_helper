@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:archery_helper/core/window/window_service.dart';
 import 'package:archery_helper/providers/keyboard_config_provider.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
+import 'package:archery_helper/providers/sound_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
@@ -22,6 +25,13 @@ void main() async {
     fullscreenProvider,
     (_, fullscreen) => windowService.setFullscreen(fullscreen),
   );
+
+  // Die Signale vorladen, damit nicht ausgerechnet der erste Ton der langsamste
+  // ist. Bewusst ohne `await`: das Bild über der Schießlinie soll deswegen
+  // nicht später kommen, und bis der erste Ton fällt, ist das längst
+  // durchgelaufen. Nicht an `soundEnabled` gebunden — Vorladen ist still, und
+  // der Ton kann jederzeit eingeschaltet werden.
+  unawaited(container.read(soundPlayerProvider).preload());
 
   runApp(
     UncontrolledProviderScope(
