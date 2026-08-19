@@ -544,10 +544,6 @@ class AppActionsNotifier {
         _cycleMode(-1);
         return KeyEventResult.handled;
 
-      case AppAction.toggleMenu:
-        _toggleScreen(AppScreen.menu);
-        return KeyEventResult.handled;
-
       // Vollbild gilt für die ganze App, nicht für einen Screen: die Aktion
       // bleibt deshalb global und schaltet das persistierte Setting, dem das
       // Fenster folgt (siehe `main.dart`).
@@ -563,14 +559,6 @@ class AppActionsNotifier {
     final nextIndex = (currentIndex + delta + modes.length) % modes.length;
 
     ref.read(timerProvider.notifier).setMode(modes[nextIndex]);
-  }
-
-  /// Toggling a screen you are already on returns home, i.e. to the menu.
-  void _toggleScreen(AppScreen screen) {
-    final current = ref.read(currentScreenProvider);
-    ref
-        .read(appStateProvider.notifier)
-        .navigateToScreen(current == screen ? AppScreen.menu : screen);
   }
 }
 

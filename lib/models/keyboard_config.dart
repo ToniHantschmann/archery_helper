@@ -13,7 +13,6 @@ enum AppAction {
   nextMode, // next timer mode
   previousMode, // previous timer mode
   // ── Navigation (Screens) ───────────────────────────────
-  toggleMenu, // toggle menu
   toggleSettings, // toggle settings
   back, // back / close
   confirm, // confirm / select
@@ -45,13 +44,16 @@ class KeyboardConfig {
         LogicalKeyboardKey.delete: AppAction.forward,
         LogicalKeyboardKey.enter: AppAction.confirm,
         LogicalKeyboardKey.keyR: AppAction.resetTimer,
-        LogicalKeyboardKey.keyN: AppAction.nextMode,
+        LogicalKeyboardKey.keyM: AppAction.nextMode,
         LogicalKeyboardKey.keyP: AppAction.toggleTimer,
 
         // Screen navigation
+        // Esc ist der einzige Rückweg: aus einem Werkzeug ins Hauptmenü, aus
+        // dessen Einstellungen zurück zum Werkzeug. Eine zweite Taste nur fürs
+        // Menü gab es einmal (M) — sie tat dasselbe wie Esc und nahm dem
+        // Timer-Screen den Buchstaben für den Moduswechsel weg.
         LogicalKeyboardKey.escape: AppAction.back,
         LogicalKeyboardKey.keyS: AppAction.toggleSettings,
-        LogicalKeyboardKey.keyM: AppAction.toggleMenu,
         LogicalKeyboardKey.f11: AppAction.toggleFullscreen,
 
         // UI navigation (Pfeiltasten)
@@ -110,8 +112,6 @@ class KeyboardConfig {
         return 'Nächster Modus';
       case AppAction.previousMode:
         return 'Vorheriger Modus';
-      case AppAction.toggleMenu:
-        return 'Menü öffnen';
       case AppAction.toggleSettings:
         return 'Einstellungen öffnen';
       case AppAction.back:

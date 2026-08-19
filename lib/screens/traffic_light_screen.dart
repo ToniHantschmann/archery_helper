@@ -81,7 +81,7 @@ class _TrafficLightHintRail extends ConsumerWidget {
     return KeyHintRail(
       hints: [
         hintFor(AppAction.next, texts.hintToggle, emphasised: true),
-        hintFor(AppAction.toggleMenu, texts.hintMenu),
+        hintFor(AppAction.back, texts.hintMenu),
       ],
     );
   }

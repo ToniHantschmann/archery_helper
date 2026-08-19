@@ -76,7 +76,10 @@ final timerHintActionsProvider = Provider<List<AppAction>>((ref) {
     AppAction.resetTimer,
     AppAction.nextMode,
     AppAction.toggleSettings,
-    AppAction.toggleMenu,
+    // Der Rückweg ins Hauptmenü ist Esc, dieselbe Taste, die aus den
+    // Einstellungen wieder hierher führt — die Leiste zeigt sie deshalb als
+    // [AppAction.back] und nicht als eigene Menü-Taste.
+    AppAction.back,
   ];
 });
 

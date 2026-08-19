@@ -112,12 +112,12 @@ void main() {
       expect(selectedItem(), SettingsItem.defaultMode);
     });
 
-    testWidgets('M returns to the menu, and Esc there does nothing', (
+    testWidgets('Esc returns to the menu, and Esc there does nothing', (
       tester,
     ) async {
       await pumpApp(tester);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyM);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(currentScreen(), AppScreen.menu);
 
@@ -136,7 +136,7 @@ void main() {
 
       final before = timer().mode;
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.keyN);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyM);
       await tester.pumpAndSettle();
 
       expect(timer().mode, isNot(before));

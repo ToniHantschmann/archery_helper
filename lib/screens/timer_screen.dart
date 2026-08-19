@@ -163,7 +163,7 @@ class _TimerHintRail extends ConsumerWidget {
         AppAction.resetTimer => texts.hintReset,
         AppAction.nextMode => texts.hintMode,
         AppAction.toggleSettings => texts.hintSettings,
-        AppAction.toggleMenu => texts.hintMenu,
+        AppAction.back => texts.hintMenu,
         _ => '',
       };
 

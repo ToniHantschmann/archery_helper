@@ -91,7 +91,8 @@ final competitionHintActionsProvider = Provider<List<AppAction>>((ref) {
     AppAction.toggleTimer,
     AppAction.resetTimer,
     AppAction.toggleSettings,
-    AppAction.toggleMenu,
+    // Esc, wie bei der Ampel — siehe timerHintActionsProvider.
+    AppAction.back,
   ];
 });
 
