@@ -150,7 +150,10 @@ void main() {
     test('keeps the round-wide wording for idle and ended', () {
       // Neither belongs to one of the two archers.
       expect(de.getPhaseTextEnhanced(state(phase: TimerPhase.idle)), 'Bereit');
-      expect(de.getPhaseTextEnhanced(state(phase: TimerPhase.ended)), 'Beendet');
+      expect(
+        de.getPhaseTextEnhanced(state(phase: TimerPhase.ended)),
+        'Beendet',
+      );
     });
 
     test('still marks a paused round', () {

@@ -458,7 +458,9 @@ void main() {
       stop();
     });
 
-    testWidgets('ends after both archers have shot every arrow', (tester) async {
+    testWidgets('ends after both archers have shot every arrow', (
+      tester,
+    ) async {
       notifier().setMode(TimerMode.alternating);
       notifier().startTimer();
 
@@ -562,7 +564,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400)); // debounced save
     });
 
-    testWidgets('a changed arrow count sets the round up again', (tester) async {
+    testWidgets('a changed arrow count sets the round up again', (
+      tester,
+    ) async {
       notifier().setMode(TimerMode.alternating);
       notifier().startTimer();
       await tester.pump(const Duration(seconds: 35)); // mid-round
@@ -577,7 +581,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400)); // debounced save
     });
 
-    testWidgets('reset returns to archer A and the first arrow', (tester) async {
+    testWidgets('reset returns to archer A and the first arrow', (
+      tester,
+    ) async {
       notifier().setMode(TimerMode.alternating);
       notifier().startTimer();
       await tester.pump(const Duration(seconds: 35)); // B, first arrow

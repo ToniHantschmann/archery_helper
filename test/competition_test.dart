@@ -142,11 +142,10 @@ void main() {
       // die Runde, bis der Schießleiter wieder freigibt.
       await tester.pump(const Duration(seconds: 260));
       expect(round().currentEnd, 2);
-      expect(
-        round().groupOrder,
-        ['CD', 'AB'],
-        reason: 'after each end the other group starts',
-      );
+      expect(round().groupOrder, [
+        'CD',
+        'AB',
+      ], reason: 'after each end the other group starts');
       expect(round().currentGroup, 'CD');
 
       notifier().advance();
@@ -367,7 +366,8 @@ void main() {
       expect(
         round().groupIndex,
         1,
-        reason: 'the step back from the end of the round repeats its last '
+        reason:
+            'the step back from the end of the round repeats its last '
             'passage, it does not skip one',
       );
       expect(round().currentGroup, 'CD');
@@ -470,29 +470,32 @@ void main() {
       expect(round().groupIndex, 1);
     });
 
-    test('winding back and forth over an end boundary lands where it began', () {
-      setEnds(3);
+    test(
+      'winding back and forth over an end boundary lands where it began',
+      () {
+        setEnds(3);
 
-      // Über die Passengrenze hinweg und wieder zurück — dort dreht sich die
-      // Gruppenreihenfolge um, also ist das die Stelle, an der ein Schritt zu
-      // viel oder zu wenig auffällt.
-      notifier().fastForward();
-      notifier().fastForward();
-      notifier().fastForward();
-      expect(round().currentEnd, 2);
-      expect(round().groupIndex, 1);
-      expect(round().currentGroup, 'AB', reason: 'end 2 shoots CD first');
+        // Über die Passengrenze hinweg und wieder zurück — dort dreht sich die
+        // Gruppenreihenfolge um, also ist das die Stelle, an der ein Schritt zu
+        // viel oder zu wenig auffällt.
+        notifier().fastForward();
+        notifier().fastForward();
+        notifier().fastForward();
+        expect(round().currentEnd, 2);
+        expect(round().groupIndex, 1);
+        expect(round().currentGroup, 'AB', reason: 'end 2 shoots CD first');
 
-      notifier().rewind();
-      notifier().rewind();
-      notifier().rewind();
+        notifier().rewind();
+        notifier().rewind();
+        notifier().rewind();
 
-      expect(round().currentEnd, 1);
-      expect(round().groupIndex, 0);
-      expect(round().currentGroup, 'AB');
-      expect(round().phase, TimerPhase.idle);
-      expect(round().isRunning, isFalse);
-    });
+        expect(round().currentEnd, 1);
+        expect(round().groupIndex, 0);
+        expect(round().currentGroup, 'AB');
+        expect(round().phase, TimerPhase.idle);
+        expect(round().isRunning, isFalse);
+      },
+    );
   });
 
   group('settings changes', () {
@@ -543,8 +546,9 @@ void main() {
   /// Zehntel nicht hin. Sie ist aber nur eine Anzeige: an der Runde selbst
   /// ändert der Wechsel nichts.
   group('the LED display', () {
-    void setDisplay(CompetitionDisplay display) =>
-        container.read(settingsProvider.notifier).setCompetitionDisplay(display);
+    void setDisplay(CompetitionDisplay display) => container
+        .read(settingsProvider.notifier)
+        .setCompetitionDisplay(display);
 
     test('keeps whole seconds even while milliseconds are switched on', () {
       container.read(settingsProvider.notifier).toggleShowMilliseconds();

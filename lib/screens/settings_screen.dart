@@ -251,8 +251,8 @@ class _SettingsHeader extends ConsumerWidget {
         children: [
           GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap:
-                () => ref.read(appActionsProvider).handleAction(AppAction.back),
+            onTap: () =>
+                ref.read(appActionsProvider).handleAction(AppAction.back),
             child: Container(
               width: 56,
               height: 56,
@@ -332,15 +332,13 @@ class _SettingsHintRail extends ConsumerWidget {
     final texts = ref.watch(settingsTextsProvider);
     final actions = ref.read(appActionsProvider);
 
-    String keyFor(AppAction action) => ref.watch(actionKeyLabelProvider(action));
+    String keyFor(AppAction action) =>
+        ref.watch(actionKeyLabelProvider(action));
 
     return KeyHintRail(
       hints: [
         KeyHint(
-          keys: [
-            keyFor(AppAction.navigateUp),
-            keyFor(AppAction.navigateDown),
-          ],
+          keys: [keyFor(AppAction.navigateUp), keyFor(AppAction.navigateDown)],
           label: texts.labelSelect,
         ),
         KeyHint(
@@ -407,11 +405,9 @@ class _SettingsRow extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap:
-            enabled
-                ? () =>
-                    ref.read(settingsNavigationProvider.notifier).select(item)
-                : null,
+        onTap: enabled
+            ? () => ref.read(settingsNavigationProvider.notifier).select(item)
+            : null,
         child: AnimatedContainer(
           duration: AppMotion.fast,
           curve: AppMotion.curve,
@@ -550,10 +546,9 @@ class _StepArrow extends StatelessWidget {
         height: 52,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color:
-              highlighted
-                  ? AppPalette.accent.withValues(alpha: 0.16)
-                  : AppPalette.surfaceRaised,
+          color: highlighted
+              ? AppPalette.accent.withValues(alpha: 0.16)
+              : AppPalette.surfaceRaised,
           borderRadius: AppRadius.sm,
           border: Border.all(
             color: highlighted ? AppPalette.accent : AppPalette.outline,
@@ -600,8 +595,7 @@ class _TogglePill extends ConsumerWidget {
               textAlign: TextAlign.right,
               style: AppType.body.copyWith(
                 fontWeight: FontWeight.w700,
-                color:
-                    value ? AppPalette.accent : AppPalette.textMuted,
+                color: value ? AppPalette.accent : AppPalette.textMuted,
               ),
             ),
           ),
@@ -612,10 +606,9 @@ class _TogglePill extends ConsumerWidget {
             width: 104,
             height: 56,
             decoration: BoxDecoration(
-              color:
-                  value
-                      ? AppPalette.accent.withValues(alpha: 0.22)
-                      : AppPalette.surfaceRaised,
+              color: value
+                  ? AppPalette.accent.withValues(alpha: 0.22)
+                  : AppPalette.surfaceRaised,
               borderRadius: AppRadius.pill,
               border: Border.all(
                 color: value ? AppPalette.accent : AppPalette.outlineStrong,
@@ -672,29 +665,26 @@ class _VolumeMeter extends ConsumerWidget {
                 Expanded(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap:
-                        enabled
-                            ? () {
-                              navigation.select(SettingsItem.volume);
-                              settings.setVolume(index / steps);
-                            }
-                            : null,
+                    onTap: enabled
+                        ? () {
+                            navigation.select(SettingsItem.volume);
+                            settings.setVolume(index / steps);
+                          }
+                        : null,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 3),
                       child: AnimatedContainer(
                         duration: AppMotion.fast,
                         height: index <= filled ? 44 : 30,
                         decoration: BoxDecoration(
-                          color:
-                              index <= filled
-                                  ? AppPalette.accent
-                                  : AppPalette.surfaceRaised,
+                          color: index <= filled
+                              ? AppPalette.accent
+                              : AppPalette.surfaceRaised,
                           borderRadius: AppRadius.sm,
                           border: Border.all(
-                            color:
-                                index <= filled
-                                    ? AppPalette.accent
-                                    : AppPalette.outline,
+                            color: index <= filled
+                                ? AppPalette.accent
+                                : AppPalette.outline,
                           ),
                         ),
                       ),
@@ -1162,31 +1152,30 @@ class _ResetRow extends ConsumerWidget {
             isSelected: armed || isSelected,
             color: armed ? AppPalette.caution : AppPalette.accent,
           ),
-          child:
-              armed
-                  ? _ResetConfirmation(
-                    texts: texts,
-                    onCancel: navigation.disarmReset,
-                    onConfirm: activate,
-                  )
-                  : Row(
-                    children: [
-                      _SelectionMarker(isSelected: isSelected),
-                      const SizedBox(width: AppSpacing.md),
-                      const Icon(
-                        Icons.restore_rounded,
-                        size: 34,
-                        color: AppPalette.textSecondary,
+          child: armed
+              ? _ResetConfirmation(
+                  texts: texts,
+                  onCancel: navigation.disarmReset,
+                  onConfirm: activate,
+                )
+              : Row(
+                  children: [
+                    _SelectionMarker(isSelected: isSelected),
+                    const SizedBox(width: AppSpacing.md),
+                    const Icon(
+                      Icons.restore_rounded,
+                      size: 34,
+                      color: AppPalette.textSecondary,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        texts.resetToDefaultsButton,
+                        style: AppType.body,
                       ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Text(
-                          texts.resetToDefaultsButton,
-                          style: AppType.body,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

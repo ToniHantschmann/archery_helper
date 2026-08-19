@@ -89,10 +89,9 @@ class _HintEntry extends StatelessWidget {
         Text(
           hint.label,
           style: AppType.hint.copyWith(
-            color:
-                hint.emphasised
-                    ? AppPalette.textSecondary
-                    : AppPalette.textMuted,
+            color: hint.emphasised
+                ? AppPalette.textSecondary
+                : AppPalette.textMuted,
             fontWeight: hint.emphasised ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
@@ -144,13 +143,12 @@ class KeyCap extends StatelessWidget {
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
       decoration: BoxDecoration(
-        color:
-            tint == null
-                ? AppPalette.surfaceRaised
-                : Color.alphaBlend(
-                  tint.withValues(alpha: 0.18),
-                  AppPalette.surfaceRaised,
-                ),
+        color: tint == null
+            ? AppPalette.surfaceRaised
+            : Color.alphaBlend(
+                tint.withValues(alpha: 0.18),
+                AppPalette.surfaceRaised,
+              ),
         borderRadius: AppRadius.sm,
         border: Border.all(
           color: tint ?? AppPalette.outlineStrong,
@@ -160,7 +158,9 @@ class KeyCap extends StatelessWidget {
       child: Text(
         label,
         style: AppType.keyCap.copyWith(
-          color: tint == null ? AppPalette.textSecondary : AppPalette.textPrimary,
+          color: tint == null
+              ? AppPalette.textSecondary
+              : AppPalette.textPrimary,
         ),
       ),
     );

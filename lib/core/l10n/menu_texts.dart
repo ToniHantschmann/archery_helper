@@ -27,30 +27,21 @@ class MenuTexts {
     en: 'Shooting time with preparation',
   );
 
-  static const _competition = LocalizedText(
-    de: 'Wettkampf',
-    en: 'Competition',
-  );
+  static const _competition = LocalizedText(de: 'Wettkampf', en: 'Competition');
 
   static const _competitionDescription = LocalizedText(
     de: 'Qualifikationsrunde mit Passen',
     en: 'Qualification round with ends',
   );
 
-  static const _trafficLight = LocalizedText(
-    de: 'Ampel',
-    en: 'Traffic Light',
-  );
+  static const _trafficLight = LocalizedText(de: 'Ampel', en: 'Traffic Light');
 
   static const _trafficLightDescription = LocalizedText(
     de: 'Rot und Grün von Hand',
     en: 'Red and green by hand',
   );
 
-  static const _generalSettings = LocalizedText(
-    de: 'Allgemein',
-    en: 'General',
-  );
+  static const _generalSettings = LocalizedText(de: 'Allgemein', en: 'General');
 
   static const _generalSettingsDescription = LocalizedText(
     de: 'Sprache und Ton',
@@ -99,8 +90,7 @@ class MenuTexts {
   String get competition => _competition.get(_language);
   String get competitionDescription => _competitionDescription.get(_language);
   String get trafficLight => _trafficLight.get(_language);
-  String get trafficLightDescription =>
-      _trafficLightDescription.get(_language);
+  String get trafficLightDescription => _trafficLightDescription.get(_language);
   String get generalSettings => _generalSettings.get(_language);
   String get generalSettingsDescription =>
       _generalSettingsDescription.get(_language);

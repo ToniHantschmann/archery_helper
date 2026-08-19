@@ -21,10 +21,7 @@ class SettingsTexts {
     en: 'Settings',
   );
 
-  static const _generalTitle = LocalizedText(
-    de: 'Allgemein',
-    en: 'General',
-  );
+  static const _generalTitle = LocalizedText(de: 'Allgemein', en: 'General');
 
   static const _timerTitle = LocalizedText(
     de: 'Ampel-Einstellungen',
@@ -259,10 +256,7 @@ class SettingsTexts {
     en: '↑↓ Select',
   );
 
-  static const _navHintChange = LocalizedText(
-    de: '←→ Ändern',
-    en: '←→ Change',
-  );
+  static const _navHintChange = LocalizedText(de: '←→ Ändern', en: '←→ Change');
 
   static const _navHintConfirm = LocalizedText(
     de: 'Enter/Leertaste Bestätigen',
@@ -426,7 +420,8 @@ class SettingsTexts {
   /// die Zahlen sind der eigentliche Inhalt der Einstellung, und wer sie sieht,
   /// muss nicht wissen, was „Halle" in den Regeln bedeutet.
   String getDisciplineDetail(CompetitionDiscipline discipline) {
-    final arrows = '${discipline.arrowsPerEnd} ${_arrows.get(_currentLanguage)}';
+    final arrows =
+        '${discipline.arrowsPerEnd} ${_arrows.get(_currentLanguage)}';
     return '$arrows · ${TimerTexts.formatTime(discipline.shootingTime)}';
   }
 

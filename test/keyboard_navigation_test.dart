@@ -518,7 +518,8 @@ void main() {
       // nächsten Verschieben der Grenzen still zu klein werden und den Test
       // dann an einer Stelle scheitern lassen, die nichts damit zu tun hat.
       final stepsAcrossRange =
-          ((Settings.maxTimerScale - Settings.minTimerScale) * 100 /
+          ((Settings.maxTimerScale - Settings.minTimerScale) *
+                  100 /
                   Settings.timerScaleStepPercent)
               .ceil();
 

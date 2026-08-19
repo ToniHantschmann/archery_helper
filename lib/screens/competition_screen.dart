@@ -171,10 +171,9 @@ class _GroupRail extends ConsumerWidget {
               duration: AppMotion.medium,
               curve: AppMotion.curve,
               style: AppType.headline.copyWith(
-                color:
-                    i == rail.groupIndex
-                        ? signalColor
-                        : AppPalette.textMuted,
+                color: i == rail.groupIndex
+                    ? signalColor
+                    : AppPalette.textMuted,
               ),
               child: Text(labels[i], maxLines: 1),
             ),

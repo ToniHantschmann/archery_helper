@@ -167,7 +167,8 @@ class _IdleHintRail extends ConsumerWidget {
           keys: [ref.watch(actionKeyLabelProvider(AppAction.next))],
           label: texts.wakeHint,
           emphasised: true,
-          onTap: () => ref.read(appActionsProvider).handleAction(AppAction.next),
+          onTap: () =>
+              ref.read(appActionsProvider).handleAction(AppAction.next),
         ),
       ],
     );

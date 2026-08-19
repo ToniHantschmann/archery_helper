@@ -171,8 +171,10 @@ void main() {
     });
 
     test('an anzeigegröße outside the allowed range', () async {
-      for (final entry in {5.0: Settings.maxTimerScale, 0.0: Settings.minTimerScale}
-          .entries) {
+      for (final entry in {
+        5.0: Settings.maxTimerScale,
+        0.0: Settings.minTimerScale,
+      }.entries) {
         SharedPreferences.setMockInitialValues({
           storageKey: jsonEncode({'timerScale': entry.key}),
         });

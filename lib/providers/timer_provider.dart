@@ -126,14 +126,12 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
     // sie ist dieselbe Ansage an denselben Schützen, und eine zweite
     // Einstellung für denselben Wert wäre nur eine Stelle mehr, an der er
     // falsch stehen kann. Die Schusszeit bleibt die 20s des Modus.
-    final prepTime =
-        mode == TimerMode.custom || mode.isAlternating
-            ? settings.customPrepTime
-            : mode.defaultPrepTime;
-    final mainTime =
-        mode == TimerMode.custom
-            ? settings.customMainTime
-            : mode.defaultMainTime;
+    final prepTime = mode == TimerMode.custom || mode.isAlternating
+        ? settings.customPrepTime
+        : mode.defaultPrepTime;
+    final mainTime = mode == TimerMode.custom
+        ? settings.customMainTime
+        : mode.defaultMainTime;
 
     return TimerState(
       remainingTime: prepTime + mainTime,

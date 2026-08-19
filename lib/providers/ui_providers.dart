@@ -85,7 +85,10 @@ final timerHintActionsProvider = Provider<List<AppAction>>((ref) {
 /// The hint rails read the binding instead of hard-coding letters, so a
 /// remapped key stays honest on screen. The space bar is special-cased: its
 /// proper name ("Leertaste") does not fit on a cap.
-final actionKeyLabelProvider = Provider.family<String, AppAction>((ref, action) {
+final actionKeyLabelProvider = Provider.family<String, AppAction>((
+  ref,
+  action,
+) {
   final keys = ref.watch(keyboardConfigProvider).getKeysForAction(action);
   if (keys.isEmpty) return '–';
 

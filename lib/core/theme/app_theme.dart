@@ -43,10 +43,7 @@ class AppTheme {
         labelLarge: AppType.label,
         labelSmall: AppType.hint,
       ),
-      iconTheme: const IconThemeData(
-        color: AppPalette.textSecondary,
-        size: 32,
-      ),
+      iconTheme: const IconThemeData(color: AppPalette.textSecondary, size: 32),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppPalette.surfaceRaised,
@@ -105,13 +102,9 @@ class AppTheme {
     BorderRadius radius = AppRadius.lg,
   }) {
     return BoxDecoration(
-      color:
-          isSelected
-              ? Color.alphaBlend(
-                color.withValues(alpha: 0.22),
-                AppPalette.surface,
-              )
-              : AppPalette.surface,
+      color: isSelected
+          ? Color.alphaBlend(color.withValues(alpha: 0.22), AppPalette.surface)
+          : AppPalette.surface,
       borderRadius: radius,
       border: Border.all(
         color: isSelected ? color : AppPalette.outline,

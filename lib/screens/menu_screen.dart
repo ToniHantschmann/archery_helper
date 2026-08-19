@@ -150,12 +150,11 @@ class _MenuGridState extends ConsumerState<_MenuGrid> {
             }
             children.add(
               Expanded(
-                child:
-                    column < rowItems.length
-                        // An incomplete last row keeps its empty slots, so the
-                        // tiles above and below stay the same width.
-                        ? _MenuTile(item: rowItems[column])
-                        : const SizedBox.shrink(),
+                child: column < rowItems.length
+                    // An incomplete last row keeps its empty slots, so the
+                    // tiles above and below stay the same width.
+                    ? _MenuTile(item: rowItems[column])
+                    : const SizedBox.shrink(),
               ),
             );
           }
@@ -280,10 +279,9 @@ class _MenuTile extends ConsumerWidget {
               const SizedBox(height: AppSpacing.lg),
               Text(
                 armed ? texts.quitConfirmTitle : _title(texts),
-                style:
-                    armed
-                        ? AppType.title.copyWith(color: AppPalette.caution)
-                        : AppType.title,
+                style: armed
+                    ? AppType.title.copyWith(color: AppPalette.caution)
+                    : AppType.title,
               ),
               const SizedBox(height: AppSpacing.xxs),
               Text(

@@ -178,11 +178,8 @@ class LedPanelSpec {
 
   static final _formatWidths = <TimeFormat, double>{};
 
-  static double _formatWidth(TimeFormat format) =>
-      _formatWidths[format] ??= _measure(
-        timeSamplesByFormat[format]!,
-        timeStyle,
-      );
+  static double _formatWidth(TimeFormat format) => _formatWidths[format] ??=
+      _measure(timeSamplesByFormat[format]!, timeStyle);
 
   /// Die vertikale Streckung: die Zeile füllt danach genau [timeHeight].
   ///
@@ -228,11 +225,10 @@ class LedPanelSpec {
   /// Ohne Streckung, anders als die Uhr: [timeScaleY] ist deren Eigenheit, weil
   /// sie als Einzige ihre Zelle sonst nicht ausfüllen würde. Auf die Zeilenhöhe
   /// gestreckt wäre der Passenzähler unleserlich schmal.
-  static double get labelFontSize =>
-      _labelFontSize ??= math.min(
-        _fit(groupSamples, _groupBase, labelWidth, rowHeight),
-        _fit(endSamples, _endBase, labelWidth, rowHeight),
-      );
+  static double get labelFontSize => _labelFontSize ??= math.min(
+    _fit(groupSamples, _groupBase, labelWidth, rowHeight),
+    _fit(endSamples, _endBase, labelWidth, rowHeight),
+  );
 
   static TextStyle get timeStyle => _timeBase.copyWith(fontSize: timeFontSize);
 
@@ -259,11 +255,10 @@ class LedPanelSpec {
   static double _measure(String text, TextStyle style) =>
       _painterFor(text, style).width;
 
-  static double _baselineOf(String text, TextStyle style) =>
-      _painterFor(
-        text,
-        style,
-      ).computeDistanceToActualBaseline(TextBaseline.alphabetic);
+  static double _baselineOf(String text, TextStyle style) => _painterFor(
+    text,
+    style,
+  ).computeDistanceToActualBaseline(TextBaseline.alphabetic);
 
   static TextPainter _painterFor(String text, TextStyle style) => TextPainter(
     text: TextSpan(text: text, style: style),

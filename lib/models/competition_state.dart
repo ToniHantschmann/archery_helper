@@ -8,7 +8,11 @@ import 'timer_state.dart';
 /// Passenzahl hängt mit dran, bleibt danach aber frei änderbar (ein Vereins-
 /// wettkampf schießt auch mal zehn Passen).
 enum CompetitionDiscipline {
-  indoor(arrowsPerEnd: 3, shootingTime: Duration(seconds: 120), defaultEnds: 20),
+  indoor(
+    arrowsPerEnd: 3,
+    shootingTime: Duration(seconds: 120),
+    defaultEnds: 20,
+  ),
   outdoor(
     arrowsPerEnd: 6,
     shootingTime: Duration(seconds: 240),
@@ -156,8 +160,7 @@ class CompetitionState {
 
   String get currentGroup => groupOrder[groupIndex];
 
-  String? get nextGroup =>
-      hasNextGroup ? groupOrder[groupIndex + 1] : null;
+  String? get nextGroup => hasNextGroup ? groupOrder[groupIndex + 1] : null;
 
   /// Ob in dieser Passe nach der laufenden Gruppe noch eine folgt.
   bool get hasNextGroup => groupIndex + 1 < groupOrder.length;

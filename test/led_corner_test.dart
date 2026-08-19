@@ -20,7 +20,10 @@ void main() {
           home: Stack(
             alignment: Alignment.topLeft,
             // Steht für die Bedienansicht: füllt das Bild und liegt darunter.
-            children: [SizedBox.expand(child: ColoredBox(color: Colors.teal)), LedCorner()],
+            children: [
+              SizedBox.expand(child: ColoredBox(color: Colors.teal)),
+              LedCorner(),
+            ],
           ),
         ),
       ),
@@ -28,21 +31,22 @@ void main() {
   }
 
   for (final ratio in [1.0, 2.0, 3.0]) {
-    testWidgets('at devicePixelRatio $ratio the panel covers exactly the crop', (
-      tester,
-    ) async {
-      await pumpCorner(tester, ratio: ratio);
+    testWidgets(
+      'at devicePixelRatio $ratio the panel covers exactly the crop',
+      (tester) async {
+        await pumpCorner(tester, ratio: ratio);
 
-      final panel = find.byType(LedPanel);
+        final panel = find.byType(LedPanel);
 
-      // In Gerätepixeln gerechnet, denn das ist die Einheit, in der die Wand
-      // denkt: logische Pixel sind nur bei einem Verhältnis von 1 dasselbe.
-      expect(tester.getTopLeft(panel) * ratio, Offset.zero);
-      expect(
-        tester.getBottomRight(panel) * ratio,
-        const Offset(LedPanelSpec.width, LedPanelSpec.height),
-      );
-    });
+        // In Gerätepixeln gerechnet, denn das ist die Einheit, in der die Wand
+        // denkt: logische Pixel sind nur bei einem Verhältnis von 1 dasselbe.
+        expect(tester.getTopLeft(panel) * ratio, Offset.zero);
+        expect(
+          tester.getBottomRight(panel) * ratio,
+          const Offset(LedPanelSpec.width, LedPanelSpec.height),
+        );
+      },
+    );
   }
 
   testWidgets('the panel is drawn on top of everything below it', (
@@ -51,7 +55,9 @@ void main() {
     await pumpCorner(tester, ratio: 1);
 
     final stack = tester.widget<Stack>(
-      find.ancestor(of: find.byType(LedCorner), matching: find.byType(Stack)).first,
+      find
+          .ancestor(of: find.byType(LedCorner), matching: find.byType(Stack))
+          .first,
     );
 
     expect(stack.children.last, isA<LedCorner>());

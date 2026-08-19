@@ -258,9 +258,9 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
   List<SettingsItem> _selectableItems() {
     final soundEnabled = ref.read(settingsProvider).soundEnabled;
 
-    return SettingsItem.of(state.section)
-        .where((item) => soundEnabled || !_needsSound.contains(item))
-        .toList();
+    return SettingsItem.of(
+      state.section,
+    ).where((item) => soundEnabled || !_needsSound.contains(item)).toList();
   }
 
   /// Lässt hören, was gerade eingestellt wird.

@@ -104,8 +104,9 @@ class CompetitionTexts {
 
     switch (state.phase) {
       case TimerPhase.idle:
-        return (state.isWaitingBetweenEnds ? _collectArrows : _ready)
-            .get(_language);
+        return (state.isWaitingBetweenEnds ? _collectArrows : _ready).get(
+          _language,
+        );
       case TimerPhase.preparation:
         return (state.isChangeover ? _changeover : _preparation).get(_language);
       case TimerPhase.active:

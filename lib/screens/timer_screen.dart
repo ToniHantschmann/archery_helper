@@ -145,7 +145,8 @@ class _TimerHintRail extends ConsumerWidget {
     final texts = ref.watch(timerTextsProvider);
     final actions = ref.read(appActionsProvider);
 
-    String keyFor(AppAction action) => ref.watch(actionKeyLabelProvider(action));
+    String keyFor(AppAction action) =>
+        ref.watch(actionKeyLabelProvider(action));
 
     // Built from timerHintActionsProvider rather than a fixed list, so this
     // stays the same order left/right steps through in TimerScreenActions —

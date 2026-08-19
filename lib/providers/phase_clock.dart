@@ -39,10 +39,9 @@ mixin PhaseClock<T> on Notifier<T> {
   /// Beide Uhren zeigen dieselbe Zahl auf demselben Raster, also steht die
   /// Regel hier statt zweimal daneben; überschreibbar bleibt sie für eine Uhr,
   /// die einmal ein eigenes Raster braucht.
-  Duration get displayStep =>
-      ref.read(showMillisecondsProvider)
-          ? const Duration(milliseconds: 100)
-          : const Duration(seconds: 1);
+  Duration get displayStep => ref.read(showMillisecondsProvider)
+      ? const Duration(milliseconds: 100)
+      : const Duration(seconds: 1);
 
   /// Im [Notifier.build] aufzurufen: hält das Anzeigeraster live.
   ///

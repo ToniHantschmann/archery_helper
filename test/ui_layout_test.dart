@@ -153,7 +153,10 @@ void main() {
     ) async {
       // Die Uhr ist der letzte Text der Anzeige; davor steht das Phasenwort.
       final clock = find
-          .descendant(of: find.byType(TimerDisplay), matching: find.byType(Text))
+          .descendant(
+            of: find.byType(TimerDisplay),
+            matching: find.byType(Text),
+          )
           .last;
 
       await pumpScreen(tester, const Size(1920, 1080), AppScreen.timer);
@@ -360,7 +363,9 @@ void main() {
       // Kopf mitführt: ein Pixel zu viel ist ein halber Zentimeter Wand, der
       // irgendwo abgeschnitten wird.
       expect(
-        LedPanelSpec.timeHeight + LedPanelSpec.rowGutter + LedPanelSpec.rowHeight,
+        LedPanelSpec.timeHeight +
+            LedPanelSpec.rowGutter +
+            LedPanelSpec.rowHeight,
         LedPanelSpec.height,
       );
       // Drei gleiche Zellen gehen nur auf, solange die Wand durch drei teilbar
@@ -373,10 +378,7 @@ void main() {
       // Rangfolge, sondern als Versehen — vorher war die Gruppe von der
       // Zeilenhöhe begrenzt und der Passenzähler von seiner Zellenbreite, und
       // genau diesen Zufall darf niemand wieder einbauen.
-      expect(
-        LedPanelSpec.groupStyle.fontSize,
-        LedPanelSpec.endStyle.fontSize,
-      );
+      expect(LedPanelSpec.groupStyle.fontSize, LedPanelSpec.endStyle.fontSize);
     });
 
     test('every group label fits its cell', () {
@@ -482,9 +484,9 @@ void main() {
       // skaliert ganzzahlig und sitzt irgendwo im Fenster.
       expect(time.center.dx, closeTo(panel.center.dx, 1));
 
-      container.read(settingsProvider.notifier).setTimeFormat(
-        TimeFormat.minutesSeconds,
-      );
+      container
+          .read(settingsProvider.notifier)
+          .setTimeFormat(TimeFormat.minutesSeconds);
       await tester.pump(const Duration(milliseconds: 400));
     });
 
@@ -760,7 +762,10 @@ void main() {
     }
 
     test('red while nobody may shoot', () {
-      expect(TimerTheme.signalFor(stateFor(TimerPhase.idle)), TrafficSignal.red);
+      expect(
+        TimerTheme.signalFor(stateFor(TimerPhase.idle)),
+        TrafficSignal.red,
+      );
       expect(
         TimerTheme.signalFor(stateFor(TimerPhase.preparation)),
         TrafficSignal.red,
