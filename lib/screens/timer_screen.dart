@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,7 +9,6 @@ import '../providers/app_actions_provider.dart';
 import '../providers/hint_navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_providers.dart';
-import '../widgets/debug_panel.dart';
 import '../widgets/key_hint_rail.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/timer_display.dart';
@@ -38,37 +36,25 @@ class TimerScreen extends ConsumerWidget {
         duration: AppMotion.slow,
         curve: AppMotion.curve,
         decoration: BoxDecoration(gradient: gradient),
-        child: Stack(
-          children: [
-            SafeArea(
-              child: Column(
-                children: [
-                  const _StatusRail(),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xl,
-                        vertical: AppSpacing.md,
-                      ),
-                      child: TimerDisplay(
-                        uiStateProvider: timerUIStateProvider,
-                        scale: ref.watch(timerScaleProvider),
-                      ),
-                    ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const _StatusRail(),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl,
+                    vertical: AppSpacing.md,
                   ),
-                  const _TimerHintRail(),
-                ],
+                  child: TimerDisplay(
+                    uiStateProvider: timerUIStateProvider,
+                    scale: ref.watch(timerScaleProvider),
+                  ),
+                ),
               ),
-            ),
-
-            // Debug Panel (oben rechts) - nur für Development
-            if (kDebugMode)
-              const Positioned(
-                top: AppSpacing.lg,
-                right: AppSpacing.lg,
-                child: DebugPanel(),
-              ),
-          ],
+              const _TimerHintRail(),
+            ],
+          ),
         ),
       ),
     );
