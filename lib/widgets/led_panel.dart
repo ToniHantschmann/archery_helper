@@ -106,10 +106,11 @@ class LedPanelSpec {
 
   /// Alle drei Stile erben **nicht** vom umgebenden `DefaultTextStyle`.
   ///
-  /// Das Panel muss überall gleich aussehen: im eigenen Schirm, in der Vorschau
-  /// und als Ecke über der Bedienansicht — dort hängt es außerhalb jedes
-  /// `Material`, und `MaterialApp` schiebt in dem Fall seinen Fallback-Stil
-  /// unter, mitsamt gelber Unterstreichung und `monospace`. Eine andere Schrift
+  /// Das Panel bemisst seine Schriftgrößen selbst und definiert deshalb auch
+  /// die Schrift selbst — wo es hängt, geht es nichts an. Ohne `inherit: false`
+  /// entscheidet die Umgebung mit; außerhalb jedes `Material` schiebt
+  /// `MaterialApp` sogar seinen Fallback-Stil unter, mitsamt gelber
+  /// Unterstreichung und `monospace`. Eine andere Schrift
   /// als die, an der [timeFontSize] ausgemessen wurde, würde die Uhr aber
   /// abschneiden statt sie überlaufen zu lassen — und das sieht man nur auf der
   /// Wand. `inherit: false` macht Messung und Anzeige zur selben Sache.

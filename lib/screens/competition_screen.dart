@@ -6,7 +6,6 @@ import '../core/l10n/settings_texts.dart';
 import '../core/theme/app_dimens.dart';
 import '../core/theme/app_palette.dart';
 import '../core/theme/app_typography.dart';
-import '../models/competition_state.dart';
 import '../models/keyboard_config.dart';
 import '../providers/app_actions_provider.dart';
 import '../providers/competition_ui_providers.dart';
@@ -14,7 +13,6 @@ import '../providers/hint_navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
-import '../widgets/led_corner.dart';
 import 'competition_led_screen.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/timer_display.dart';
@@ -26,7 +24,7 @@ import '../widgets/timer_display.dart';
 /// einem einzelnen Countdown unterscheiden: in welcher Passe wir sind, und
 /// welche Gruppe gerade an der Schießlinie steht.
 ///
-/// Steht die Anzeige auf LED-Wand, übernimmt [CompetitionLedScreen] — dieselbe
+/// Steht die Ausgabe auf LED-Wand, übernimmt [CompetitionLedScreen] — dieselbe
 /// Runde, nur auf 192 × 128 Pixel eingedampft. Die Verzweigung sitzt hier und
 /// nicht im `AppNavigator`, damit [AppScreen.competition] *ein* Screen bleibt:
 /// Tastenbelegung, Herkunft der Einstellungen und die Layout-Tests hängen alle
@@ -40,17 +38,12 @@ class CompetitionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final display = ref.watch(competitionDisplayProvider);
-    if (display == CompetitionDisplay.led ||
-        display == CompetitionDisplay.ledPreview) {
-      return CompetitionLedScreen(
-        isPreview: display == CompetitionDisplay.ledPreview,
-      );
-    }
+    final ledFit = ref.watch(competitionDisplayProvider).ledFit;
+    if (ledFit != null) return CompetitionLedScreen(fit: ledFit);
 
     final gradient = ref.watch(competitionBackgroundGradientProvider);
 
-    final view = Scaffold(
+    return Scaffold(
       body: AnimatedContainer(
         duration: AppMotion.slow,
         curve: AppMotion.curve,
@@ -77,15 +70,6 @@ class CompetitionScreen extends ConsumerWidget {
         ),
       ),
     );
-
-    if (display != CompetitionDisplay.ledWithControl) return view;
-
-    // Die Ecke zuletzt, damit sie über allem liegt: nur so ist der Ausschnitt
-    // unabhängig davon, was das Layout darunter gerade tut.
-    return Stack(
-      alignment: Alignment.topLeft,
-      children: [view, const LedCorner()],
-    );
   }
 }
 
@@ -102,17 +86,9 @@ class _CompetitionStatusRail extends ConsumerWidget {
     final settingsTexts = ref.watch(settingsTextsProvider);
     final discipline = ref.watch(competitionDisciplineProvider);
 
-    // Der Passenzähler steht dort, wo im Wandmodus die Ecke liegt — also weicht
-    // er ihr aus, statt unter ihr zu verschwinden.
-    final reserved =
-        ref.watch(competitionDisplayProvider) ==
-            CompetitionDisplay.ledWithControl
-        ? ledCornerSize(context).width + AppSpacing.md
-        : 0.0;
-
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.xl + reserved,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
         AppSpacing.lg,
         AppSpacing.xl,
         AppSpacing.xs,

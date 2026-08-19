@@ -557,7 +557,7 @@ void main() {
       setDisplay(CompetitionDisplay.led);
       expect(notifier().displayStep, const Duration(seconds: 1));
 
-      setDisplay(CompetitionDisplay.ledPreview);
+      setDisplay(CompetitionDisplay.ledStretched);
       expect(notifier().displayStep, const Duration(seconds: 1));
 
       // Zurück auf den Monitor gilt wieder die allgemeine Einstellung.

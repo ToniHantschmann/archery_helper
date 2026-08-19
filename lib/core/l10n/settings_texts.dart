@@ -83,26 +83,24 @@ class SettingsTexts {
 
   static const _display = LocalizedText(de: 'Ausgabe', en: 'Output');
 
+  /// Wann die gestreckte Variante die richtige ist, gehört an die Zeile: sonst
+  /// steht am Stand die Wahl zwischen zwei Namen ohne erkennbaren Unterschied.
   static const _displaySubtitle = LocalizedText(
-    de: 'LED-Wand: 192 × 128 Pixel oben links, Skalierung 100 %',
-    en: 'LED panel: 192 × 128 pixels at the top left, 100 % scaling',
+    de:
+        'LED-Wand: 192 × 128 Pixel, formatfüllend — gestreckt nur, wenn die '
+        'Wand das Bild staucht',
+    en:
+        'LED panel: 192 × 128 pixels, fitted to the screen — stretched only '
+        'if the wall squeezes the image',
   );
 
   static const _displayStandard = LocalizedText(de: 'Monitor', en: 'Monitor');
 
-  static const _displayLedPreview = LocalizedText(
-    de: 'LED-Vorschau',
-    en: 'LED preview',
-  );
-
   static const _displayLed = LocalizedText(de: 'LED-Wand', en: 'LED panel');
 
-  /// Setzt gespiegelte Bildschirme voraus — das muss dort stehen, wo man den
-  /// Wert auswählt, sonst sitzt der Ausschnitt am Turniertag auf dem falschen
-  /// Bild.
-  static const _displayLedWithControl = LocalizedText(
-    de: 'LED-Wand + Bedienung (gespiegelt)',
-    en: 'LED panel + control (mirrored)',
+  static const _displayLedStretched = LocalizedText(
+    de: 'LED-Wand (gestreckt)',
+    en: 'LED panel (stretched)',
   );
 
   static const _arrows = LocalizedText(de: 'Pfeile', en: 'arrows');
@@ -433,12 +431,10 @@ class SettingsTexts {
     switch (display) {
       case CompetitionDisplay.standard:
         return _displayStandard.get(_currentLanguage);
-      case CompetitionDisplay.ledPreview:
-        return _displayLedPreview.get(_currentLanguage);
       case CompetitionDisplay.led:
         return _displayLed.get(_currentLanguage);
-      case CompetitionDisplay.ledWithControl:
-        return _displayLedWithControl.get(_currentLanguage);
+      case CompetitionDisplay.ledStretched:
+        return _displayLedStretched.get(_currentLanguage);
     }
   }
 

@@ -49,7 +49,7 @@ void main() {
     competitionLineup: CompetitionLineup.ab,
     // Bewusst der letzte Wert des Enums: ein Index, der beim Lesen aus dem
     // Gespeicherten am ehesten aus der Liste fällt.
-    competitionDisplay: CompetitionDisplay.ledWithControl,
+    competitionDisplay: CompetitionDisplay.ledStretched,
   );
 
   test('saved settings survive a round trip unchanged', () async {

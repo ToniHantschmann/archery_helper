@@ -1,3 +1,5 @@
+import 'package:flutter/painting.dart' show BoxFit;
+
 import 'signal_state.dart';
 import 'timer_state.dart';
 
@@ -68,33 +70,37 @@ enum CompetitionLineup {
 /// bleiben nur Restzeit, Gruppe, Passe und Ampelfarbe, und der Hintergrund muss
 /// schwarz sein, damit die Dioden an diesen Stellen einfach aus bleiben.
 ///
+/// Die Steuerkarte der Wand schneidet **keinen** Ausschnitt aus dem HDMI-Signal,
+/// sondern überträgt das ganze Monitorbild. Das Panel füllt darum das Fenster,
+/// statt in echten Gerätepixeln irgendwo in einer Ecke zu sitzen.
+///
 /// Das ist eine Eigenschaft des *Aufstellungsorts*, nicht der Runde: der
 /// Rechner am Außenstand steht dauerhaft auf [led], der im Tunnel auf
 /// [standard]. Deshalb eine persistierte Einstellung und keine Taste.
 enum CompetitionDisplay {
   /// Der volle Wettkampfschirm auf einem gewöhnlichen Monitor.
-  standard,
+  standard(ledFit: null),
 
-  /// Das 192×128-Panel, ganzzahlig hochskaliert auf das Fenster. Ohne diesen
-  /// Zwischenschritt wäre das Layout auf einem normalen Bildschirm ein
-  /// briefmarkengroßer Fleck und nur über Tests zu beurteilen.
-  ledPreview,
+  /// Das 192×128-Panel, proportionsgetreu und formatfüllend im Fenster.
+  led(ledFit: BoxFit.contain),
 
-  /// Das Panel in echten Gerätepixeln, links oben, Rest des Bildes schwarz.
-  led,
-
-  /// Das Panel links oben *in* der vollen Bedienansicht.
+  /// Dasselbe Panel, auf das ganze Fenster gestreckt.
   ///
-  /// Für den Turnierbetrieb, mit **gespiegelten** Bildschirmen: der Player
-  /// sieht nur das Rechteck (0, 0, 192, 128) des Bildes, alles daneben existiert
-  /// für die Wand nicht. Also kann dort dieselbe Ansicht stehen, die der
-  /// Schießleiter am Laptop ohnehin braucht — Gruppenleiste und Tastenleiste,
-  /// die [led] gerade wegnimmt.
+  /// Für den Fall, dass die Steuerkarte das 16:9-Bild auf die 3:2 der Wand
+  /// *staucht*, statt mittig einen Ausschnitt zu nehmen: dann macht die Wand die
+  /// Streckung wieder rückgängig und die Proportionen stimmen dort — am Laptop
+  /// sieht das Panel dabei zu breit aus, und das muss so sein.
+  ledStretched(ledFit: BoxFit.fill);
+
+  const CompetitionDisplay({required this.ledFit});
+
+  /// Wie das 192×128-Panel ins Fenster gelegt wird, `null` für den Monitor.
   ///
-  /// Ein Fenster, eine Uhr, keine Fensterverwaltung: die Wand hängt nicht daran,
-  /// wie das Layout daneben aussieht, sondern nur daran, dass das Panel zuletzt
-  /// und auf Gerätepixel (0,0) gezeichnet wird.
-  ledWithControl,
+  /// Der einzige Unterschied zwischen den beiden Wandwerten — und zugleich die
+  /// ganze Fallunterscheidung des Schirms. Welche Einpassung die Wand braucht,
+  /// sagt ihre Steuerkarte und nicht der Code; deshalb sind es zwei Werte und
+  /// keine Annahme.
+  final BoxFit? ledFit;
 }
 
 /// Vorbereitungszeit vor jeder Schusszeit — am Passenanfang und beim

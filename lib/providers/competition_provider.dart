@@ -28,7 +28,7 @@ class CompetitionNotifier extends Notifier<CompetitionState>
   void _playSignal(AudioSignal signal) =>
       ref.read(signalSoundsProvider).play(signal);
 
-  /// Auf der LED-Wand immer ganze Sekunden.
+  /// Im LED-Modus immer ganze Sekunden.
   ///
   /// Das Panel zeigt ohnehin nur ganze Sekunden — und ein Zehntelraster würde
   /// die Uhr zehnmal pro Sekunde für eine Anzeige rechnen lassen, die sich

@@ -14,10 +14,7 @@ import 'package:archery_helper/providers/menu_navigation_provider.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
 import 'package:archery_helper/providers/traffic_light_provider.dart';
-import 'package:archery_helper/widgets/key_hint_rail.dart';
-import 'package:archery_helper/widgets/led_corner.dart';
 import 'package:archery_helper/widgets/led_panel.dart';
-import 'package:archery_helper/widgets/status_chip.dart';
 import 'package:archery_helper/widgets/timer_display.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -442,7 +439,7 @@ void main() {
 
     for (final display in [
       CompetitionDisplay.led,
-      CompetitionDisplay.ledPreview,
+      CompetitionDisplay.ledStretched,
     ]) {
       for (final entry in sizes.entries) {
         testWidgets('${display.name} lays out at ${entry.key}', (tester) async {
@@ -473,15 +470,15 @@ void main() {
       // Zahl auch wirklich in der Mitte des Panels landen.
       container.read(settingsProvider.notifier)
         ..setTimeFormat(TimeFormat.seconds)
-        ..setCompetitionDisplay(CompetitionDisplay.ledPreview);
+        ..setCompetitionDisplay(CompetitionDisplay.led);
 
       await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
 
       final panel = tester.getRect(find.byType(LedPanel));
       final time = tester.getRect(find.byKey(ledTimeKey));
 
-      // Gegen die Mitte des gefundenen Panels, nicht gegen 96: die Vorschau
-      // skaliert ganzzahlig und sitzt irgendwo im Fenster.
+      // Gegen die Mitte des gefundenen Panels, nicht gegen 96: das Panel ist
+      // aufs Fenster skaliert und sitzt nicht mehr an seinen eigenen Maßen.
       expect(time.center.dx, closeTo(panel.center.dx, 1));
 
       container
@@ -495,7 +492,7 @@ void main() {
     ) async {
       container.read(settingsProvider.notifier)
         ..setCompetitionLineup(CompetitionLineup.single)
-        ..setCompetitionDisplay(CompetitionDisplay.ledPreview);
+        ..setCompetitionDisplay(CompetitionDisplay.led);
 
       await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
 
@@ -510,44 +507,133 @@ void main() {
     });
   });
 
-  /// Der Turniermodus: die Wand oben links *in* der vollen Bedienansicht. Weil
-  /// der Mediaplayer nur das Rechteck (0,0,192,128) sieht, muss beides
-  /// gleichzeitig stimmen — die Ecke auf dem Pixel und die Bedienansicht
-  /// vollständig daneben.
-  group('the LED corner sits inside the full competition view', () {
+  /// Die Steuerkarte überträgt das ganze Monitorbild, also muss das Panel das
+  /// Fenster füllen — und zwar genau so, wie der gewählte Wert es verspricht.
+  /// Welcher der beiden richtig ist, zeigt sich erst auf der Wand; dass sie
+  /// sich unterscheiden, muss hier feststehen, sonst schaltet am Stand jemand
+  /// um und sieht keinen Unterschied.
+  group('the LED panel fills the window', () {
     for (final entry in sizes.entries) {
-      testWidgets('ledWithControl at ${entry.key}', (tester) async {
+      testWidgets('stretched covers the whole window at ${entry.key}', (
+        tester,
+      ) async {
         container
             .read(settingsProvider.notifier)
-            .setCompetitionDisplay(CompetitionDisplay.ledWithControl);
+            .setCompetitionDisplay(CompetitionDisplay.ledStretched);
 
         await pumpScreen(tester, entry.value, AppScreen.competition);
 
         expect(tester.takeException(), isNull);
-
-        // Die Wand.
-        expect(find.byKey(ledTimeKey), findsOneWidget);
-        expect(find.byKey(ledGroupKey), findsOneWidget);
-        expect(find.byKey(ledEndKey), findsOneWidget);
-        expect(tester.getTopLeft(find.byType(LedPanel)), Offset.zero);
-
-        // Und daneben genau das, was der reine LED-Modus wegnimmt.
-        expect(find.byType(StatusChip), findsWidgets);
-        expect(find.byType(KeyHintRail), findsOneWidget);
-
-        // Der Passenzähler weicht der Ecke aus. Ohne diese Zusicherung merkt
-        // niemand, wenn eine spätere Layout-Änderung ihn wieder darunter
-        // schiebt — auf der Wand fällt es nie auf, nur dem Schießleiter.
-        final corner = ledCornerSize(tester.element(find.byType(LedCorner)));
         expect(
-          tester.getTopLeft(find.byType(StatusChip).first).dx,
-          greaterThanOrEqualTo(corner.width),
+          tester.getRect(find.byType(LedPanel)),
+          Offset.zero & entry.value,
         );
 
         await leaveScreen(tester);
         await tester.pump(const Duration(milliseconds: 400));
       });
+
+      testWidgets('unstretched keeps 3:2, centred, at ${entry.key}', (
+        tester,
+      ) async {
+        container
+            .read(settingsProvider.notifier)
+            .setCompetitionDisplay(CompetitionDisplay.led);
+
+        await pumpScreen(tester, entry.value, AppScreen.competition);
+
+        expect(tester.takeException(), isNull);
+
+        final panel = tester.getRect(find.byType(LedPanel));
+        final window = Offset.zero & entry.value;
+
+        // Alle drei Fenster sind breiter als 3:2, also gibt die Höhe den
+        // Ausschlag und links wie rechts bleibt gleich viel schwarz.
+        expect(panel.height, entry.value.height);
+        expect(
+          panel.width / panel.height,
+          closeTo(LedPanelSpec.width / LedPanelSpec.height, 0.01),
+        );
+        expect(panel.center.dx, closeTo(window.center.dx, 0.01));
+        expect(panel.width, lessThanOrEqualTo(entry.value.width));
+
+        await leaveScreen(tester);
+        await tester.pump(const Duration(milliseconds: 400));
+      });
     }
+  });
+
+  /// Die Ausgabe-Zeile trägt den längsten Wert der Wettkampf-Einstellungen.
+  /// Der Reihen-Stepper ist nicht dehnbar, ein zu langer Name schiebt die Zeile
+  /// also über den Rand — und zwar erst dann, wenn jemand den Wert wählt.
+  testWidgets('the longest output value still fits the settings row', (
+    tester,
+  ) async {
+    container
+        .read(settingsProvider.notifier)
+        .setCompetitionDisplay(CompetitionDisplay.ledStretched);
+
+    await pumpScreen(
+      tester,
+      const Size(1280, 720),
+      AppScreen.competitionSettings,
+    );
+
+    expect(tester.takeException(), isNull);
+
+    await leaveScreen(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+  });
+
+  /// Das Panel bemisst seine Schriftgrößen selbst und rechnet dabei mit einer
+  /// bekannten Schrift. Übernähme es Stil aus seiner Umgebung, wäre die Uhr
+  /// eine andere als die ausgemessene — abgeschnittene Ziffern fallen aber
+  /// erst auf der Wand auf, und dort niemandem, der sie noch ändern kann.
+  group('the LED panel ignores the text style around it', () {
+    testWidgets('no ancestor decoration leaks into the panel', (tester) async {
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDisplay(CompetitionDisplay.led);
+
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+
+      for (final key in [ledTimeKey, ledGroupKey, ledEndKey]) {
+        final style = tester.widget<Text>(find.byKey(key)).style!;
+        expect(style.inherit, isFalse, reason: '$key erbt vom Umfeld');
+        expect(style.decoration ?? TextDecoration.none, TextDecoration.none);
+      }
+
+      await leaveScreen(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+    });
+
+    testWidgets('the rendered cells still fit their bands', (tester) async {
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDisplay(CompetitionDisplay.led);
+
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+
+      // Nicht die Messung aus [LedPanelSpec], sondern was wirklich gezeichnet
+      // wurde: nur so schlägt der Test an, wenn die Schrift eine andere ist.
+      // [WidgetTester.getSize] misst im Raster des Panels, also unskaliert —
+      // in derselben Einheit, in der die Zellen definiert sind.
+      expect(
+        tester.getSize(find.byKey(ledTimeKey)).width,
+        lessThanOrEqualTo(LedPanelSpec.timeWidth + 0.01),
+      );
+      expect(
+        tester.getSize(find.byKey(ledGroupKey)).width,
+        lessThanOrEqualTo(LedPanelSpec.labelWidth + 0.01),
+      );
+      expect(
+        tester.getSize(find.byKey(ledEndKey)).width,
+        lessThanOrEqualTo(LedPanelSpec.labelWidth + 0.01),
+      );
+
+      await leaveScreen(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+    });
   });
 
   group('menu keyboard wiring', () {
