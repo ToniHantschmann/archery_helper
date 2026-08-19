@@ -1,0 +1,6 @@
+# Commits, die nur die Formatierung betreffen — für `git blame` uninteressant.
+# Aktivieren mit:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Set the whole codebase with the current formatter
+2b02e353f1a59e9a88674440a0846833c4ba78a4
