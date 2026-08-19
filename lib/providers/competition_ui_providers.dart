@@ -133,9 +133,12 @@ final competitionLedTimeColorProvider = Provider<Color>((ref) {
 /// Die Zahl auf der Wand — die einzige Stelle, die sie formatiert.
 ///
 /// Bewusst nicht [competitionFormattedTimeProvider] mitbenutzt: dessen
-/// Millisekunden („1:59.8", sechs Zeichen) passen auf 120 Pixel nicht. Das
-/// Zeitformat („4:00" oder „240") folgt dagegen der Einstellung wie überall
-/// sonst — dass es dafür genau einen Ort gibt, war der halbe Aufwand.
+/// Millisekunden („1:59.8", sechs Zeichen) gehören nicht auf die Wand. Sie
+/// würden zwar in die Zelle passen, aber als schmale, hohe Ziffern — und ab
+/// fünf Metern Ableseabstand sind Zehntel Unruhe ohne Nutzen, die die
+/// Qualifikationsrunde auch gar nicht kennt. Das Zeitformat („4:00" oder
+/// „240") folgt dagegen der Einstellung wie überall sonst — dass es dafür genau
+/// einen Ort gibt, war der halbe Aufwand.
 final competitionLedTimeProvider = Provider<String>((ref) {
   return TimerTexts.formatTime(
     ref.watch(competitionRemainingProvider),
@@ -146,7 +149,7 @@ final competitionLedTimeProvider = Provider<String>((ref) {
 /// Das Kürzel der Gruppe, die gerade dran ist — oder `null`, wenn alle
 /// zusammen schießen.
 ///
-/// Auf 24 Pixel Spaltenbreite ist für die ganze Leiste kein Platz, und was
+/// Auf 38 Pixel Spaltenbreite ist für die ganze Leiste kein Platz, und was
 /// auf der Schießlinie zählt, ist ohnehin nur „wer ist dran".
 final competitionLedGroupProvider = Provider<String?>((ref) {
   final rail = ref.watch(competitionGroupRailProvider);

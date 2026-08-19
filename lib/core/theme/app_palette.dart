@@ -71,7 +71,7 @@ class AppPalette {
 
   // ===== LED-PANEL =====
   //
-  // Die Wand am Außenstand ist 120x80 Pixel groß und leuchtet mit 6500 Nits.
+  // Die Wand am Außenstand ist 192x128 Pixel groß und leuchtet mit 5000 Nits.
   // Dort gelten die Regeln von oben *nicht*: Schwarz ist hier kein Loch,
   // sondern die ausgeschaltete Diode — die einzige Möglichkeit, die Fläche
   // nicht blenden zu lassen. Und die Signalfarben stehen voll gesättigt, weil

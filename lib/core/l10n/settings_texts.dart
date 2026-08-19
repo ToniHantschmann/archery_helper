@@ -87,8 +87,8 @@ class SettingsTexts {
   static const _display = LocalizedText(de: 'Ausgabe', en: 'Output');
 
   static const _displaySubtitle = LocalizedText(
-    de: 'LED-Wand: 120 × 80 Pixel oben links, Skalierung 100 %',
-    en: 'LED panel: 120 × 80 pixels at the top left, 100 % scaling',
+    de: 'LED-Wand: 192 × 128 Pixel oben links, Skalierung 100 %',
+    en: 'LED panel: 192 × 128 pixels at the top left, 100 % scaling',
   );
 
   static const _displayStandard = LocalizedText(de: 'Monitor', en: 'Monitor');

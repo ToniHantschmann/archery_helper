@@ -251,12 +251,12 @@ void main() {
     }
   });
 
-  /// Die LED-Wand am Außenstand ist 120 × 80 Pixel groß. Der übliche
+  /// Die LED-Wand am Außenstand ist 192 × 128 Pixel groß. Der übliche
   /// Overflow-Test greift dort nur halb: eine zu große Schrift *clippt*, und
   /// das ist kein RenderFlex-Overflow. Geprüft wird deshalb, dass die Strings
   /// selbst in ihre Zellen passen — und zwar unabhängig davon, welche Schrift
   /// gerade rechnet (der Testlauf benutzt eine andere als die App).
-  group('the LED panel fits its 120x80 grid', () {
+  group('the LED panel fits its 192x128 grid', () {
     double widthOf(String text, TextStyle style) {
       final painter = TextPainter(
         text: TextSpan(text: text, style: style),
@@ -392,7 +392,7 @@ void main() {
   });
 
   /// Der Turniermodus: die Wand oben links *in* der vollen Bedienansicht. Weil
-  /// der Mediaplayer nur das Rechteck (0,0,120,80) sieht, muss beides
+  /// der Mediaplayer nur das Rechteck (0,0,192,128) sieht, muss beides
   /// gleichzeitig stimmen — die Ecke auf dem Pixel und die Bedienansicht
   /// vollständig daneben.
   group('the LED corner sits inside the full competition view', () {

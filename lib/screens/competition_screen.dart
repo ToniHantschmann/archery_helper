@@ -27,7 +27,7 @@ import '../widgets/timer_display.dart';
 /// welche Gruppe gerade an der Schießlinie steht.
 ///
 /// Steht die Anzeige auf LED-Wand, übernimmt [CompetitionLedScreen] — dieselbe
-/// Runde, nur auf 120 × 80 Pixel eingedampft. Die Verzweigung sitzt hier und
+/// Runde, nur auf 192 × 128 Pixel eingedampft. Die Verzweigung sitzt hier und
 /// nicht im `AppNavigator`, damit [AppScreen.competition] *ein* Screen bleibt:
 /// Tastenbelegung, Herkunft der Einstellungen und die Layout-Tests hängen alle
 /// daran, und eine zweite Zeile im Navigator würde sie auseinanderziehen.

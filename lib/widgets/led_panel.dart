@@ -8,9 +8,9 @@ import '../providers/competition_ui_providers.dart';
 
 /// Die Maße der LED-Wand am Außenstand.
 ///
-/// 96 × 64 cm bei 8 mm Pixelabstand sind **120 × 80 Pixel** — das ist kein
+/// 96 × 64 cm bei 5 mm Pixelabstand sind **192 × 128 Pixel** — das ist kein
 /// Layout, das man responsiv rechnet, sondern ein Raster, das man abzählt.
-/// Alle Werte sind deshalb ganzzahlig: ein halber Pixel ist hier ein halber
+/// Alle Werte sind deshalb ganzzahlig: ein halber Pixel ist hier ein Viertel
 /// Zentimeter Wand.
 ///
 /// Die Aufteilung folgt daraus, dass die Uhr *breiten*- und nicht
@@ -22,26 +22,26 @@ import '../providers/competition_ui_providers.dart';
 class LedPanelSpec {
   const LedPanelSpec._();
 
-  static const double width = 120;
-  static const double height = 80;
+  static const double width = 192;
+  static const double height = 128;
 
   /// Die linke Spalte: oben die Ampelfläche, darunter das Gruppenkürzel.
-  static const double sideWidth = 24;
-  static const double signalHeight = 48;
+  static const double sideWidth = 38;
+  static const double signalHeight = 76;
   static const double groupHeight = height - signalHeight;
 
   /// Schwarzer Abstand zwischen Spalte und Uhr.
-  static const double gutter = 4;
+  static const double gutter = 6;
 
   /// Rechter Rand der Uhr. Sie steht rechtsbündig, damit beim Stellenwechsel
   /// (etwa 100 → 99) die verbleibenden Ziffern ihre Spalte behalten.
-  static const double timeInset = 4;
+  static const double timeInset = 6;
 
   /// Was der Uhr an Breite bleibt.
   static const double timeWidth = width - sideWidth - gutter - timeInset;
 
   /// Damit das Gruppenkürzel nicht an beiden Kanten der Spalte klebt.
-  static const double groupInset = 2;
+  static const double groupInset = 3;
 
   static const double groupWidth = sideWidth - 2 * groupInset;
 
@@ -120,7 +120,7 @@ class LedPanelSpec {
   /// Eine Zeilenbox ist nicht um ihre Tinte herum gebaut: unten reserviert sie
   /// Platz für Unterlängen, die Ziffern nicht haben, oben den Unterschied
   /// zwischen Oberlänge und Versalhöhe. Beides ist bei einer Uhr leer, und
-  /// beides ist verschieden groß — ohne Ausgleich säße die Zahl um rund fünf
+  /// beides ist verschieden groß — ohne Ausgleich säße die Zahl um rund acht
   /// Pixel zu hoch in der Wand, also gut vier Zentimeter.
   static double get timeNudgeY {
     final baseline = _baselineOf(timeSamples.first, timeStyle);
@@ -174,11 +174,11 @@ class LedPanelSpec {
 const ledTimeKey = ValueKey('led-time');
 const ledGroupKey = ValueKey('led-group');
 
-/// Der Wettkampfstand auf 120 × 80 Pixeln: Restzeit, Gruppe, Ampelfarbe.
+/// Der Wettkampfstand auf 192 × 128 Pixeln: Restzeit, Gruppe, Ampelfarbe.
 ///
 /// Mehr passt nicht, und mehr braucht es auf der Schießlinie auch nicht. Der
 /// Hintergrund ist echtes Schwarz statt [AppPalette.base] — auf einer Wand mit
-/// 6500 Nits ist eine dunkelgraue Fläche keine Zurückhaltung, sondern eine
+/// 5000 Nits ist eine dunkelgraue Fläche keine Zurückhaltung, sondern eine
 /// leuchtende Fläche. Schwarz heißt hier: Diode aus.
 class LedPanel extends ConsumerWidget {
   const LedPanel({super.key});

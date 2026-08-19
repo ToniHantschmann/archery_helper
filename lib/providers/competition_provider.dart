@@ -30,9 +30,9 @@ class CompetitionNotifier extends Notifier<CompetitionState>
 
   /// Auf der LED-Wand immer ganze Sekunden.
   ///
-  /// Auf 120×80 Pixeln ist für „1:59.8" kein Platz, das Panel zeigt also
-  /// ohnehin nur ganze Sekunden — und ein Zehntelraster würde die Uhr zehnmal
-  /// pro Sekunde für eine Anzeige rechnen lassen, die sich einmal ändert.
+  /// Das Panel zeigt ohnehin nur ganze Sekunden — und ein Zehntelraster würde
+  /// die Uhr zehnmal pro Sekunde für eine Anzeige rechnen lassen, die sich
+  /// einmal ändert.
   @override
   Duration get displayStep =>
       ref.read(competitionDisplayProvider) == CompetitionDisplay.standard

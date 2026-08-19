@@ -4,7 +4,7 @@ import 'led_panel.dart';
 
 /// Die Kantenlängen der Ecke in *logischen* Pixeln.
 ///
-/// Das Panel misst feste 120 × 80 Gerätepixel; wie viel Platz das im Layout
+/// Das Panel misst feste 192 × 128 Gerätepixel; wie viel Platz das im Layout
 /// daneben wegnimmt, hängt daher am Pixelverhältnis. Wer unter der Ecke etwas
 /// freihalten muss, fragt hier — statt die Rechnung ein zweites Mal
 /// hinzuschreiben.
@@ -41,7 +41,7 @@ class LedCorner extends StatelessWidget {
       return true;
     }());
 
-    // Kein `SizedBox` darum: das Panel soll seine natürlichen 120 × 80 messen
+    // Kein `SizedBox` darum: das Panel soll seine natürlichen 192 × 128 messen
     // und erst beim *Zeichnen* auf Gerätepixel geschrumpft werden. Eine feste,
     // kleinere Box würde die Zellen im Inneren zusammendrücken.
     return Transform.scale(

@@ -539,9 +539,9 @@ void main() {
     });
   });
 
-  /// Die LED-Wand zeigt ganze Sekunden — auf 120 Pixeln ist für Zehntel kein
-  /// Platz. Sie ist aber nur eine Anzeige: an der Runde selbst ändert der
-  /// Wechsel nichts.
+  /// Die LED-Wand zeigt ganze Sekunden — auf einer Anzeigetafel gehören
+  /// Zehntel nicht hin. Sie ist aber nur eine Anzeige: an der Runde selbst
+  /// ändert der Wechsel nichts.
   group('the LED display', () {
     void setDisplay(CompetitionDisplay display) =>
         container.read(settingsProvider.notifier).setCompetitionDisplay(display);

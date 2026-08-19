@@ -14,7 +14,7 @@ import '../widgets/led_panel.dart';
 /// * [CompetitionDisplay.led] setzt das Panel **1:1 in Gerätepixeln** links
 ///   oben ab. Die Steuerkarte der Wand (HDPlayer/LedShowSuite, also Huidu)
 ///   greift aus dem HDMI-Signal einen Ausschnitt ab — üblicherweise ab
-///   Position 0,0 —, statt sich als 120×80-Monitor zu melden. Exakt 120 × 80
+///   Position 0,0 —, statt sich als 192×128-Monitor zu melden. Exakt 192 × 128
 ///   echte Pixel in der Ecke passen damit für beide Fälle. Der Rest des Bildes
 ///   bleibt schwarz und ist der Wand egal.
 /// * [CompetitionDisplay.ledPreview] skaliert dasselbe Panel ganzzahlig auf das
@@ -39,7 +39,7 @@ class CompetitionLedScreen extends ConsumerWidget {
         builder: (context, constraints) {
           // Logische Pixel sind nur bei einem Verhältnis von 1 auch echte. Der
           // Kehrwert holt die Skalierung des Fensters wieder heraus, damit das
-          // Panel wirklich 120 × 80 Dioden trifft und nicht 120 × 80 mal
+          // Panel wirklich 192 × 128 Dioden trifft und nicht 192 × 128 mal
           // irgendetwas.
           final scale = isPreview
               ? _previewScale(constraints)

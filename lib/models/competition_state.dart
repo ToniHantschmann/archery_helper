@@ -59,8 +59,8 @@ enum CompetitionLineup {
 
 /// Auf welchem Schirm der Wettkampfmodus angezeigt wird.
 ///
-/// Am Außenstand hängt eine LED-Wand mit 96×64 cm bei 8 mm Pixelabstand, also
-/// **120×80 Pixel**. Darauf passt der normale Wettkampfschirm nicht — dort
+/// Am Außenstand hängt eine LED-Wand mit 96×64 cm bei 5 mm Pixelabstand, also
+/// **192×128 Pixel**. Darauf passt der normale Wettkampfschirm nicht — dort
 /// bleibt nur Restzeit, Gruppe und Ampelfarbe, und der Hintergrund muss
 /// schwarz sein, damit die Dioden an diesen Stellen einfach aus bleiben.
 ///
@@ -71,7 +71,7 @@ enum CompetitionDisplay {
   /// Der volle Wettkampfschirm auf einem gewöhnlichen Monitor.
   standard,
 
-  /// Das 120×80-Panel, ganzzahlig hochskaliert auf das Fenster. Ohne diesen
+  /// Das 192×128-Panel, ganzzahlig hochskaliert auf das Fenster. Ohne diesen
   /// Zwischenschritt wäre das Layout auf einem normalen Bildschirm ein
   /// briefmarkengroßer Fleck und nur über Tests zu beurteilen.
   ledPreview,
@@ -82,7 +82,7 @@ enum CompetitionDisplay {
   /// Das Panel links oben *in* der vollen Bedienansicht.
   ///
   /// Für den Turnierbetrieb, mit **gespiegelten** Bildschirmen: der Player
-  /// sieht nur das Rechteck (0, 0, 120, 80) des Bildes, alles daneben existiert
+  /// sieht nur das Rechteck (0, 0, 192, 128) des Bildes, alles daneben existiert
   /// für die Wand nicht. Also kann dort dieselbe Ansicht stehen, die der
   /// Schießleiter am Laptop ohnehin braucht — Passe, Gruppen und Tastenleiste,
   /// die [led] gerade wegnimmt.
