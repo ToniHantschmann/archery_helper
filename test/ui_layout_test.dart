@@ -291,11 +291,12 @@ void main() {
     });
 
     test('the samples the font size is derived from stay the widest case', () {
-      // Die Schriftgröße wird an [timeSamples] bemessen. Der Test hält fest,
-      // dass darin auch die reine Sekundenzahl steckt — sonst würde die
-      // geplante Umschaltung von „4:00" auf „240" die Anzeige clippen, ohne
-      // dass ein Test anschlägt.
-      expect(LedPanelSpec.timeSamples, contains('240'));
+      // Die Schriftgröße wird an [timeSamples] bemessen, und die Liste muss
+      // jedes Format abdecken — sonst clippt die Umschaltung von „4:00" auf
+      // „240" die Anzeige, ohne dass ein Test anschlägt.
+      for (final format in TimeFormat.values) {
+        expect(LedPanelSpec.timeSamplesByFormat, contains(format));
+      }
 
       for (final sample in LedPanelSpec.timeSamples) {
         expect(
@@ -303,6 +304,30 @@ void main() {
           lessThanOrEqualTo(LedPanelSpec.timeWidth + 0.01),
           reason: '"$sample" muss in die Uhrenzelle passen',
         );
+      }
+    });
+
+    test('every format starts centred, and none of them spills out', () {
+      // Rechtsbündig steht nur das Format mittig, an dem die Schriftgröße
+      // bemessen wurde. Geprüft wird deshalb für *jedes* Format, dass links und
+      // rechts gleich viel Luft bleibt — und dass die Verschiebung dabei nie
+      // über den Rand des Bandes hinausschiebt.
+      for (final format in TimeFormat.values) {
+        final sample = LedPanelSpec.timeSamplesByFormat[format]!;
+        final width = widthOf(sample, LedPanelSpec.timeStyle);
+        final shift = LedPanelSpec.timeShiftX(format);
+
+        // Die Kanten des Blocks im Band: rechtsbündig, dann verschoben.
+        final right = LedPanelSpec.timeWidth + shift;
+        final left = right - width;
+
+        expect(
+          left,
+          closeTo(LedPanelSpec.timeWidth - right, 0.01),
+          reason: '"$sample" muss mittig im Band stehen',
+        );
+        expect(shift, lessThanOrEqualTo(0.01));
+        expect(left, greaterThanOrEqualTo(-0.01));
       }
     });
 
@@ -439,6 +464,29 @@ void main() {
         });
       }
     }
+
+    testWidgets('the seconds format sits centred on the wall', (tester) async {
+      // Die Rechnung oben prüft die Spec, dieser Test die Anzeige: das
+      // `Transform` verschiebt erst beim Zeichnen, also muss die gezeichnete
+      // Zahl auch wirklich in der Mitte des Panels landen.
+      container.read(settingsProvider.notifier)
+        ..setTimeFormat(TimeFormat.seconds)
+        ..setCompetitionDisplay(CompetitionDisplay.ledPreview);
+
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+
+      final panel = tester.getRect(find.byType(LedPanel));
+      final time = tester.getRect(find.byKey(ledTimeKey));
+
+      // Gegen die Mitte des gefundenen Panels, nicht gegen 96: die Vorschau
+      // skaliert ganzzahlig und sitzt irgendwo im Fenster.
+      expect(time.center.dx, closeTo(panel.center.dx, 1));
+
+      container.read(settingsProvider.notifier).setTimeFormat(
+        TimeFormat.minutesSeconds,
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+    });
 
     testWidgets('all together shows no group and no empty cell', (
       tester,

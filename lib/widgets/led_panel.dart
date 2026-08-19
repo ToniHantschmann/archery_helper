@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/app_palette.dart';
 import '../models/settings.dart';
 import '../providers/competition_ui_providers.dart';
+import '../providers/settings_provider.dart';
 
 /// Die Maße der LED-Wand am Außenstand.
 ///
@@ -58,6 +59,9 @@ class LedPanelSpec {
 
   /// Seitlicher Rand der Uhr. Sie steht rechtsbündig, damit beim Stellenwechsel
   /// (etwa 100 → 99) die verbleibenden Ziffern ihre Spalte behalten.
+  ///
+  /// Rechtsbündig heißt hier: innerhalb des *Blocks* ihres Formats. Der Block
+  /// selbst steht mittig — siehe [timeShiftX].
   static const double timeInset = 6;
 
   /// Was der Uhr an Breite bleibt.
@@ -71,14 +75,23 @@ class LedPanelSpec {
   /// zwei.
   static const double labelWidth = cellWidth - 2 * labelInset;
 
-  /// Die breitesten Strings, für die die Uhr Platz haben muss.
+  /// Der breiteste String, den jedes Zeitformat zeigen kann.
   ///
-  /// `4:00` ist die Freiluft-Schusszeit und damit das längste, was das aktuelle
-  /// Format zeigen kann. `240` steht für die reine Sekundenzahl, zwischen der
-  /// hier später wahlweise umgeschaltet werden soll — sie steht schon jetzt in
-  /// der Liste, damit die Schriftgröße nicht eines Tages nur noch für eines von
-  /// beiden Formaten reicht.
-  static const timeSamples = ['4:00', '240'];
+  /// `4:00` ist die Freiluft-Schusszeit und damit das Längste, was `m:ss`
+  /// hergibt; `240` dieselbe Zeit als reine Sekundenzahl. Nach Format getrennt,
+  /// weil daran zwei verschiedene Fragen hängen: beide zusammen ergeben die
+  /// Schriftgröße ([timeSamples]), jeder für sich die Mitte seines Formats
+  /// ([timeShiftX]).
+  static const timeSamplesByFormat = {
+    TimeFormat.minutesSeconds: '4:00',
+    TimeFormat.seconds: '240',
+  };
+
+  /// Die breitesten Strings, für die die Uhr Platz haben muss — beide Formate
+  /// zusammen, damit die Schriftgröße nicht für eines von beiden zu knapp wird.
+  static final List<String> timeSamples = List.unmodifiable(
+    timeSamplesByFormat.values,
+  );
 
   /// Alle Gruppenkürzel, die es gibt (siehe `CompetitionLineup`).
   static const groupSamples = ['AB', 'CD'];
@@ -146,6 +159,30 @@ class LedPanelSpec {
   /// Ziffern dürfen zwischen „0:09" und „0:10" nicht ihre Größe wechseln.
   static double get timeFontSize =>
       _timeFontSize ??= _fit(timeSamples, _timeBase, timeWidth, timeHeight);
+
+  /// Wie weit die Uhr aus der Rechtsbündigkeit nach links rückt.
+  ///
+  /// Rechtsbündig allein hieße: an der rechten Kante des Bandes. Das steht nur
+  /// für das Format mittig, an dem die Schriftgröße bemessen wurde — die reine
+  /// Sekundenzahl ist um einen Doppelpunkt schmaler und säße damit sichtbar
+  /// nach rechts gerückt. Verschoben wird deshalb nicht die einzelne Zahl,
+  /// sondern der ganze *Block* des Formats: zentriert wird der breitestmögliche
+  /// String, den dieses Format zeigen kann, und innerhalb dieses Blocks bleibt
+  /// alles rechtsbündig. Beim Stellenwechsel (etwa 100 → 99) behalten die
+  /// Ziffern also weiterhin ihre Spalte, es wird links nur Luft frei.
+  ///
+  /// Der Sprung zwischen den beiden Blöcken ist im Betrieb nie zu sehen: das
+  /// Zeitformat wird vor der Runde eingestellt, nicht während einer Passe.
+  static double timeShiftX(TimeFormat format) =>
+      -(timeWidth - _formatWidth(format)) / 2;
+
+  static final _formatWidths = <TimeFormat, double>{};
+
+  static double _formatWidth(TimeFormat format) =>
+      _formatWidths[format] ??= _measure(
+        timeSamplesByFormat[format]!,
+        timeStyle,
+      );
 
   /// Die vertikale Streckung: die Zeile füllt danach genau [timeHeight].
   ///
@@ -346,13 +383,21 @@ class _LedTime extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final time = ref.watch(competitionLedTimeProvider);
     final color = ref.watch(competitionLedTimeColorProvider);
+    // Dieselbe Quelle, aus der auch der String sein Format bekommt — die
+    // Verschiebung und die Zahl dürfen nicht aus zwei Einstellungen kommen.
+    final format = ref.watch(timeFormatProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: LedPanelSpec.timeInset),
       child: Align(
         alignment: Alignment.centerRight,
         child: Transform.translate(
-          offset: Offset(0, LedPanelSpec.timeNudgeY),
+          // Nur gezeichnet, nicht gelayoutet: die Uhr bleibt rechtsbündig, der
+          // Block rückt in die Mitte.
+          offset: Offset(
+            LedPanelSpec.timeShiftX(format),
+            LedPanelSpec.timeNudgeY,
+          ),
           child: Transform.scale(
             scaleY: LedPanelSpec.timeScaleY,
             // Feste Schriftgröße, keine `FittedBox`: der Platz ist hier ein
