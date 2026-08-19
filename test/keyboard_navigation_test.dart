@@ -369,7 +369,9 @@ void main() {
       expect(seen, SettingsItem.of(SettingsSection.competition).toSet());
     });
 
-    testWidgets('volume is skipped while sound is off', (tester) async {
+    testWidgets('signal tone and volume are skipped while sound is off', (
+      tester,
+    ) async {
       await pumpApp(tester, startAt: AppScreen.generalSettings);
 
       container.read(settingsProvider.notifier).toggleSound();
@@ -382,8 +384,21 @@ void main() {
       expect(
         selectedItem(),
         SettingsItem.resetGeneral,
-        reason: 'the disabled volume slider would be a dead stop',
+        reason: 'both disabled sound rows would be dead stops',
       );
+
+      // Und mit Ton sind beide wieder erreichbar.
+      container.read(settingsProvider.notifier).toggleSound();
+      await tester.pumpAndSettle();
+      select(SettingsItem.soundEnabled);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(selectedItem(), SettingsItem.signalTone);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(selectedItem(), SettingsItem.volume);
 
       await flushPendingSaves(tester);
     });

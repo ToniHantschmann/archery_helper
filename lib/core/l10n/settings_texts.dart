@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../audio/signal_tone.dart';
 import '../../models/competition_state.dart';
 import '../../models/settings.dart';
 import '../../models/settings_section.dart';
@@ -122,6 +123,18 @@ class SettingsTexts {
     de: 'Ton aktivieren',
     en: 'Enable Sound',
   );
+
+  static const _signalTone = LocalizedText(de: 'Signalton', en: 'Signal tone');
+
+  /// Steht unter der Signalton-Zeile: die beiden Namen sagen nicht, wozu man
+  /// den zweiten nimmt.
+  static const _signalToneSubtitle = LocalizedText(
+    de: 'Ton 2 klingt heller und trägt draußen weiter',
+    en: 'Tone 2 is brighter and carries further outdoors',
+  );
+
+  static const _signalToneOne = LocalizedText(de: 'Ton 1', en: 'Tone 1');
+  static const _signalToneTwo = LocalizedText(de: 'Ton 2', en: 'Tone 2');
 
   static const _volume = LocalizedText(de: 'Lautstärke', en: 'Volume');
 
@@ -337,6 +350,8 @@ class SettingsTexts {
   String get displaySubtitle => _displaySubtitle.get(_currentLanguage);
 
   String get soundEnabled => _soundEnabled.get(_currentLanguage);
+  String get signalTone => _signalTone.get(_currentLanguage);
+  String get signalToneSubtitle => _signalToneSubtitle.get(_currentLanguage);
   String get volume => _volume.get(_currentLanguage);
 
   String get defaultMode => _defaultMode.get(_currentLanguage);
@@ -475,6 +490,15 @@ class SettingsTexts {
         return _german.get(_currentLanguage);
       case AppLanguage.english:
         return _english.get(_currentLanguage);
+    }
+  }
+
+  String getSignalToneName(SignalTone tone) {
+    switch (tone) {
+      case SignalTone.tone1:
+        return _signalToneOne.get(_currentLanguage);
+      case SignalTone.tone2:
+        return _signalToneTwo.get(_currentLanguage);
     }
   }
 

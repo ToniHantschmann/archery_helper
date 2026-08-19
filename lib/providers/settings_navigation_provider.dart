@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/audio/audio_signal.dart';
+import '../core/audio/signal_tone.dart';
 import '../core/l10n/app_language.dart';
 import '../models/competition_state.dart';
 import '../models/settings.dart';
@@ -21,6 +22,7 @@ enum SettingsItem {
   language(SettingsSection.general),
   fullscreen(SettingsSection.general),
   soundEnabled(SettingsSection.general),
+  signalTone(SettingsSection.general),
   volume(SettingsSection.general),
   resetGeneral(SettingsSection.general),
   // ── Ampel ──────────────────────────────────────────────
@@ -79,6 +81,10 @@ const _maxDurationSeconds = 3600;
 
 /// Volume moves in the same 10 steps the slider offers.
 const _volumeSteps = 10;
+
+/// Zeilen, die ohne Ton nichts einstellen: welcher Ton wie laut käme, ist keine
+/// Frage, solange gar keiner kommt.
+const _needsSound = {SettingsItem.signalTone, SettingsItem.volume};
 
 class SettingsNavState {
   final SettingsItem selected;
@@ -206,6 +212,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.defaultMode:
       case SettingsItem.timeFormat:
       case SettingsItem.competitionTimeFormat:
+      case SettingsItem.signalTone:
       case SettingsItem.volume:
       case SettingsItem.timerScale:
       case SettingsItem.alternatingArrows:
@@ -245,13 +252,14 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
   }
 
   /// Rows that can currently hold focus: the ones on the open screen, minus the
-  /// ones that cannot be used. Volume is skipped while sound is off, because its
-  /// slider is disabled and would be a dead stop.
+  /// ones that cannot be used. Bei ausgeschaltetem Ton sind das die beiden
+  /// Zeilen darunter — sie sind ausgegraut und wären beim Durchsteppen tote
+  /// Stopps.
   List<SettingsItem> _selectableItems() {
     final soundEnabled = ref.read(settingsProvider).soundEnabled;
 
     return SettingsItem.of(state.section)
-        .where((item) => item != SettingsItem.volume || soundEnabled)
+        .where((item) => soundEnabled || !_needsSound.contains(item))
         .toList();
   }
 
@@ -286,6 +294,15 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
           notifier.toggleSound();
           _previewSound();
         }
+
+      case SettingsItem.signalTone:
+        if (!settings.soundEnabled) return;
+        notifier.setSignalTone(
+          _cycle(SignalTone.values, settings.signalTone, delta),
+        );
+        // Der Preview-Tick ist genau der Ton, an dem der Unterschied am
+        // deutlichsten zu hören ist.
+        _previewSound();
 
       case SettingsItem.volume:
         if (!settings.soundEnabled) return;

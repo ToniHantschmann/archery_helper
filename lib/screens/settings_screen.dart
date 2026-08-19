@@ -115,6 +115,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _SectionHeader(texts.soundSection),
           _SoundEnabledRow(rowKey: _itemKeys[SettingsItem.soundEnabled]!),
+          _SignalToneRow(rowKey: _itemKeys[SettingsItem.signalTone]!),
           _VolumeRow(rowKey: _itemKeys[SettingsItem.volume]!),
 
           const SizedBox(height: AppSpacing.lg),
@@ -778,6 +779,31 @@ class _SoundEnabledRow extends ConsumerWidget {
       control: _TogglePill(
         item: SettingsItem.soundEnabled,
         value: soundEnabled,
+      ),
+    );
+  }
+}
+
+class _SignalToneRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _SignalToneRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final signalTone = ref.watch(signalToneProvider);
+    final enabled = ref.watch(soundEnabledProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.signalTone,
+      rowKey: rowKey,
+      title: texts.signalTone,
+      subtitle: enabled ? texts.signalToneSubtitle : texts.soundOffNote,
+      enabled: enabled,
+      control: _ValueStepper(
+        item: SettingsItem.signalTone,
+        value: texts.getSignalToneName(signalTone),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:archery_helper/core/audio/signal_tone.dart';
 import 'package:archery_helper/core/l10n/app_language.dart';
 
 import 'competition_state.dart';
@@ -12,6 +13,12 @@ enum TimeFormat { minutesSeconds, seconds }
 class Settings {
   final bool soundEnabled;
   final double volume;
+
+  /// Welcher Satz Signaltöne gespielt wird — der reine für den Tunnel oder der
+  /// hellere fürs Freifeld. Gilt für beide Uhren, denn es ist dasselbe
+  /// Tonvokabular; siehe [SignalTone].
+  final SignalTone signalTone;
+
   final TimerMode defaultMode;
   final Duration customPrepTime;
   final Duration customMainTime;
@@ -60,6 +67,7 @@ class Settings {
   const Settings({
     this.soundEnabled = true,
     this.volume = 0.8,
+    this.signalTone = SignalTone.tone1,
     this.defaultMode = TimerMode.indoor,
     this.customPrepTime = const Duration(seconds: 10),
     this.customMainTime = const Duration(seconds: 120),
@@ -96,6 +104,7 @@ class Settings {
   Settings copyWith({
     bool? soundEnabled,
     double? volume,
+    SignalTone? signalTone,
     TimerMode? defaultMode,
     Duration? customPrepTime,
     Duration? customMainTime,
@@ -114,6 +123,7 @@ class Settings {
     return Settings(
       soundEnabled: soundEnabled ?? this.soundEnabled,
       volume: volume ?? this.volume,
+      signalTone: signalTone ?? this.signalTone,
       defaultMode: defaultMode ?? this.defaultMode,
       customPrepTime: customPrepTime ?? this.customPrepTime,
       customMainTime: customMainTime ?? this.customMainTime,
@@ -137,6 +147,7 @@ class Settings {
     return {
       "soundEnabled": soundEnabled,
       "volume": volume,
+      "signalTone": signalTone.index,
       "defaultMode": defaultMode.index,
       "customPrepTime": customPrepTime.inSeconds,
       "customMainTime": customMainTime.inSeconds,
@@ -159,6 +170,11 @@ class Settings {
     return Settings(
       soundEnabled: json['soundEnabled'] as bool? ?? true,
       volume: _parseVolume(json['volume']),
+      signalTone: _parseEnum(
+        SignalTone.values,
+        json['signalTone'] as int?,
+        SignalTone.tone1,
+      ),
       defaultMode: _parseTimerMode(json['defaultMode'] as int?),
       customPrepTime: Duration(seconds: json['customPrepTime'] as int? ?? 10),
       customMainTime: Duration(seconds: json['customMainTime'] as int? ?? 120),

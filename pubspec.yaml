@@ -25,5 +25,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    # Erzeugt von tool/generate_signal_sounds.dart
-    - assets/sounds/
+    # Erzeugt von tool/generate_signal_sounds.dart. Beide Ordner einzeln, denn
+    # eine Verzeichnisangabe nimmt nur die Dateien darin und keine Unterordner.
+    - assets/sounds/tone1/
+    - assets/sounds/tone2/

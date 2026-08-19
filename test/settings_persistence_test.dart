@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:archery_helper/core/audio/signal_tone.dart';
 import 'package:archery_helper/core/l10n/app_language.dart';
 import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/models/keyboard_config.dart';
@@ -31,6 +32,7 @@ void main() {
   const custom = Settings(
     soundEnabled: false,
     volume: 0.35,
+    signalTone: SignalTone.tone2,
     defaultMode: TimerMode.alternating,
     customPrepTime: Duration(seconds: 7),
     customMainTime: Duration(seconds: 45),
@@ -57,6 +59,7 @@ void main() {
 
     expect(loaded.soundEnabled, custom.soundEnabled);
     expect(loaded.volume, custom.volume);
+    expect(loaded.signalTone, custom.signalTone);
     expect(loaded.defaultMode, custom.defaultMode);
     expect(loaded.customPrepTime, custom.customPrepTime);
     expect(loaded.customMainTime, custom.customMainTime);
@@ -79,6 +82,7 @@ void main() {
     expect(custom.toJson().keys.toSet(), const {
       'soundEnabled',
       'volume',
+      'signalTone',
       'defaultMode',
       'customPrepTime',
       'customMainTime',
@@ -101,6 +105,9 @@ void main() {
       final loaded = await repository.loadSettings();
       expect(loaded.defaultMode, const Settings().defaultMode);
       expect(loaded.volume, const Settings().volume);
+      // Eine Konfiguration von vor der zweiten Tonvariante kennt den Schlüssel
+      // nicht und muss beim bisherigen Ton bleiben.
+      expect(loaded.signalTone, SignalTone.tone1);
     });
 
     test('unreadable json', () async {

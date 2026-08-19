@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:archery_helper/core/audio/signal_tone.dart';
 import 'package:archery_helper/core/l10n/app_language.dart';
 import 'package:archery_helper/repositories/settings_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,6 +68,11 @@ class SettingsNotifier extends Notifier<Settings> {
 
   void setVolume(double volume) {
     state = state.copyWith(volume: volume.clamp(0.0, 1.0));
+    _save();
+  }
+
+  void setSignalTone(SignalTone tone) {
+    state = state.copyWith(signalTone: tone);
     _save();
   }
 
@@ -184,6 +190,7 @@ class SettingsNotifier extends Notifier<Settings> {
         language: defaults.language,
         fullscreen: defaults.fullscreen,
         soundEnabled: defaults.soundEnabled,
+        signalTone: defaults.signalTone,
         volume: defaults.volume,
       ),
       SettingsSection.timer => state.copyWith(
@@ -224,6 +231,10 @@ final soundEnabledProvider = Provider<bool>((ref) {
 
 final volumeProvider = Provider<double>((ref) {
   return ref.watch(settingsProvider).volume;
+});
+
+final signalToneProvider = Provider<SignalTone>((ref) {
+  return ref.watch(settingsProvider).signalTone;
 });
 
 final defaultTimerModeProvider = Provider<TimerMode>((ref) {

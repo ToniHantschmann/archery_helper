@@ -25,7 +25,9 @@ class SignalSounds {
     final settings = _ref.read(settingsProvider);
     if (!settings.soundEnabled) return;
 
-    _ref.read(soundPlayerProvider).play(signal, settings.volume);
+    _ref
+        .read(soundPlayerProvider)
+        .play(signal, settings.volume, settings.signalTone);
   }
 }
 

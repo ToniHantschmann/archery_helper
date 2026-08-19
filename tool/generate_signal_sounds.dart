@@ -13,6 +13,16 @@
 // bräuchte es eine zweite Timer-Kette neben `PhaseClock`, die sich mit dem
 // 3-2-1-Ticken verschränken könnte; in der Datei ist der Abstand exakt und
 // kostet keine Zeile Programm.
+//
+// Es gibt jeden Ton zweimal, in `tone1/` und `tone2/` — im Tunnel und auf dem
+// Freifeld hört sich derselbe Ton nicht gleich gut. Drinnen tragen die harten
+// Wände den reinen Sinus; draußen gibt es keinen Nachhall, dafür Wind und
+// Nebengeräusche, und ein Sinus legt seine ganze Energie auf eine einzige
+// schmale Frequenz, die sich leicht zudecken lässt. `tone2` liegt deshalb eine
+// Quinte höher — gleiche Intervalle, gleiche Längen, also derselbe Ton, nur
+// höher — und bekommt zusätzlich Obertöne. Die sind der eigentliche Hebel: sie
+// ändern die Tonhöhe nicht, legen aber Energie in den Bereich um 2 bis 4 kHz,
+// in dem das Gehör am empfindlichsten ist.
 
 import 'dart:io';
 import 'dart:math' as math;
@@ -27,6 +37,32 @@ const _amplitude = 0.85;
 /// An- und Ausschwingen jedes Tons. Ohne diese wenigen Millisekunden beginnt
 /// und endet der Sinus an einem Sprung, und das knackt hörbar.
 const _fade = Duration(milliseconds: 8);
+
+/// Ein Klangbild: wie die Tabelle unten transponiert wird und aus welchen
+/// Teiltönen jeder einzelne Ton besteht.
+///
+/// [harmonics] sind die Amplituden der Teiltöne, beginnend beim Grundton:
+/// `[1.0]` ist der reine Sinus, `[1.0, 0.4, 0.2]` nimmt die doppelte und die
+/// dreifache Frequenz leiser dazu.
+class _Voice {
+  const _Voice({
+    required this.folder,
+    required this.transpose,
+    required this.harmonics,
+  });
+
+  /// Der Unterordner in `assets/sounds/` — derselbe Name wie in `SignalTone`.
+  final String folder;
+
+  final double transpose;
+  final List<double> harmonics;
+}
+
+/// Ton 1 ist der Satz für den Tunnel, Ton 2 der fürs Freifeld (siehe oben).
+const _voices = <_Voice>[
+  _Voice(folder: 'tone1', transpose: 1.0, harmonics: [1.0]),
+  _Voice(folder: 'tone2', transpose: 1.5, harmonics: [1.0, 0.4, 0.2]),
+];
 
 /// Ein Stück Klang: ein Ton mit [hertz], oder eine Pause wenn [hertz] `null`
 /// ist.
@@ -43,6 +79,9 @@ class _Segment {
 /// 880 Hz (a'') ist die Ansage, 1320 Hz der spitze Tick darüber, 587 Hz (d'')
 /// der tiefere Schlussstrich: fallende Tonhöhe hört man auch ohne Hinsehen als
 /// "vorbei".
+///
+/// Die Tabelle beschreibt Melodie und Rhythmus, nicht den Klang: sie gilt für
+/// beide Sätze, jeder [_Voice] transponiert sie geschlossen.
 const _signals = <String, List<_Segment>>{
   'to_the_line': [
     _Segment.tone(880, 150),
@@ -62,18 +101,25 @@ const _signals = <String, List<_Segment>>{
 };
 
 void main() {
-  final directory = Directory('assets/sounds');
-  directory.createSync(recursive: true);
+  for (final voice in _voices) {
+    final directory = Directory('assets/sounds/${voice.folder}');
+    directory.createSync(recursive: true);
 
-  for (final entry in _signals.entries) {
-    final file = File('${directory.path}/${entry.key}.wav');
-    file.writeAsBytesSync(_wav(_render(entry.value)));
-    stdout.writeln('${file.path} (${file.lengthSync()} Bytes)');
+    for (final entry in _signals.entries) {
+      final file = File('${directory.path}/${entry.key}.wav');
+      file.writeAsBytesSync(_wav(_render(entry.value, voice)));
+      stdout.writeln('${file.path} (${file.lengthSync()} Bytes)');
+    }
   }
 }
 
 /// Rechnet die Segmente in Samples zwischen -1 und 1 um.
-List<double> _render(List<_Segment> segments) {
+List<double> _render(List<_Segment> segments, _Voice voice) {
+  // Durch die Summe der Teiltöne teilen, bevor [_amplitude] wirkt: im
+  // schlimmsten Fall stehen alle Teiltöne gleichzeitig am Maximum, und ein
+  // Überlauf käme als Knacken zurück statt als lauterer Ton. Der Gewinn von
+  // Ton 2 liegt ohnehin nicht im Pegel, sondern in der Frequenzlage.
+  final norm = voice.harmonics.reduce((a, b) => a + b);
   final samples = <double>[];
 
   for (final segment in segments) {
@@ -95,9 +141,16 @@ List<double> _render(List<_Segment> segments) {
       final envelope = fade == 0
           ? 1.0
           : math.min(1.0, math.min(i / fade, (count - 1 - i) / fade));
-      samples.add(
-        _amplitude * envelope * math.sin(2 * math.pi * hertz * i / _sampleRate),
-      );
+
+      var wave = 0.0;
+      for (var harmonic = 0; harmonic < voice.harmonics.length; harmonic++) {
+        final frequency = hertz * voice.transpose * (harmonic + 1);
+        wave +=
+            voice.harmonics[harmonic] *
+            math.sin(2 * math.pi * frequency * i / _sampleRate);
+      }
+
+      samples.add(_amplitude * envelope * wave / norm);
     }
   }
 

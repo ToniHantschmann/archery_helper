@@ -1,4 +1,5 @@
 import 'package:archery_helper/core/audio/audio_signal.dart';
+import 'package:archery_helper/core/audio/signal_tone.dart';
 import 'package:archery_helper/core/audio/sound_player.dart';
 import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/models/timer_state.dart';
@@ -229,6 +230,24 @@ void main() {
       await flushPendingSaves(tester);
     });
 
+    testWidgets('der eingestellte Tonsatz kommt beim Player an', (
+      tester,
+    ) async {
+      settings().setDefaultMode(TimerMode.custom);
+      settings().setCustomPrepTime(const Duration(seconds: 1));
+
+      timer().startTimer();
+      expect(player.tones.last, SignalTone.tone1, reason: 'Standard');
+
+      settings().setSignalTone(SignalTone.tone2);
+      timer().resetTimer();
+      timer().startTimer();
+      expect(player.tones.last, SignalTone.tone2);
+
+      timer().resetTimer();
+      await flushPendingSaves(tester);
+    });
+
     testWidgets('die Lautstärke lässt sich hören', (tester) async {
       // Die Navigation der Einstellungen ist `autoDispose` und leitet ihren
       // Bereich vom offenen Screen ab: ohne beides — offener Screen und ein
@@ -275,6 +294,7 @@ void main() {
 class _RecordingSoundPlayer extends SoundPlayer {
   final signals = <AudioSignal>[];
   final volumes = <double>[];
+  final tones = <SignalTone>[];
 
   /// Die Signale seit der letzten Abfrage — damit eine Erwartung den Ausschnitt
   /// beschreiben kann, um den es gerade geht, statt die ganze Runde.
@@ -285,9 +305,10 @@ class _RecordingSoundPlayer extends SoundPlayer {
   }
 
   @override
-  Future<void> play(AudioSignal signal, double volume) async {
+  Future<void> play(AudioSignal signal, double volume, SignalTone tone) async {
     signals.add(signal);
     volumes.add(volume);
+    tones.add(tone);
   }
 
   @override
