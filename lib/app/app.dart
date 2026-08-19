@@ -9,6 +9,7 @@ import '../screens/idle_screen.dart';
 import '../screens/menu_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/timer_screen.dart';
+import '../screens/traffic_light_screen.dart';
 import '../widgets/keyboard_scope.dart';
 
 class ArcheryHelperApp extends ConsumerWidget {
@@ -37,6 +38,8 @@ class AppNavigator extends ConsumerWidget {
         return const TimerScreen();
       case AppScreen.competition:
         return const CompetitionScreen();
+      case AppScreen.trafficLight:
+        return const TrafficLightScreen();
       case AppScreen.menu:
         return const MenuScreen();
       case AppScreen.generalSettings:

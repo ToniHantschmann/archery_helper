@@ -9,7 +9,6 @@ import '../models/keyboard_config.dart';
 import '../providers/app_actions_provider.dart';
 import '../providers/hint_navigation_provider.dart';
 import '../providers/settings_provider.dart';
-import '../providers/timer_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/debug_panel.dart';
 import '../widgets/key_hint_rail.dart';
@@ -162,10 +161,6 @@ class _TimerHintRail extends ConsumerWidget {
 
     String keyFor(AppAction action) => ref.watch(actionKeyLabelProvider(action));
 
-    // Ohne Uhr fallen Weiter und Start/Pause zur selben Handlung zusammen, und
-    // zwei Tasten mit demselben Wort nebeneinander wären nur Rauschen.
-    final isManual = ref.watch(isManualModeProvider);
-
     // Built from timerHintActionsProvider rather than a fixed list, so this
     // stays the same order left/right steps through in TimerScreenActions —
     // duplicating the order here would let the two drift apart.
@@ -174,8 +169,7 @@ class _TimerHintRail extends ConsumerWidget {
     KeyHint hintFor(int index) {
       final action = hintActions[index];
       final label = switch (action) {
-        AppAction.next =>
-          isManual ? texts.hintToggleSignal : texts.hintStartNext,
+        AppAction.next => texts.hintStartNext,
         // Label follows the state (Start / Pause / Fortsetzen) — the binding
         // is a toggle, so a fixed word would be wrong half the time.
         AppAction.toggleTimer => ref.watch(startButtonTextProvider),

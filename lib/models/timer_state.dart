@@ -26,17 +26,9 @@ enum TimerMode {
   indoor,
   outdoor,
   custom,
-  alternating,
-  trafficLight;
+  alternating;
 
-  Duration get defaultPrepTime {
-    switch (this) {
-      case trafficLight:
-        return Duration.zero;
-      default:
-        return Duration(seconds: 10);
-    }
-  }
+  Duration get defaultPrepTime => const Duration(seconds: 10);
 
   Duration get defaultMainTime {
     switch (this) {
@@ -48,17 +40,8 @@ enum TimerMode {
         return const Duration(seconds: 120);
       case alternating:
         return const Duration(seconds: 20);
-      case trafficLight:
-        return Duration.zero;
     }
   }
-
-  /// Modi ohne Countdown: das Signal wird von Hand geschaltet.
-  ///
-  /// Die Null-Dauern oben sind deshalb keine Konfiguration, sondern der
-  /// Hinweis, dass hier nie eine Uhr läuft — [TimerNotifier] darf in diesem
-  /// Fall gar nicht erst mit dem Ticken anfangen.
-  bool get isManual => this == trafficLight;
 
   /// Ob der Modus zwischen zwei Schützen hin- und herwechselt.
   bool get isAlternating => this == alternating;
@@ -70,8 +53,6 @@ enum TimerMode {
   /// kein Grün mehr.
   Duration get defaultWarningThreshold {
     switch (this) {
-      case trafficLight:
-        return Duration.zero;
       case alternating:
         return const Duration(seconds: 5);
       default:
@@ -115,13 +96,8 @@ class TimerState {
     this.arrowsPerArcher = 1,
   });
 
-  // Ohne den Modus-Ausschluss wäre die Warnung im Ampel-Modus dauerhaft aktiv:
-  // dort ist die Restzeit immer null und damit trivialerweise unter der
-  // Schwelle — die grüne Phase käme in Gelb heraus.
   bool get isInWarningPeriod =>
-      phase == TimerPhase.active &&
-      !mode.isManual &&
-      remainingTime <= warningThreshold;
+      phase == TimerPhase.active && remainingTime <= warningThreshold;
 
   /// Ob nach der laufenden Passage noch eine folgt.
   ///
@@ -137,7 +113,6 @@ class TimerState {
     phase: phase,
     isWarning: isInWarningPeriod,
     isPaused: isPaused,
-    isManual: mode.isManual,
   );
 
   bool get canStart => phase == TimerPhase.idle;

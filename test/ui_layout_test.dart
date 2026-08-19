@@ -13,6 +13,7 @@ import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/menu_navigation_provider.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
+import 'package:archery_helper/providers/traffic_light_provider.dart';
 import 'package:archery_helper/widgets/key_hint_rail.dart';
 import 'package:archery_helper/widgets/led_corner.dart';
 import 'package:archery_helper/widgets/led_panel.dart';
@@ -187,12 +188,11 @@ void main() {
       ) async {
         // The signal word takes the whole clock area here, so it is scaled up
         // much further than a countdown ever is.
-        container.read(timerProvider.notifier).setMode(TimerMode.trafficLight);
-        await pumpScreen(tester, entry.value, AppScreen.timer);
+        await pumpScreen(tester, entry.value, AppScreen.trafficLight);
 
         expect(tester.takeException(), isNull);
 
-        container.read(timerProvider.notifier).advance();
+        container.read(trafficLightProvider.notifier).toggle();
         await tester.pump(const Duration(milliseconds: 600));
 
         expect(tester.takeException(), isNull);
@@ -509,8 +509,12 @@ void main() {
       expect(container.read(menuNavigationProvider).selected, MenuItem.timer);
 
       // At 1920px the grid is three wide, so down lands on the second row —
-      // the settings tile below the timer tile.
+      // the standby tile below the timer tile.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(container.read(menuNavigationProvider).selected, MenuItem.idle);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pump();
       expect(
         container.read(menuNavigationProvider).selected,
@@ -575,7 +579,10 @@ void main() {
       // second.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
-      expect(container.read(menuNavigationProvider).selected, MenuItem.idle);
+      expect(
+        container.read(menuNavigationProvider).selected,
+        MenuItem.trafficLight,
+      );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pump();
@@ -592,10 +599,7 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pump();
-      expect(
-        container.read(menuNavigationProvider).selected,
-        MenuItem.generalSettings,
-      );
+      expect(container.read(menuNavigationProvider).selected, MenuItem.idle);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
@@ -737,22 +741,18 @@ void main() {
     });
 
     test('the hand-switched signal is only ever red or green', () {
-      SignalState manual(TimerPhase phase) => TimerState(
-        remainingTime: Duration.zero,
-        phase: phase,
-        mode: TimerMode.trafficLight,
-        preparationTime: Duration.zero,
-        mainTime: Duration.zero,
-      ).signal;
+      final light = ProviderContainer();
+      addTearDown(light.dispose);
 
+      SignalState signal() => light.read(trafficLightSignalProvider);
+
+      expect(TimerTheme.signalFor(signal()), TrafficSignal.red);
+
+      light.read(trafficLightProvider.notifier).toggle();
       expect(
-        TimerTheme.signalFor(manual(TimerPhase.preparation)),
-        TrafficSignal.red,
-      );
-      expect(
-        TimerTheme.signalFor(manual(TimerPhase.active)),
+        TimerTheme.signalFor(signal()),
         TrafficSignal.green,
-        reason: 'zero remaining time must not read as a warning period',
+        reason: 'the hand-switched light has no remaining time to warn about',
       );
     });
   });

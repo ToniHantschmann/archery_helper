@@ -19,14 +19,10 @@ class SignalState {
 
   final bool isPaused;
 
-  /// Ob das Signal von Hand geschaltet wird — dann läuft keine Uhr.
-  final bool isManual;
-
   const SignalState({
     required this.phase,
     this.isWarning = false,
     this.isPaused = false,
-    this.isManual = false,
   });
 
   @override
@@ -34,9 +30,8 @@ class SignalState {
       other is SignalState &&
       other.phase == phase &&
       other.isWarning == isWarning &&
-      other.isPaused == isPaused &&
-      other.isManual == isManual;
+      other.isPaused == isPaused;
 
   @override
-  int get hashCode => Object.hash(phase, isWarning, isPaused, isManual);
+  int get hashCode => Object.hash(phase, isWarning, isPaused);
 }

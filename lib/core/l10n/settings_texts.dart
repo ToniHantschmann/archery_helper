@@ -314,8 +314,6 @@ class SettingsTexts {
     en: 'Alternating (20s)',
   );
 
-  static const _trafficLight = LocalizedText(de: 'Ampel', en: 'Traffic Light');
-
   // ===== PUBLIC GETTERS =====
 
   String get screenTitle => _screenTitle.get(_currentLanguage);
@@ -468,8 +466,6 @@ class SettingsTexts {
         return _custom.get(_currentLanguage);
       case TimerMode.alternating:
         return _alternating.get(_currentLanguage);
-      case TimerMode.trafficLight:
-        return _trafficLight.get(_currentLanguage);
     }
   }
 

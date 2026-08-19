@@ -55,9 +55,7 @@ final startButtonTextProvider = Provider<String>((ref) {
   final timerState = ref.watch(timerProvider);
   final texts = ref.watch(timerTextsProvider);
 
-  if (timerState.mode.isManual) {
-    return texts.hintToggleSignal;
-  } else if (timerState.isPaused) {
+  if (timerState.isPaused) {
     return texts.resumeButton;
   } else if (timerState.canStart) {
     return texts.startButton;
@@ -72,11 +70,9 @@ final startButtonTextProvider = Provider<String>((ref) {
 /// providers so the two stay in sync; `_TimerHintRail` builds its [KeyHint]s
 /// from this list rather than duplicating the order.
 final timerHintActionsProvider = Provider<List<AppAction>>((ref) {
-  final isManual = ref.watch(isManualModeProvider);
-
-  return [
+  return const [
     AppAction.next,
-    if (!isManual) AppAction.toggleTimer,
+    AppAction.toggleTimer,
     AppAction.resetTimer,
     AppAction.nextMode,
     AppAction.toggleSettings,
@@ -134,8 +130,8 @@ class TimerUIState {
   final Color phaseColor;
   final bool isWarning;
 
-  /// Ob überhaupt eine Uhr gezeigt wird. Im Ampel-Modus gibt es keine Zeit,
-  /// dort ist das Phasenwort die ganze Anzeige.
+  /// Ob überhaupt eine Uhr gezeigt wird. Das Ampel-Werkzeug hat keine Zeit,
+  /// dort ist das Signalwort die ganze Anzeige.
   final bool showTime;
 
   const TimerUIState({
@@ -155,6 +151,6 @@ final timerUIStateProvider = Provider<TimerUIState>((ref) {
     timeColor: ref.watch(timerTextColorProvider),
     phaseColor: ref.watch(timerPhaseColorProvider),
     isWarning: ref.watch(isInWarningProvider),
-    showTime: !ref.watch(isManualModeProvider),
+    showTime: true,
   );
 });

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 enum AppScreen {
   timer,
   competition,
+  trafficLight,
   menu,
   generalSettings,
   timerSettings,

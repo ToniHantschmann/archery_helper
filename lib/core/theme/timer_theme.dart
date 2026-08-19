@@ -99,13 +99,7 @@ class TimerTheme {
   }
 
   /// Colour of the phase word above the countdown.
-  ///
-  /// Im Ampel-Modus ist das Wort nicht die Beschriftung einer Uhr, sondern
-  /// füllt allein den Schirm. Es bleibt deshalb weiß: die Signalfarbe steht
-  /// schon flächig dahinter, und ein rotes Wort auf rotem Grund verliert genau
-  /// den Kontrast, von dem es auf die Distanz lebt.
   static Color phaseColor(SignalState state) {
-    if (state.isManual) return AppPalette.textOnSignal;
     if (state.phase == TimerPhase.idle) return AppPalette.textSecondary;
     return signalFor(state).onTint;
   }

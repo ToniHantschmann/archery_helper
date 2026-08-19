@@ -13,6 +13,7 @@ import 'menu_navigation_provider.dart';
 import 'settings_navigation_provider.dart';
 import 'settings_provider.dart';
 import 'timer_provider.dart';
+import 'traffic_light_provider.dart';
 
 /// Direction of an in-screen navigation step.
 ///
@@ -371,6 +372,48 @@ class MenuScreenActions extends ScreenActionHandler {
   }
 }
 
+/// Die Ampel von Hand.
+///
+/// Die Uhr-Tasten meinen hier keine Uhr: Leertaste und P schalten beide das
+/// Signal um — ohne Countdown fallen „weiter" und „Start/Pause" zur selben
+/// Handlung zusammen. Überspringen, Zurücksetzen und Einstellungen gibt es
+/// nicht: dieses Werkzeug hat weder eine Phase noch etwas einzustellen, und
+/// „zurück auf Rot" ist schon das Umschalten. Die drei müssen trotzdem
+/// beantwortet werden — sonst fielen sie an die Basisklasse und griffen von
+/// hier aus in den Ampel-Timer.
+class TrafficLightScreenActions extends ScreenActionHandler {
+  const TrafficLightScreenActions(super.ref);
+
+  TrafficLightNotifier get _light => ref.read(trafficLightProvider.notifier);
+
+  @override
+  KeyEventResult next() {
+    _light.toggle();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult confirm() => next();
+
+  @override
+  KeyEventResult toggleTimer() => next();
+
+  @override
+  KeyEventResult resetTimer() => KeyEventResult.ignored;
+
+  @override
+  KeyEventResult skipTimer() => KeyEventResult.ignored;
+
+  @override
+  KeyEventResult openSettings() => KeyEventResult.ignored;
+
+  @override
+  KeyEventResult back() {
+    goTo(AppScreen.menu);
+    return KeyEventResult.handled;
+  }
+}
+
 class IdleScreenActions extends ScreenActionHandler {
   const IdleScreenActions(super.ref);
 
@@ -405,6 +448,8 @@ final screenActionHandlerProvider = Provider<ScreenActionHandler>((ref) {
       return TimerScreenActions(ref);
     case AppScreen.competition:
       return CompetitionScreenActions(ref);
+    case AppScreen.trafficLight:
+      return TrafficLightScreenActions(ref);
     case AppScreen.generalSettings:
     case AppScreen.timerSettings:
     case AppScreen.competitionSettings:

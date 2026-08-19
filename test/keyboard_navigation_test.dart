@@ -8,6 +8,7 @@ import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/settings_navigation_provider.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
+import 'package:archery_helper/providers/traffic_light_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -145,16 +146,15 @@ void main() {
     testWidgets('space switches the hand-held signal instead of starting it', (
       tester,
     ) async {
-      await pumpApp(tester);
-      container.read(timerProvider.notifier).setMode(TimerMode.trafficLight);
-      await tester.pumpAndSettle();
+      await pumpApp(tester, startAt: AppScreen.trafficLight);
 
-      expect(timer().phase, TimerPhase.preparation);
+      bool isGreen() => container.read(trafficLightProvider);
+      expect(isGreen(), isFalse);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.space);
       await tester.pumpAndSettle();
 
-      expect(timer().phase, TimerPhase.active);
+      expect(isGreen(), isTrue);
       expect(
         timer().isRunning,
         isFalse,
@@ -164,7 +164,29 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.space);
       await tester.pumpAndSettle();
 
+      expect(isGreen(), isFalse);
+    });
+
+    testWidgets('the traffic light keeps its keys off the Ampel timer', (
+      tester,
+    ) async {
+      await pumpApp(tester, startAt: AppScreen.trafficLight);
+
+      // R, S and the skip key have nothing to act on here. Without the
+      // handler's `ignored` they would fall through to the base class and
+      // reach into the timer from a screen that does not show it.
+      container.read(timerProvider.notifier).startTimer();
+      await tester.pumpAndSettle();
       expect(timer().phase, TimerPhase.preparation);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.pumpAndSettle();
+
+      expect(timer().phase, TimerPhase.preparation);
+      expect(currentScreen(), AppScreen.trafficLight);
+
+      await stopTimer(tester);
     });
 
     testWidgets('nothing below the scope can take the keyboard focus', (

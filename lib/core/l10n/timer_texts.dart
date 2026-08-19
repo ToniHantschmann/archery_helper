@@ -25,17 +25,6 @@ class TimerTexts {
 
   static const _paused = LocalizedText(de: 'Pausiert', en: 'Paused');
 
-  // ===== SIGNAL TEXTS (Ampel-Modus) =====
-  //
-  // Im Ampel-Modus ersetzt eines dieser beiden Wörter die ganze Anzeige, es
-  // steht also formatfüllend im Tunnel. Beide sind kurz gehalten, damit die
-  // FittedBox sie gleich groß skaliert — ein langes Wort auf einer Seite
-  // würde den Wechsel auch als Größensprung lesen lassen.
-
-  static const _signalShoot = LocalizedText(de: 'Schießen', en: 'Shoot');
-
-  static const _signalStop = LocalizedText(de: 'Stopp', en: 'Stop');
-
   // ===== WECHSEL-MODUS =====
   //
   // Das Phasenwort benennt hier den Schützen, nicht die Phase: aus der Distanz
@@ -60,11 +49,6 @@ class TimerTexts {
   static const _alternating = LocalizedText(
     de: '20s Wechsel-Timer',
     en: '20s Alternating Timer',
-  );
-
-  static const _trafficLight = LocalizedText(
-    de: 'Ampel',
-    en: 'Traffic Light Only',
   );
 
   // ===== BUTTON TEXTS =====
@@ -108,11 +92,6 @@ class TimerTexts {
     en: 'Pause / resume',
   );
 
-  static const _hintToggleSignal = LocalizedText(
-    de: 'Umschalten',
-    en: 'Switch',
-  );
-
   static const _hintReset = LocalizedText(de: 'Zurücksetzen', en: 'Reset');
 
   static const _hintMode = LocalizedText(de: 'Modus', en: 'Mode');
@@ -131,8 +110,6 @@ class TimerTexts {
   String get active => _active.get(_language);
   String get ended => _ended.get(_language);
   String get paused => _paused.get(_language);
-  String get signalShoot => _signalShoot.get(_language);
-  String get signalStop => _signalStop.get(_language);
   String get archer => _archer.get(_language);
   String get arrow => _arrow.get(_language);
 
@@ -140,7 +117,6 @@ class TimerTexts {
   String get outdoor => _outdoor.get(_language);
   String get custom => _custom.get(_language);
   String get alternating => _alternating.get(_language);
-  String get trafficLight => _trafficLight.get(_language);
 
   String get startButton => _start.get(_language);
   String get pauseButton => _pause.get(_language);
@@ -157,7 +133,6 @@ class TimerTexts {
   String get keySpaceLabel => _keySpace.get(_language);
   String get hintStartNext => _hintStartNext.get(_language);
   String get hintPlayPause => _hintPlayPause.get(_language);
-  String get hintToggleSignal => _hintToggleSignal.get(_language);
   String get hintReset => _hintReset.get(_language);
   String get hintMode => _hintMode.get(_language);
   String get hintSettings => _hintSettings.get(_language);
@@ -190,8 +165,6 @@ class TimerTexts {
         return custom;
       case TimerMode.alternating:
         return alternating;
-      case TimerMode.trafficLight:
-        return trafficLight;
     }
   }
 
@@ -212,13 +185,6 @@ class TimerTexts {
 
   /// Get enhanced phase text that includes paused state
   String getPhaseTextEnhanced(TimerState state) {
-    // Im Ampel-Modus ist dieses Wort die gesamte Anzeige, nicht die
-    // Beschriftung über einer Uhr — es benennt deshalb die Handlung und nicht
-    // die Phase. Pausiert kann der Modus nicht sein.
-    if (state.mode.isManual) {
-      return state.phase == TimerPhase.active ? signalShoot : signalStop;
-    }
-
     final baseText = _alternatingPhaseText(state) ?? getPhaseText(state.phase);
 
     if (state.isInWarningPeriod) {

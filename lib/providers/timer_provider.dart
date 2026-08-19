@@ -59,11 +59,6 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
   }
 
   void startTimer() {
-    if (state.mode.isManual) {
-      _toggleSignal();
-      return;
-    }
-
     if (state.phase == TimerPhase.idle) {
       _startPreparationPhase();
     } else if (state.isPaused) {
@@ -75,9 +70,6 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
   }
 
   void pauseTimer() {
-    // Im Ampel-Modus gibt es nichts anzuhalten — das Signal steht ohnehin.
-    if (state.mode.isManual) return;
-
     // Freeze on the clock-derived value, not on the last tick: pausing between
     // two callbacks would otherwise hand back up to 100ms of shooting time.
     final left = remaining();
@@ -92,11 +84,6 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
   /// Play/pause toggle. Lives here because only the notifier knows which
   /// transitions the current state allows — callers should not re-derive that.
   void toggle() {
-    if (state.mode.isManual) {
-      _toggleSignal();
-      return;
-    }
-
     if (state.canStart || state.isPaused) {
       startTimer();
     } else if (state.isRunning) {
@@ -107,11 +94,6 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
   /// Context-sensitive "one step further": start, skip the running phase, or
   /// reset once finished. Distinct from [toggle], which never skips or resets.
   void advance() {
-    if (state.mode.isManual) {
-      _toggleSignal();
-      return;
-    }
-
     if (state.canStart || state.isPaused) {
       startTimer();
     } else if (state.isRunning) {
@@ -126,8 +108,6 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
   }
 
   void skipTimerPhase() {
-    if (state.mode.isManual) return;
-
     if (state.isRunning) {
       stopTicking();
       onPhaseElapsed();
@@ -140,19 +120,6 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
   }
 
   TimerState _stateForMode(TimerMode mode) {
-    // Der Ampel-Modus steigt direkt in `preparation` ein, nicht in `idle`:
-    // `idle` ist als "noch nichts los" gedacht und wird deshalb nur ganz
-    // schwach getönt. Hier ist Rot aber schon die Aussage — nicht schießen.
-    if (mode.isManual) {
-      return TimerState(
-        remainingTime: Duration.zero,
-        phase: TimerPhase.preparation,
-        mode: mode,
-        preparationTime: Duration.zero,
-        mainTime: Duration.zero,
-      );
-    }
-
     final settings = ref.read(settingsProvider);
 
     // Der Wechselmodus teilt sich die Vorbereitungszeit mit dem custom-Modus:
@@ -177,23 +144,6 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
       warningThreshold: mode.defaultWarningThreshold,
       arrowsPerArcher: mode.isAlternating ? settings.alternatingArrows : 1,
     );
-  }
-
-  /// Schaltet das handgesteuerte Signal zwischen Rot und Grün um.
-  ///
-  /// Bewusst ohne [_startTicking]: mit Null-Dauern würde [_scheduleNextStep]
-  /// sofort synchron in [_handlePhaseTransition] laufen und die Runde in einem
-  /// einzigen Aufruf bis `ended` durchreichen. Hier wird nie ein Timer
-  /// armiert — die Phase ist der ganze Zustand.
-  void _toggleSignal() {
-    final toGreen = state.phase != TimerPhase.active;
-
-    state = state.copyWith(
-      phase: toGreen ? TimerPhase.active : TimerPhase.preparation,
-    );
-    // Auch von Hand geschaltet geht ein Signal an die Linie: dass keine Uhr
-    // läuft, ändert nichts an der Aussage.
-    _playSignal(toGreen ? AudioSignal.start : AudioSignal.stop);
   }
 
   void _startPreparationPhase() {
@@ -318,10 +268,4 @@ final isTimerRunningProvider = Provider<bool>((ref) {
 
 final isInWarningProvider = Provider<bool>((ref) {
   return ref.watch(timerProvider).isInWarningPeriod;
-});
-
-/// Ob der aktive Modus von Hand geschaltet wird (Ampel) — dann gibt es keine
-/// Uhr anzuzeigen.
-final isManualModeProvider = Provider<bool>((ref) {
-  return ref.watch(timerProvider).mode.isManual;
 });

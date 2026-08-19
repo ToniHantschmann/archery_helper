@@ -12,6 +12,7 @@ import 'app_state_provider.dart';
 enum MenuItem {
   timer(AppScreen.timer),
   competition(AppScreen.competition),
+  trafficLight(AppScreen.trafficLight),
   idle(AppScreen.idle),
   generalSettings(AppScreen.generalSettings),
   quit(null);

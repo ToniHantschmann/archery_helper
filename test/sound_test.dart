@@ -9,6 +9,7 @@ import 'package:archery_helper/providers/settings_navigation_provider.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/sound_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
+import 'package:archery_helper/providers/traffic_light_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,6 +39,8 @@ void main() {
   CompetitionNotifier competition() =>
       container.read(competitionProvider.notifier);
   SettingsNotifier settings() => container.read(settingsProvider.notifier);
+  TrafficLightNotifier trafficLight() =>
+      container.read(trafficLightProvider.notifier);
 
   /// Das Speichern der Einstellungen ist entprellt — ein Test, der eine
   /// geändert hat, hinterlässt sonst einen laufenden Timer, den das
@@ -134,11 +137,9 @@ void main() {
     });
 
     testWidgets('Hand-Ampel tönt bei jedem Umschalten', (tester) async {
-      settings().setDefaultMode(TimerMode.trafficLight);
-
-      timer().toggle();
-      timer().toggle();
-      timer().toggle();
+      trafficLight().toggle();
+      trafficLight().toggle();
+      trafficLight().toggle();
 
       expect(player.signals, [
         AudioSignal.start,

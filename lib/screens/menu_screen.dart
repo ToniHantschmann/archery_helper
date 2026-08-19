@@ -187,9 +187,11 @@ class _MenuTile extends ConsumerWidget {
   IconData get _icon {
     switch (item) {
       case MenuItem.timer:
-        return Icons.traffic_rounded;
+        return Icons.timer_rounded;
       case MenuItem.competition:
         return Icons.emoji_events_rounded;
+      case MenuItem.trafficLight:
+        return Icons.traffic_rounded;
       case MenuItem.idle:
         return Icons.schedule_rounded;
       case MenuItem.generalSettings:
@@ -205,6 +207,8 @@ class _MenuTile extends ConsumerWidget {
         return texts.timer;
       case MenuItem.competition:
         return texts.competition;
+      case MenuItem.trafficLight:
+        return texts.trafficLight;
       case MenuItem.idle:
         return texts.idle;
       case MenuItem.generalSettings:
@@ -220,6 +224,8 @@ class _MenuTile extends ConsumerWidget {
         return texts.timerDescription;
       case MenuItem.competition:
         return texts.competitionDescription;
+      case MenuItem.trafficLight:
+        return texts.trafficLightDescription;
       case MenuItem.idle:
         return texts.idleDescription;
       case MenuItem.generalSettings:
