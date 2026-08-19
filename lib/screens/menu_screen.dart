@@ -194,6 +194,8 @@ class _MenuTile extends ConsumerWidget {
         return Icons.schedule_rounded;
       case MenuItem.generalSettings:
         return Icons.settings_rounded;
+      case MenuItem.quit:
+        return Icons.power_settings_new_rounded;
     }
   }
 
@@ -207,6 +209,8 @@ class _MenuTile extends ConsumerWidget {
         return texts.idle;
       case MenuItem.generalSettings:
         return texts.generalSettings;
+      case MenuItem.quit:
+        return texts.quit;
     }
   }
 
@@ -220,6 +224,8 @@ class _MenuTile extends ConsumerWidget {
         return texts.idleDescription;
       case MenuItem.generalSettings:
         return texts.generalSettingsDescription;
+      case MenuItem.quit:
+        return texts.quitDescription;
     }
   }
 
@@ -227,6 +233,12 @@ class _MenuTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isSelected = ref.watch(isMenuItemSelectedProvider(item));
     final texts = ref.watch(menuTextsProvider);
+
+    // Nur die Beenden-Kachel kennt diesen Zustand, also hört auch nur sie
+    // darauf. Scharf ist sie immer auch ausgewählt — anders kommt man gar
+    // nicht dorthin.
+    final armed = item == MenuItem.quit && ref.watch(isQuitArmedProvider);
+    final accent = armed ? AppPalette.caution : AppPalette.accent;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -243,20 +255,35 @@ class _MenuTile extends ConsumerWidget {
           duration: AppMotion.fast,
           curve: AppMotion.curve,
           padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: AppTheme.selectablePanel(isSelected: isSelected),
+          decoration: AppTheme.selectablePanel(
+            isSelected: isSelected,
+            color: accent,
+          ),
+          // Die Abfrage tauscht Wort und Farbe, nicht den Aufbau: die Kachel
+          // steht in einer IntrinsicHeight-Zeile, ein anderer Inhalt würde die
+          // ganze Zeile umbauen.
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                _icon,
+                armed ? Icons.warning_amber_rounded : _icon,
                 size: 64,
-                color: isSelected ? AppPalette.accent : AppPalette.textMuted,
+                color: isSelected ? accent : AppPalette.textMuted,
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text(_title(texts), style: AppType.title),
+              Text(
+                armed ? texts.quitConfirmTitle : _title(texts),
+                style:
+                    armed
+                        ? AppType.title.copyWith(color: AppPalette.caution)
+                        : AppType.title,
+              ),
               const SizedBox(height: AppSpacing.xxs),
-              Text(_description(texts), style: AppType.bodySecondary),
+              Text(
+                armed ? texts.quitConfirmHint : _description(texts),
+                style: AppType.bodySecondary,
+              ),
             ],
           ),
         ),

@@ -1,9 +1,12 @@
 import 'package:archery_helper/app/app.dart';
+import 'package:archery_helper/core/l10n/menu_texts.dart';
 import 'package:archery_helper/core/l10n/timer_texts.dart';
 import 'package:archery_helper/core/theme/timer_theme.dart';
+import 'package:archery_helper/core/window/window_service.dart';
 import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/models/signal_state.dart';
 import 'package:archery_helper/models/timer_state.dart';
+import 'package:archery_helper/providers/app_actions_provider.dart';
 import 'package:archery_helper/providers/app_state_provider.dart';
 import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/menu_navigation_provider.dart';
@@ -362,13 +365,16 @@ void main() {
     ) async {
       await pumpScreen(tester, const Size(1920, 1080), AppScreen.menu);
 
-      expect(container.read(menuNavigationProvider), MenuItem.timer);
+      expect(container.read(menuNavigationProvider).selected, MenuItem.timer);
 
       // At 1920px the grid is three wide, so down lands on the second row —
       // the settings tile below the timer tile.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.generalSettings);
+      expect(
+        container.read(menuNavigationProvider).selected,
+        MenuItem.generalSettings,
+      );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
@@ -399,17 +405,20 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.competition);
+      expect(
+        container.read(menuNavigationProvider).selected,
+        MenuItem.competition,
+      );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.timer);
+      expect(container.read(menuNavigationProvider).selected, MenuItem.timer);
 
-      // Right wraps around the flat order, so the last tile is reachable from
+      // Left wraps around the flat order, so the last tile is reachable from
       // the first without going through the grid.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.generalSettings);
+      expect(container.read(menuNavigationProvider).selected, MenuItem.quit);
     });
 
     testWidgets('down moves a whole row once the grid wraps', (tester) async {
@@ -425,11 +434,11 @@ void main() {
       // second.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.idle);
+      expect(container.read(menuNavigationProvider).selected, MenuItem.idle);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.timer);
+      expect(container.read(menuNavigationProvider).selected, MenuItem.timer);
     });
 
     /// Kein Pfeil darf ins Leere gehen: hoch aus der ersten Zeile landet in der
@@ -442,11 +451,104 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.generalSettings);
+      expect(
+        container.read(menuNavigationProvider).selected,
+        MenuItem.generalSettings,
+      );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
-      expect(container.read(menuNavigationProvider), MenuItem.timer);
+      expect(container.read(menuNavigationProvider).selected, MenuItem.timer);
+    });
+  });
+
+  /// Beenden ist die einzige Aktion der App, die man nicht rückgängig machen
+  /// kann — über der Schießlinie hängt danach ein schwarzer Monitor. Diese
+  /// Gruppe hält fest, dass ein einzelner Tastendruck sie nie auslöst.
+  group('quit tile', () {
+    late _FakeWindowService window;
+
+    setUp(() {
+      window = _FakeWindowService();
+      container.dispose();
+      container = ProviderContainer(
+        overrides: [windowServiceProvider.overrideWithValue(window)],
+      );
+    });
+
+    /// Bringt die Auswahl auf die Beenden-Kachel: sie steht als letzte in der
+    /// flachen Reihenfolge, also ist sie einen Schritt links von der ersten.
+    Future<void> selectQuit(WidgetTester tester) async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(container.read(menuNavigationProvider).selected, MenuItem.quit);
+    }
+
+    testWidgets('the first Enter only arms the tile', (tester) async {
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.menu);
+      await selectQuit(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(container.read(isQuitArmedProvider), isTrue);
+      expect(window.quitCount, 0);
+
+      // Und die Kachel sagt es auch: die Abfrage steht dort, wo sonst der Name
+      // steht, statt in einem Dialog, den die Tastatur nicht sähe.
+      final texts = container.read(menuTextsProvider);
+      expect(find.text(texts.quitConfirmTitle), findsOneWidget);
+    });
+
+    testWidgets('the second Enter closes the window', (tester) async {
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.menu);
+      await selectQuit(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(window.quitCount, 1);
+      expect(container.read(isQuitArmedProvider), isFalse);
+    });
+
+    testWidgets('Esc cancels the armed tile', (tester) async {
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.menu);
+      await selectQuit(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(container.read(isQuitArmedProvider), isFalse);
+      expect(window.quitCount, 0);
+      expect(container.read(currentScreenProvider), AppScreen.menu);
+    });
+
+    /// Wer weiterblättert, hat es sich anders überlegt: die scharfe Kachel darf
+    /// nicht scharf bleiben, bis man zufällig wieder auf ihr landet.
+    testWidgets('moving the selection cancels the armed tile', (tester) async {
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.menu);
+      await selectQuit(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(container.read(isQuitArmedProvider), isFalse);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(
+        window.quitCount,
+        0,
+        reason: 'das Enter danach stellt wieder nur scharf',
+      );
     });
   });
 
@@ -513,4 +615,13 @@ void main() {
       );
     });
   });
+}
+
+/// Ein Fenster, das sich nur merkt, dass es zumachen sollte. Das echte
+/// `destroy()` im Test wäre kein Ergebnis, sondern ein abgebrochener Lauf.
+class _FakeWindowService extends WindowService {
+  int quitCount = 0;
+
+  @override
+  Future<void> quit() async => quitCount++;
 }

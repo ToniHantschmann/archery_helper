@@ -54,6 +54,25 @@ class MenuTexts {
     en: 'Large clock while nobody is shooting',
   );
 
+  static const _quit = LocalizedText(de: 'Beenden', en: 'Quit');
+
+  static const _quitDescription = LocalizedText(
+    de: 'App schließen',
+    en: 'Close the app',
+  );
+
+  // ===== BEENDEN-ABFRAGE =====
+
+  static const _quitConfirmTitle = LocalizedText(
+    de: 'Wirklich beenden?',
+    en: 'Really quit?',
+  );
+
+  static const _quitConfirmHint = LocalizedText(
+    de: 'Nochmal bestätigen zum Beenden, Esc bricht ab',
+    en: 'Confirm again to quit, Esc cancels',
+  );
+
   // ===== HINTS =====
 
   static const _hintSelect = LocalizedText(de: 'Auswählen', en: 'Select');
@@ -74,6 +93,10 @@ class MenuTexts {
       _generalSettingsDescription.get(_language);
   String get idle => _idle.get(_language);
   String get idleDescription => _idleDescription.get(_language);
+  String get quit => _quit.get(_language);
+  String get quitDescription => _quitDescription.get(_language);
+  String get quitConfirmTitle => _quitConfirmTitle.get(_language);
+  String get quitConfirmHint => _quitConfirmHint.get(_language);
 
   String get hintSelect => _hintSelect.get(_language);
   String get hintOpen => _hintOpen.get(_language);

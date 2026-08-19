@@ -13,12 +13,18 @@ enum MenuItem {
   timer(AppScreen.timer),
   competition(AppScreen.competition),
   idle(AppScreen.idle),
-  generalSettings(AppScreen.generalSettings);
+  generalSettings(AppScreen.generalSettings),
+  quit(null);
 
   const MenuItem(this.target);
 
-  /// Screen this entry opens.
-  final AppScreen target;
+  /// Screen this entry opens — `null` für den einen Eintrag, der keiner ist.
+  ///
+  /// Beenden ist der einzige Menüpunkt, der nirgendwohin führt. Statt einer
+  /// zweiten Liste neben [MenuItem.values], durch die die Pfeiltasten dann
+  /// nicht mehr liefen, sagt das fehlende Ziel genau das: „das ist kein
+  /// Screen" — und [MenuScreenActions.confirm] entscheidet danach.
+  final AppScreen? target;
 }
 
 /// How many tiles the menu grid currently puts in one row.
@@ -42,17 +48,42 @@ final menuColumnsProvider = NotifierProvider<MenuColumnsNotifier, int>(
   () => MenuColumnsNotifier(),
 );
 
+/// Was das Menü an Zustand hat: die Auswahl und die scharfe Beenden-Kachel.
+///
+/// Wie [SettingsNavState] ein Objekt statt zweier Notifier — die Auswahl zu
+/// bewegen entschärft das Beenden, und zwei getrennte Zustände müsste man
+/// dafür von Hand synchron halten.
+class MenuNavState {
+  final MenuItem selected;
+
+  /// True, solange [MenuItem.quit] auf die zweite Bestätigung wartet.
+  ///
+  /// Echter Zustand, kein einmaliges Ereignis: die Kachel sieht so lange
+  /// anders aus, und geräumt wird sie durch Bestätigen, durch Esc oder dadurch,
+  /// dass die Auswahl weiterwandert.
+  final bool quitArmed;
+
+  const MenuNavState({this.selected = MenuItem.timer, this.quitArmed = false});
+
+  MenuNavState copyWith({MenuItem? selected, bool? quitArmed}) {
+    return MenuNavState(
+      selected: selected ?? this.selected,
+      quitArmed: quitArmed ?? this.quitArmed,
+    );
+  }
+}
+
 /// Owns which menu entry is focused.
 ///
 /// Same split as the settings navigation notifier: the notifier holds the
 /// selection, the screen only renders it, and the keyboard path and the mouse
 /// path both go through here — a menu whose entries could only be reached with
 /// a mouse would be unusable on this kiosk.
-class MenuNavigationNotifier extends Notifier<MenuItem> {
+class MenuNavigationNotifier extends Notifier<MenuNavState> {
   @override
-  MenuItem build() => MenuItem.timer;
+  MenuNavState build() => const MenuNavState();
 
-  void select(MenuItem item) => state = item;
+  void select(MenuItem item) => _selectItem(item);
 
   void moveLeft() => _step(-1);
 
@@ -62,12 +93,43 @@ class MenuNavigationNotifier extends Notifier<MenuItem> {
 
   void moveDown() => _stepRow(1);
 
+  /// Stellt das Beenden scharf oder führt es aus — die zweite Stufe meldet sich
+  /// mit `true`, damit der Aufrufer das Fenster schließen kann.
+  bool armOrConfirmQuit() {
+    if (state.quitArmed) {
+      state = state.copyWith(quitArmed: false);
+      return true;
+    }
+
+    state = state.copyWith(quitArmed: true);
+    return false;
+  }
+
+  /// Entschärft eine wartende Beenden-Abfrage. Meldet, ob es etwas zu
+  /// entschärfen gab — sonst bedeutet Esc im Menü weiterhin nichts.
+  bool disarmQuit() {
+    if (!state.quitArmed) return false;
+
+    state = state.copyWith(quitArmed: false);
+    return true;
+  }
+
+  /// Jede Bewegung der Auswahl räumt die Abfrage mit weg — ein Schritt auf die
+  /// Kachel, auf der man schon steht, ist aber keine Bewegung: sonst würde die
+  /// Maus, die über der scharfen Beenden-Kachel wieder hereinfährt, die Abfrage
+  /// entschärfen, statt sie stehen zu lassen.
+  void _selectItem(MenuItem item) {
+    if (item == state.selected) return;
+
+    state = MenuNavState(selected: item);
+  }
+
   /// One tile along the flat order, wrapping around at both ends.
   void _step(int delta) {
     const items = MenuItem.values;
     final nextIndex =
-        (items.indexOf(state) + delta + items.length) % items.length;
-    state = items[nextIndex];
+        (items.indexOf(state.selected) + delta + items.length) % items.length;
+    _selectItem(items[nextIndex]);
   }
 
   /// One row up or down, wrapping within the column just like [_step] wraps
@@ -87,7 +149,7 @@ class MenuNavigationNotifier extends Notifier<MenuItem> {
       return;
     }
 
-    final index = items.indexOf(state);
+    final index = items.indexOf(state.selected);
     final column = index % columns;
     final rows = (items.length / columns).ceil();
 
@@ -98,7 +160,7 @@ class MenuNavigationNotifier extends Notifier<MenuItem> {
       final row = (index ~/ columns + delta * step) % rows;
       final target = row * columns + column;
       if (target < items.length) {
-        state = items[target];
+        _selectItem(items[target]);
         return;
       }
     }
@@ -106,12 +168,17 @@ class MenuNavigationNotifier extends Notifier<MenuItem> {
 }
 
 final menuNavigationProvider =
-    NotifierProvider<MenuNavigationNotifier, MenuItem>(
+    NotifierProvider<MenuNavigationNotifier, MenuNavState>(
       () => MenuNavigationNotifier(),
     );
 
 /// Whether a single entry is focused — watched per row so moving the selection
 /// rebuilds only the two entries involved.
 final isMenuItemSelectedProvider = Provider.family<bool, MenuItem>((ref, item) {
-  return ref.watch(menuNavigationProvider) == item;
+  return ref.watch(menuNavigationProvider).selected == item;
+});
+
+/// Ob die Beenden-Kachel gerade auf ihre zweite Bestätigung wartet.
+final isQuitArmedProvider = Provider<bool>((ref) {
+  return ref.watch(menuNavigationProvider).quitArmed;
 });

@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/window/window_service.dart';
 import '../models/keyboard_config.dart';
 import '../models/timer_state.dart';
 import 'app_state_provider.dart';
@@ -20,6 +21,12 @@ import 'timer_provider.dart';
 /// over four cases the compiler can check exhaustively — no `default` clause
 /// that would silently swallow a newly added direction.
 enum NavigationDirection { up, down, left, right }
+
+/// Der Fensterdienst als Provider, damit der Test ihn ersetzen kann — das
+/// echte Fenster im Test zuzumachen wäre keine Zusicherung, sondern ein Abbruch.
+/// `main.dart` benutzt weiterhin direkt [windowService]: dort gibt es keinen
+/// Container, in dem etwas überschrieben sein könnte.
+final windowServiceProvider = Provider<WindowService>((ref) => windowService);
 
 /// Per-screen behaviour of the actions whose meaning depends on where you are.
 ///
@@ -334,7 +341,19 @@ class MenuScreenActions extends ScreenActionHandler {
 
   @override
   KeyEventResult confirm() {
-    goTo(ref.read(menuNavigationProvider).target);
+    final target = ref.read(menuNavigationProvider).selected.target;
+
+    if (target == null) {
+      // Der einzige Eintrag ohne Ziel ist das Beenden, und das fragt zweimal:
+      // ein verirrtes Enter darf die Anzeige über der Schießlinie nicht
+      // ausmachen.
+      if (_navigation.armOrConfirmQuit()) {
+        ref.read(windowServiceProvider).quit();
+      }
+      return KeyEventResult.handled;
+    }
+
+    goTo(target);
     return KeyEventResult.handled;
   }
 
@@ -342,8 +361,14 @@ class MenuScreenActions extends ScreenActionHandler {
   @override
   KeyEventResult next() => confirm();
 
-  // No back(): the menu is the home screen, so there is nothing above it. The
-  // base class default (ignored) is the behaviour we want.
+  /// Esc räumt nur eine wartende Beenden-Abfrage weg — über dem Menü liegt
+  /// nichts, wohin man sonst zurückgehen könnte.
+  @override
+  KeyEventResult back() {
+    return _navigation.disarmQuit()
+        ? KeyEventResult.handled
+        : KeyEventResult.ignored;
+  }
 }
 
 class IdleScreenActions extends ScreenActionHandler {

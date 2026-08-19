@@ -35,6 +35,17 @@ class WindowService {
     if (!isSupported) return;
     await windowManager.setFullScreen(value);
   }
+
+  /// Beendet die App — der einzige Weg aus dem Kiosk heraus.
+  ///
+  /// `destroy` statt `close`: ein Schließen-Ereignis, auf das noch jemand
+  /// hören könnte, gibt es hier nicht, und der Aufruf kommt ohnehin schon aus
+  /// einer bestätigten Abfrage. Auf Web und Mobil gibt es kein Fenster, das man
+  /// zumachen könnte — dort passiert wie überall in dieser Datei nichts.
+  Future<void> quit() async {
+    if (!isSupported) return;
+    await windowManager.destroy();
+  }
 }
 
 const windowService = WindowService();
