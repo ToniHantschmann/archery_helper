@@ -158,19 +158,21 @@ final competitionLedGroupProvider = Provider<String?>((ref) {
   return rail.lineup.orderedLabels(reversed: rail.reversed)[rail.groupIndex];
 });
 
-/// Der Passenzähler auf der Wand: „3/20".
+/// Der Passenzähler auf der Wand: „3".
 ///
 /// Bewusst nicht über [CompetitionTexts.endCounter]: dessen „Passe 3/20" hat
-/// ein Wort, und dafür ist in der Spalte kein Platz. Was ohne das Wort übrig
-/// bleibt, ist in jeder Sprache dasselbe — hier gibt es also nichts zu
-/// übersetzen.
+/// ein Wort, und dafür ist in der Zelle kein Platz. Auch die Gesamtzahl ist
+/// keine: sie würde die Zelle um die Hälfte breiter machen, und die anderen
+/// beiden Drittel der Zeile müssten das bezahlen. Wie viele Passen die Runde
+/// hat, steht in der Bedienansicht — auf der Schießlinie zählt, die wievielte
+/// gerade läuft. Was übrig bleibt, ist eine Zahl und damit in jeder Sprache
+/// dasselbe; hier gibt es also nichts zu übersetzen.
 ///
 /// Hängt am ganzen [competitionProvider] und rechnet damit im Sekundentakt neu,
 /// meldet aber nur bei geändertem String: ein `Provider` benachrichtigt auf
 /// `!=`, und zwei gleiche Zähler sind gleich.
 final competitionLedEndProvider = Provider<String>((ref) {
-  final state = ref.watch(competitionProvider);
-  return '${state.currentEnd}/${state.totalEnds}';
+  return '${ref.watch(competitionProvider).currentEnd}';
 });
 
 // ===== COMBINED =====

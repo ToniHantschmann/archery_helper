@@ -15,49 +15,61 @@ import '../providers/competition_ui_providers.dart';
 /// Zentimeter Wand.
 ///
 /// Die Aufteilung folgt daraus, dass die Uhr *breiten*- und nicht
-/// höhenbegrenzt ist. Eine proportional gesetzte Ziffer kann nur so hoch
-/// werden, wie die Breite es zulässt — die restliche Höhe bliebe leer. Die Uhr
-/// bekommt deshalb die volle Höhe und wird vertikal gestreckt
-/// ([timeScaleY]), also hoch und schmal wie auf jeder Anzeigetafel. Ampel,
-/// Gruppe und Passe stehen dafür seitlich übereinander statt als Zeile darüber.
+/// höhenbegrenzt ist. Eine proportional gesetzte Ziffernfolge kann nur so hoch
+/// werden, wie die Breite es zulässt — „4:00" ist knapp zwei Ziffernhöhen
+/// breit. Die Uhr bekommt deshalb die volle *Breite* der Wand; ihre natürliche
+/// Höhe füllt damit fast die ganze Zelle, und die [timeScaleY] übrig bleibende
+/// Streckung ist mit rund einem Zehntel so klein, dass man sie nicht sieht.
+/// Stünde sie stattdessen neben einer Seitenspalte, bliebe ihr nur gut die
+/// halbe Breite — und die fehlende Höhe müsste sie sich mit einer Streckung auf
+/// das Doppelte holen, was die Ziffern sichtbar verzerrt.
 ///
-/// Dass die Seitenspalte breiter ist, als die Ampelfläche allein bräuchte, ist
-/// dieselbe Überlegung von der anderen Seite: die beiden Beschriftungen
-/// darunter sind *breiten*begrenzt, die Uhr bekommt ihre Höhe ohnehin
-/// geschenkt. Ein Pixel Breite von der Uhr an die Spalte kostet deshalb nur
-/// Ziffernbreite und keine Ziffernhöhe — und der Passenzähler braucht jeden
-/// davon dringender als die Uhr.
+/// Ampel, Gruppe und Passe stehen dafür als Zeile darunter statt seitlich
+/// übereinander. Das kostet die Uhr die 28 Pixel dieser Zeile und gibt den
+/// beiden Beschriftungen dafür deutlich mehr Breite, als eine Spalte ihnen
+/// lassen könnte — und sie sind *breiten*begrenzt, ihre Zellenhöhe reizen sie
+/// ohnehin nicht aus.
 class LedPanelSpec {
   const LedPanelSpec._();
 
   static const double width = 192;
   static const double height = 128;
 
-  /// Die linke Spalte: Ampelfläche, Gruppenkürzel, Passenzähler.
-  static const double sideWidth = 52;
-  static const double signalHeight = 56;
-  static const double groupHeight = 40;
+  /// Was die Uhr an Höhe bekommt.
+  static const double timeHeight = 100;
 
-  /// Was der Spalte bleibt — so summieren sich die drei Zellen immer auf
+  /// Schwarzer Abstand zwischen Uhr und Zeile. Ohne ihn stößt die Ampelfläche
+  /// direkt an die Ziffern.
+  static const double rowGutter = 2;
+
+  /// Was der Zeile bleibt — so summieren sich die drei Bänder immer auf
   /// [height], ganz gleich, wie an den beiden darüber gedreht wird.
-  static const double endHeight = height - signalHeight - groupHeight;
+  static const double rowHeight = height - timeHeight - rowGutter;
 
-  /// Schwarzer Abstand zwischen Spalte und Uhr.
-  static const double gutter = 6;
+  /// Die drei Zellen der Zeile: Gruppenkürzel, Ampelfläche, Passenzähler.
+  ///
+  /// Ein Drittel der Wand für jedes — beide Beschriftungen sind zwei Zeichen
+  /// breit („AB", „30") und stehen in derselben [labelFontSize], also gibt es
+  /// keinen Grund, ihnen verschieden viel Platz zu geben. Das Drittel ist auch
+  /// die Bedingung an den Passenzähler und nicht bloß seine Folge: mit der
+  /// Gesamtzahl („30/30") bräuchte er die anderthalbfache Breite, und die
+  /// müssten die anderen beiden bezahlen.
+  static const double cellWidth = width / 3;
 
-  /// Rechter Rand der Uhr. Sie steht rechtsbündig, damit beim Stellenwechsel
+  /// Seitlicher Rand der Uhr. Sie steht rechtsbündig, damit beim Stellenwechsel
   /// (etwa 100 → 99) die verbleibenden Ziffern ihre Spalte behalten.
   static const double timeInset = 6;
 
   /// Was der Uhr an Breite bleibt.
-  static const double timeWidth = width - sideWidth - gutter - timeInset;
+  static const double timeWidth = width - 2 * timeInset;
 
-  /// Damit die Beschriftungen nicht an beiden Kanten der Spalte kleben.
-  static const double sideInset = 3;
+  /// Damit die Beschriftungen nicht an den Kanten ihrer Zelle kleben.
+  static const double labelInset = 3;
 
-  /// Die Breite, an der Gruppenkürzel *und* Passenzähler bemessen sind — beide
-  /// stehen in derselben Spalte, also ist es dieselbe Zahl und nicht zwei.
-  static const double labelWidth = sideWidth - 2 * sideInset;
+  /// Die Breite, in die Gruppenkürzel *und* Passenzähler passen müssen — beide
+  /// stehen in einer gleich breiten Zelle, also ist es dieselbe Zahl und nicht
+  /// zwei.
+  static const double labelWidth = cellWidth - 2 * labelInset;
 
   /// Die breitesten Strings, für die die Uhr Platz haben muss.
   ///
@@ -75,10 +87,9 @@ class LedPanelSpec {
   ///
   /// Aus [Settings.maxCompetitionEnds] gebaut statt hingeschrieben: eine
   /// heraufgesetzte Obergrenze in den Einstellungen darf die Schrift nicht
-  /// stillschweigend zu groß stehen lassen.
-  static final endSamples = [
-    '${Settings.maxCompetitionEnds}/${Settings.maxCompetitionEnds}',
-  ];
+  /// stillschweigend zu groß stehen lassen — bei dreistelligen Passen wäre die
+  /// Zelle zu schmal.
+  static final endSamples = ['${Settings.maxCompetitionEnds}'];
 
   /// Alle drei Stile erben **nicht** vom umgebenden `DefaultTextStyle`.
   ///
@@ -109,9 +120,10 @@ class LedPanelSpec {
     letterSpacing: 0,
   );
 
-  /// Derselbe Stil wie die Gruppe — die Hierarchie zwischen beiden macht allein
-  /// die Zellengröße. Weiß und nicht [AppPalette.ledDim]: das Grau heißt auf
-  /// diesem Panel „die Uhr ist pausiert" und darf keine zweite Bedeutung
+  /// Derselbe Stil wie die Gruppe — die beiden stehen nebeneinander in einer
+  /// Zeile und sind gleich wichtig, also gibt es zwischen ihnen auch keine
+  /// Rangordnung zu setzen. Weiß und nicht [AppPalette.ledDim]: das Grau heißt
+  /// auf diesem Panel „die Uhr ist pausiert" und darf keine zweite Bedeutung
   /// bekommen.
   static const _endBase = TextStyle(
     inherit: false,
@@ -123,8 +135,7 @@ class LedPanelSpec {
   );
 
   static double? _timeFontSize;
-  static double? _groupFontSize;
-  static double? _endFontSize;
+  static double? _labelFontSize;
 
   /// Die größte Schrift, in der [timeSamples] noch in [timeWidth] passt.
   ///
@@ -134,14 +145,15 @@ class LedPanelSpec {
   /// immer am *breitesten denkbaren* String, nie am gerade angezeigten: die
   /// Ziffern dürfen zwischen „0:09" und „0:10" nicht ihre Größe wechseln.
   static double get timeFontSize =>
-      _timeFontSize ??= _fit(timeSamples, _timeBase, timeWidth, height);
+      _timeFontSize ??= _fit(timeSamples, _timeBase, timeWidth, timeHeight);
 
-  /// Die vertikale Streckung: die Zeile füllt danach genau [height].
+  /// Die vertikale Streckung: die Zeile füllt danach genau [timeHeight].
   ///
-  /// Ohne sie bliebe die halbe Wand leer, denn eine proportional gesetzte
-  /// Ziffer kann nur so hoch werden, wie die Breite es erlaubt. Hoch und schmal
-  /// ist bei Anzeigetafeln ohnehin der Normalfall.
-  static double get timeScaleY => height / timeFontSize;
+  /// Über die volle Breite gesetzt ist die Uhr von sich aus schon fast so hoch
+  /// wie ihre Zelle — die Streckung ist deshalb keine Gestaltung mehr, sondern
+  /// nur noch das letzte Zehntel, das die Rundung übrig lässt. Sie wird nicht
+  /// eingestellt, sie fällt aus dem Raster.
+  static double get timeScaleY => timeHeight / timeFontSize;
 
   /// Versalhöhe im Verhältnis zur Schriftgröße (Roboto: `sCapHeight` 1456 von
   /// 2048 Einheiten).
@@ -167,22 +179,30 @@ class LedPanelSpec {
     return (emptyBelow - emptyAbove) / 2 * timeScaleY;
   }
 
-  static double get groupFontSize =>
-      _groupFontSize ??= _fit(groupSamples, _groupBase, labelWidth, groupHeight);
-
-  /// Wie die Gruppe bemessen, nur in der kleineren Zelle — und ohne Streckung:
-  /// [timeScaleY] ist eine Eigenheit der Uhr, die ihre Zelle sonst nur zur
-  /// Hälfte füllen würde. Auf [labelWidth] gestreckt wäre der Passenzähler
-  /// unleserlich schmal.
-  static double get endFontSize =>
-      _endFontSize ??= _fit(endSamples, _endBase, labelWidth, endHeight);
+  /// Die Schriftgröße **beider** Beschriftungen der Infozeile.
+  ///
+  /// Eine Größe und nicht zwei: nebeneinander in derselben Zeile liest sich ein
+  /// Größenunterschied nicht als Rangfolge, sondern als Versehen. Genommen wird
+  /// die kleinere der beiden Passungen — die größere passte ja gerade nicht
+  /// mehr in ihre Zelle. Beide Strings sind zwei Zeichen breit und landen im
+  /// Drittel der Wand deshalb bei der vollen [rowHeight]; geht das eines Tages
+  /// nicht mehr auf, werden eben beide zusammen kleiner statt eines von beiden.
+  ///
+  /// Ohne Streckung, anders als die Uhr: [timeScaleY] ist deren Eigenheit, weil
+  /// sie als Einzige ihre Zelle sonst nicht ausfüllen würde. Auf die Zeilenhöhe
+  /// gestreckt wäre der Passenzähler unleserlich schmal.
+  static double get labelFontSize =>
+      _labelFontSize ??= math.min(
+        _fit(groupSamples, _groupBase, labelWidth, rowHeight),
+        _fit(endSamples, _endBase, labelWidth, rowHeight),
+      );
 
   static TextStyle get timeStyle => _timeBase.copyWith(fontSize: timeFontSize);
 
   static TextStyle get groupStyle =>
-      _groupBase.copyWith(fontSize: groupFontSize);
+      _groupBase.copyWith(fontSize: labelFontSize);
 
-  static TextStyle get endStyle => _endBase.copyWith(fontSize: endFontSize);
+  static TextStyle get endStyle => _endBase.copyWith(fontSize: labelFontSize);
 
   static double _fit(
     List<String> samples,
@@ -238,11 +258,15 @@ class LedPanel extends ConsumerWidget {
       child: SizedBox(
         width: LedPanelSpec.width,
         height: LedPanelSpec.height,
-        child: Row(
+        child: Column(
           children: [
-            _LedSideColumn(),
-            SizedBox(width: LedPanelSpec.gutter),
-            Expanded(child: _LedTime()),
+            SizedBox(
+              height: LedPanelSpec.timeHeight,
+              width: double.infinity,
+              child: _LedTime(),
+            ),
+            SizedBox(height: LedPanelSpec.rowGutter),
+            SizedBox(height: LedPanelSpec.rowHeight, child: _LedInfoRow()),
           ],
         ),
       ),
@@ -251,8 +275,8 @@ class LedPanel extends ConsumerWidget {
 }
 
 /// Ampelfläche, Gruppenkürzel und Passenzähler.
-class _LedSideColumn extends ConsumerWidget {
-  const _LedSideColumn();
+class _LedInfoRow extends ConsumerWidget {
+  const _LedInfoRow();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -260,26 +284,22 @@ class _LedSideColumn extends ConsumerWidget {
     final group = ref.watch(competitionLedGroupProvider);
 
     // Schießen alle zusammen, gibt es keine Gruppe anzuzeigen — dann fällt ihre
-    // Zelle an die Farbfläche, statt leer freigehalten zu werden. Der
-    // Passenzähler steht in beiden Fällen an derselben Stelle.
-    final signalHeight = group == null
-        ? LedPanelSpec.signalHeight + LedPanelSpec.groupHeight
-        : LedPanelSpec.signalHeight;
+    // Zelle an die Farbfläche, statt leer freigehalten zu werden. Sie reicht
+    // dann bis an den linken Rand; der Passenzähler steht in beiden Fällen an
+    // derselben Stelle.
+    final signalWidth = group == null
+        ? 2 * LedPanelSpec.cellWidth
+        : LedPanelSpec.cellWidth;
 
     return SizedBox(
-      width: LedPanelSpec.sideWidth,
-      height: LedPanelSpec.height,
-      child: Column(
+      width: LedPanelSpec.width,
+      height: LedPanelSpec.rowHeight,
+      child: Row(
         children: [
-          SizedBox(
-            height: signalHeight,
-            width: double.infinity,
-            child: ColoredBox(color: signalColor),
-          ),
           if (group != null)
             SizedBox(
-              height: LedPanelSpec.groupHeight,
-              width: double.infinity,
+              width: LedPanelSpec.cellWidth,
+              height: double.infinity,
               child: Center(
                 child: Text(
                   group,
@@ -288,9 +308,14 @@ class _LedSideColumn extends ConsumerWidget {
                 ),
               ),
             ),
+          SizedBox(
+            width: signalWidth,
+            height: double.infinity,
+            child: ColoredBox(color: signalColor),
+          ),
           const SizedBox(
-            height: LedPanelSpec.endHeight,
-            width: double.infinity,
+            width: LedPanelSpec.cellWidth,
+            height: double.infinity,
             child: Center(child: _LedEnd()),
           ),
         ],
@@ -299,7 +324,7 @@ class _LedSideColumn extends ConsumerWidget {
   }
 }
 
-/// Die wievielte Passe von wie vielen — „3/20".
+/// Die wievielte Passe gerade läuft — „3".
 class _LedEnd extends ConsumerWidget {
   const _LedEnd();
 
@@ -313,7 +338,7 @@ class _LedEnd extends ConsumerWidget {
   }
 }
 
-/// Die Restzeit über die volle Höhe der Wand.
+/// Die Restzeit über die volle Breite der Wand.
 class _LedTime extends ConsumerWidget {
   const _LedTime();
 
@@ -323,7 +348,7 @@ class _LedTime extends ConsumerWidget {
     final color = ref.watch(competitionLedTimeColorProvider);
 
     return Padding(
-      padding: const EdgeInsets.only(right: LedPanelSpec.timeInset),
+      padding: const EdgeInsets.symmetric(horizontal: LedPanelSpec.timeInset),
       child: Align(
         alignment: Alignment.centerRight,
         child: Transform.translate(

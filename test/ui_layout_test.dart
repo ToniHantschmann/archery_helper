@@ -306,39 +306,77 @@ void main() {
       }
     });
 
-    test('the stretched clock fills the panel without spilling over it', () {
+    test('the stretched clock fills its band without spilling over it', () {
       expect(
         LedPanelSpec.timeFontSize * LedPanelSpec.timeScaleY,
-        closeTo(LedPanelSpec.height, 0.01),
+        closeTo(LedPanelSpec.timeHeight, 0.01),
       );
     });
 
-    test('every group label fits the side column', () {
+    test('nothing takes width from the clock', () {
+      // Der Anlass des ganzen Rasters: die Streckung ist umgekehrt
+      // proportional zur Uhrenbreite, und mit Roboto sind das über die volle
+      // Wand nur noch rund 1,10 statt der 2,0 einer Seitenspalte. Die Zahl
+      // selbst steht hier bewusst nicht: der Testlauf rechnet mit einer
+      // Ersatzschrift, deren Ziffern quadratisch sind, und käme damit auf einen
+      // ganz anderen Wert. Prüfbar ist die Ursache — dass der Uhr niemand
+      // Breite wegnimmt außer ihren beiden Rändern.
+      expect(
+        LedPanelSpec.timeWidth,
+        LedPanelSpec.width - 2 * LedPanelSpec.timeInset,
+      );
+      // Und dass sie nach unten wirkt: eine Streckung kleiner als 1 wäre eine
+      // Stauchung und hieße, dass die Zelle zu niedrig ist.
+      expect(LedPanelSpec.timeScaleY, greaterThanOrEqualTo(1));
+    });
+
+    test('the cells add up to the panel', () {
+      // Auf einem Pixelraster ist die Summe die Zusicherung, die man nicht im
+      // Kopf mitführt: ein Pixel zu viel ist ein halber Zentimeter Wand, der
+      // irgendwo abgeschnitten wird.
+      expect(
+        LedPanelSpec.timeHeight + LedPanelSpec.rowGutter + LedPanelSpec.rowHeight,
+        LedPanelSpec.height,
+      );
+      // Drei gleiche Zellen gehen nur auf, solange die Wand durch drei teilbar
+      // ist — bei einer anderen Panelbreite bliebe sonst ein Pixel offen.
+      expect(3 * LedPanelSpec.cellWidth, LedPanelSpec.width);
+    });
+
+    test('both labels of the info row are the same size', () {
+      // Nebeneinander in einer Zeile liest sich ein Größenunterschied nicht als
+      // Rangfolge, sondern als Versehen — vorher war die Gruppe von der
+      // Zeilenhöhe begrenzt und der Passenzähler von seiner Zellenbreite, und
+      // genau diesen Zufall darf niemand wieder einbauen.
+      expect(
+        LedPanelSpec.groupStyle.fontSize,
+        LedPanelSpec.endStyle.fontSize,
+      );
+    });
+
+    test('every group label fits its cell', () {
       for (final lineup in CompetitionLineup.values) {
         for (final label in lineup.groupLabels) {
           expect(
             widthOf(label, LedPanelSpec.groupStyle),
             lessThanOrEqualTo(LedPanelSpec.labelWidth + 0.01),
-            reason: '"$label" muss in die Seitenspalte passen',
+            reason: '"$label" muss in die Infozeile passen',
           );
         }
       }
     });
 
-    test('every end counter the round can reach fits the side column', () {
-      // Nicht nur die Samples, sondern jede Kombination, die eine Runde
-      // annehmen kann: die Zahl mit der breitesten Ziffernfolge ist nicht
-      // zwingend die größte.
-      for (var total = 1; total <= Settings.maxCompetitionEnds; total++) {
-        for (var current = 1; current <= total; current++) {
-          final text = '$current/$total';
+    test('every end counter the round can reach fits its cell', () {
+      // Nicht nur die Samples, sondern jede Zahl, die eine Runde annehmen kann:
+      // die Zahl mit der breitesten Ziffernfolge ist nicht zwingend die größte.
+      for (var current = 1; current <= Settings.maxCompetitionEnds; current++) {
+        final text = '$current';
 
-          expect(
-            widthOf(text, LedPanelSpec.endStyle),
-            lessThanOrEqualTo(LedPanelSpec.labelWidth + 0.01),
-            reason: '"$text" muss in die Seitenspalte passen',
-          );
-        }
+        expect(
+          widthOf(text, LedPanelSpec.endStyle),
+          lessThanOrEqualTo(LedPanelSpec.labelWidth + 0.01),
+          reason: '"$text" muss in die Infozeile passen',
+        );
       }
     });
 
@@ -348,13 +386,11 @@ void main() {
       // Test schlägt an, wenn das Sample stattdessen stehen bleibt.
       expect(
         LedPanelSpec.endSamples,
-        contains(
-          '${Settings.maxCompetitionEnds}/${Settings.maxCompetitionEnds}',
-        ),
+        contains('${Settings.maxCompetitionEnds}'),
       );
     });
 
-    test('the nudged clock keeps its digits inside the panel', () {
+    test('the nudged clock keeps its digits inside its band', () {
       // Die Versalhöhe steckt in [LedPanelSpec] als Konstante — hier wird
       // nachgerechnet, dass die verschobene Zahl mit ihr oben wie unten noch
       // in der Wand steht.
@@ -372,9 +408,9 @@ void main() {
       final bottom = b * LedPanelSpec.timeScaleY + LedPanelSpec.timeNudgeY;
 
       expect(top, greaterThanOrEqualTo(0));
-      expect(bottom, lessThanOrEqualTo(LedPanelSpec.height));
+      expect(bottom, lessThanOrEqualTo(LedPanelSpec.timeHeight));
       // Und zwar mittig: oben und unten gleich viel Luft.
-      expect(top, closeTo(LedPanelSpec.height - bottom, 0.01));
+      expect(top, closeTo(LedPanelSpec.timeHeight - bottom, 0.01));
     });
 
     for (final display in [
@@ -417,7 +453,7 @@ void main() {
       expect(find.byKey(ledTimeKey), findsOneWidget);
       expect(find.byKey(ledGroupKey), findsNothing);
       // Der Passenzähler bleibt: die freigewordene Zelle fällt an die
-      // Ampelfläche, sie schiebt nicht die ganze Spalte hoch.
+      // Ampelfläche, sie schiebt nicht die ganze Zeile zur Seite.
       expect(find.byKey(ledEndKey), findsOneWidget);
 
       await tester.pump(const Duration(milliseconds: 400));
