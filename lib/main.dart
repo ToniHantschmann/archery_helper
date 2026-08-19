@@ -31,7 +31,17 @@ void main() async {
   // nicht später kommen, und bis der erste Ton fällt, ist das längst
   // durchgelaufen. Nicht an `soundEnabled` gebunden — Vorladen ist still, und
   // der Ton kann jederzeit eingeschaltet werden.
-  unawaited(container.read(soundPlayerProvider).preload());
+  //
+  // Nur die eingestellte Klangvariante, und beim Umschalten die neue: geladen
+  // ist auf Linux gleichbedeutend mit "steht im Lautstärkemixer" (siehe
+  // `SoundPlayer.preload`). Der Listener hängt wie der für das Vollbild am
+  // Container, weil er die ganze Laufzeit über gelten muss.
+  final soundPlayer = container.read(soundPlayerProvider);
+  unawaited(soundPlayer.preload(container.read(signalToneProvider)));
+  container.listen(
+    signalToneProvider,
+    (_, tone) => unawaited(soundPlayer.preload(tone)),
+  );
 
   runApp(
     UncontrolledProviderScope(
