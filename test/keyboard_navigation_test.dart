@@ -457,6 +457,49 @@ void main() {
       await flushPendingSaves(tester);
     });
 
+    /// Die Anzeigegröße hat als einziger Wert einen Sinn oberhalb dessen, was
+    /// passt — die Grenzen sind deshalb das eigentlich Prüfenswerte an ihr.
+    testWidgets('arrow keys step the display scale within its range', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await openSettings(tester);
+
+      select(SettingsItem.timerScale);
+      expect(settings().timerScale, 1.0);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(settings().timerScale, closeTo(1.05, 0.0001));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      expect(settings().timerScale, closeTo(0.95, 0.0001));
+
+      // Aus dem Bereich abgeleitet statt geraten: eine feste Zahl würde beim
+      // nächsten Verschieben der Grenzen still zu klein werden und den Test
+      // dann an einer Stelle scheitern lassen, die nichts damit zu tun hat.
+      final stepsAcrossRange =
+          ((Settings.maxTimerScale - Settings.minTimerScale) * 100 /
+                  Settings.timerScaleStepPercent)
+              .ceil();
+
+      for (var i = 0; i < stepsAcrossRange; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      }
+      await tester.pumpAndSettle();
+      expect(settings().timerScale, Settings.maxTimerScale);
+
+      for (var i = 0; i < stepsAcrossRange; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      }
+      await tester.pumpAndSettle();
+      expect(settings().timerScale, Settings.minTimerScale);
+
+      await flushPendingSaves(tester);
+    });
+
     testWidgets('space toggles the selected switch instead of the timer', (
       tester,
     ) async {

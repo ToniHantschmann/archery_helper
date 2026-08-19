@@ -136,6 +136,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             item: SettingsItem.timeFormat,
             rowKey: _itemKeys[SettingsItem.timeFormat]!,
           ),
+          _TimerScaleRow(rowKey: _itemKeys[SettingsItem.timerScale]!),
           _AlternatingArrowsRow(
             rowKey: _itemKeys[SettingsItem.alternatingArrows]!,
           ),
@@ -892,6 +893,34 @@ class _TimeFormatRow extends ConsumerWidget {
       control: _ValueStepper(
         item: item,
         value: texts.getTimeFormatName(format),
+      ),
+    );
+  }
+}
+
+/// Anzeigegröße der Ampel.
+///
+/// Beurteilen lässt sich der Wert nur auf dem Timer selbst — die Zeile steht
+/// deshalb bewusst weit oben im Bereich, damit der Weg Esc → schauen → S kurz
+/// bleibt und die Auswahl beim Zurückkommen wieder in Sichtweite liegt.
+class _TimerScaleRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _TimerScaleRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final scale = ref.watch(timerScaleProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.timerScale,
+      rowKey: rowKey,
+      title: texts.displayScale,
+      subtitle: texts.displayScaleSubtitle,
+      control: _ValueStepper(
+        item: SettingsItem.timerScale,
+        value: texts.formatPercentage(scale),
       ),
     );
   }

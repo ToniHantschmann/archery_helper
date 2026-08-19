@@ -4,6 +4,7 @@ import 'package:archery_helper/core/l10n/timer_texts.dart';
 import 'package:archery_helper/core/theme/timer_theme.dart';
 import 'package:archery_helper/core/window/window_service.dart';
 import 'package:archery_helper/models/competition_state.dart';
+import 'package:archery_helper/models/settings.dart';
 import 'package:archery_helper/models/signal_state.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/app_actions_provider.dart';
@@ -16,6 +17,7 @@ import 'package:archery_helper/widgets/key_hint_rail.dart';
 import 'package:archery_helper/widgets/led_corner.dart';
 import 'package:archery_helper/widgets/led_panel.dart';
 import 'package:archery_helper/widgets/status_chip.dart';
+import 'package:archery_helper/widgets/timer_display.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -108,6 +110,75 @@ void main() {
 
       container.read(timerProvider.notifier).resetTimer();
       await tester.pump();
+    });
+
+    /// Die Anzeigegröße wirkt bewusst nur beim Malen: eine vergrößerte Uhr
+    /// wird beschnitten, statt das Layout auseinanderzudrücken. Was dieser
+    /// Test sichert, ist genau das — das Beschneiden selbst sieht er nicht,
+    /// und soll er auch nicht, das entscheidet das Auge im Tunnel.
+    for (final entry in sizes.entries) {
+      testWidgets('an extreme display scale keeps the layout at ${entry.key}', (
+        tester,
+      ) async {
+        for (final scale in [Settings.maxTimerScale, Settings.minTimerScale]) {
+          container.read(settingsProvider.notifier).setTimerScale(scale);
+          await pumpScreen(tester, entry.value, AppScreen.timer);
+
+          container.read(timerProvider.notifier).startTimer();
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: 'timer at ${(scale * 100).round()}% must fit ${entry.key}',
+          );
+
+          container.read(timerProvider.notifier).resetTimer();
+          await tester.pump();
+        }
+
+        container.read(settingsProvider.notifier).setTimerScale(1.0);
+        // Der Debounce der Einstellungen darf den Test nicht überleben.
+        await tester.pump(const Duration(milliseconds: 400));
+      });
+    }
+
+    /// Die Größe wirkt nur beim Malen, also sagt keine Layoutgröße etwas über
+    /// sie aus. `getRect` rechnet die Transformationen der Vorfahren mit und
+    /// misst damit genau das, was auf dem Monitor steht.
+    testWidgets('the display scale reaches the clock, and only the Ampel', (
+      tester,
+    ) async {
+      // Die Uhr ist der letzte Text der Anzeige; davor steht das Phasenwort.
+      final clock = find
+          .descendant(of: find.byType(TimerDisplay), matching: find.byType(Text))
+          .last;
+
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.timer);
+      final unscaled = tester.getRect(clock).size;
+
+      container.read(settingsProvider.notifier).setTimerScale(1.5);
+      await tester.pump();
+      final scaled = tester.getRect(clock).size;
+
+      expect(scaled.height, closeTo(unscaled.height * 1.5, 0.5));
+      expect(scaled.width, closeTo(unscaled.width * 1.5, 0.5));
+
+      // Der Wettkampf hat seine eigene Fläche und eine feste LED-Wand daneben;
+      // er darf von dieser Einstellung nichts mitbekommen.
+      container
+          .read(appStateProvider.notifier)
+          .navigateToScreen(AppScreen.competition);
+      await tester.pump(const Duration(milliseconds: 600));
+      final competition = tester.getRect(clock).size;
+
+      container.read(settingsProvider.notifier).setTimerScale(1.0);
+      await tester.pump();
+      expect(tester.getRect(clock).size, competition);
+
+      // Der Debounce der Einstellungen darf den Test nicht überleben.
+      await tester.pump(const Duration(milliseconds: 400));
     });
 
     for (final entry in sizes.entries) {

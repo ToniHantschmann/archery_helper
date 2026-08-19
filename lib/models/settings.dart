@@ -32,6 +32,18 @@ class Settings {
   /// 2 × [alternatingArrows] Passagen.
   final int alternatingArrows;
 
+  /// Wie groß Uhr und Phasenwort der Ampel gezeichnet werden, als Faktor.
+  ///
+  /// 1.0 heißt „füllt die Fläche exakt" — die Uhr steckt in einer `FittedBox`,
+  /// passt sich also von selbst ein, und dieser Faktor verschiebt genau diesen
+  /// Einpasspunkt. Größer als 1.0 ist damit ausdrücklich erlaubt und wird an
+  /// der Kante der Anzeigefläche beschnitten: die Zeilenbox der Schrift ist
+  /// höher als die Ziffern selbst, dieser Rest ist von außen nicht ausrechenbar
+  /// und wird deshalb dem Auge im Tunnel überlassen.
+  ///
+  /// Gilt nur für die Ampel, nicht für den Wettkampf und nicht für die LED-Wand.
+  final double timerScale;
+
   /// Halle oder Freiluft im Wettkampfmodus — bestimmt Pfeilzahl und Schusszeit
   /// einer Passe, siehe [CompetitionDiscipline].
   final CompetitionDiscipline competitionDiscipline;
@@ -57,6 +69,7 @@ class Settings {
     this.timeFormat = TimeFormat.minutesSeconds,
     this.fullscreen = true,
     this.alternatingArrows = 3,
+    this.timerScale = 1.0,
     this.competitionDiscipline = CompetitionDiscipline.indoor,
     this.competitionEnds = 20,
     this.competitionLineup = CompetitionLineup.abcd,
@@ -73,6 +86,13 @@ class Settings {
   static const minCompetitionEnds = 1;
   static const maxCompetitionEnds = 30;
 
+  /// Grenzen und Schrittweite für [timerScale], in Prozent gerechnet: mit
+  /// Kommazahlen zu schrittweise addieren würde sich aufaddierende Rundungs-
+  /// fehler einfangen, ganze Prozente treffen die 100 immer.
+  static const minTimerScale = 0.7;
+  static const maxTimerScale = 3.0;
+  static const timerScaleStepPercent = 5;
+
   Settings copyWith({
     bool? soundEnabled,
     double? volume,
@@ -85,6 +105,7 @@ class Settings {
     TimeFormat? timeFormat,
     bool? fullscreen,
     int? alternatingArrows,
+    double? timerScale,
     CompetitionDiscipline? competitionDiscipline,
     int? competitionEnds,
     CompetitionLineup? competitionLineup,
@@ -102,6 +123,7 @@ class Settings {
       timeFormat: timeFormat ?? this.timeFormat,
       fullscreen: fullscreen ?? this.fullscreen,
       alternatingArrows: alternatingArrows ?? this.alternatingArrows,
+      timerScale: timerScale ?? this.timerScale,
       competitionDiscipline:
           competitionDiscipline ?? this.competitionDiscipline,
       competitionEnds: competitionEnds ?? this.competitionEnds,
@@ -124,6 +146,7 @@ class Settings {
       "timeFormat": timeFormat.index,
       "fullscreen": fullscreen,
       "alternatingArrows": alternatingArrows,
+      "timerScale": timerScale,
       "competitionDiscipline": competitionDiscipline.index,
       "competitionEnds": competitionEnds,
       "competitionLineup": competitionLineup.index,
@@ -149,6 +172,7 @@ class Settings {
       ),
       fullscreen: json['fullscreen'] as bool? ?? true,
       alternatingArrows: _parseArrows(json['alternatingArrows'] as int?),
+      timerScale: _parseScale(json['timerScale']),
       competitionDiscipline: _parseEnum(
         CompetitionDiscipline.values,
         json['competitionDiscipline'] as int?,
@@ -186,6 +210,16 @@ class Settings {
   static int _parseEnds(int? ends) {
     if (ends == null) return const Settings().competitionEnds;
     return ends.clamp(minCompetitionEnds, maxCompetitionEnds);
+  }
+
+  /// Helper: keep the display scale inside its range (with fallback)
+  ///
+  /// Nimmt bewusst `dynamic` statt `double?`: ein glatter Wert landet als `int`
+  /// im JSON, und ein `as double?` würde daran mit einem Cast-Fehler die
+  /// gesamte gespeicherte Konfiguration verwerfen.
+  static double _parseScale(Object? scale) {
+    if (scale is! num) return 1.0;
+    return scale.toDouble().clamp(minTimerScale, maxTimerScale);
   }
 
   /// Helper: convert a stored index back to an enum value (with fallback)

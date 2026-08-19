@@ -42,6 +42,7 @@ void main() {
     // gespeichert und nicht bloß wieder auf den Default gesetzt wird.
     fullscreen: false,
     alternatingArrows: 5,
+    timerScale: 1.15,
     competitionDiscipline: CompetitionDiscipline.outdoor,
     competitionEnds: 9,
     competitionLineup: CompetitionLineup.ab,
@@ -65,6 +66,7 @@ void main() {
     expect(loaded.language, custom.language);
     expect(loaded.fullscreen, custom.fullscreen);
     expect(loaded.alternatingArrows, custom.alternatingArrows);
+    expect(loaded.timerScale, custom.timerScale);
     expect(loaded.competitionDiscipline, custom.competitionDiscipline);
     expect(loaded.competitionEnds, custom.competitionEnds);
     expect(loaded.competitionLineup, custom.competitionLineup);
@@ -86,6 +88,7 @@ void main() {
       'language',
       'fullscreen',
       'alternatingArrows',
+      'timerScale',
       'competitionDiscipline',
       'competitionEnds',
       'competitionLineup',
@@ -158,6 +161,31 @@ void main() {
         final loaded = await repository.loadSettings();
         expect(loaded.competitionDisplay, CompetitionDisplay.standard);
       }
+    });
+
+    test('an anzeigegröße outside the allowed range', () async {
+      for (final entry in {5.0: Settings.maxTimerScale, 0.0: Settings.minTimerScale}
+          .entries) {
+        SharedPreferences.setMockInitialValues({
+          storageKey: jsonEncode({'timerScale': entry.key}),
+        });
+
+        final loaded = await repository.loadSettings();
+        expect(loaded.timerScale, entry.value);
+      }
+    });
+
+    /// Ein glatter Faktor landet als `int` im JSON — ein `as double` würde
+    /// daran scheitern und dabei die ganze gespeicherte Konfiguration
+    /// verwerfen, nicht nur dieses Feld.
+    test('a whole-number scale stored as int', () async {
+      SharedPreferences.setMockInitialValues({
+        storageKey: jsonEncode({'timerScale': 1, 'volume': 0.25}),
+      });
+
+      final loaded = await repository.loadSettings();
+      expect(loaded.timerScale, 1.0);
+      expect(loaded.volume, 0.25, reason: 'der Rest überlebt es');
     });
 
     test('an out of range mode index', () async {
@@ -241,6 +269,24 @@ void main() {
       expect(settings.competitionLineup, defaults.competitionLineup);
       expect(settings.competitionDisplay, defaults.competitionDisplay);
       expect(settings.alternatingArrows, 5, reason: 'gehört zur Ampel');
+    });
+
+    test('the timer section takes the display scale with it', () {
+      final notifier = container.read(settingsProvider.notifier);
+
+      notifier
+        ..setTimerScale(1.4)
+        ..setCompetitionLineup(CompetitionLineup.ab);
+
+      notifier.resetSection(SettingsSection.timer);
+
+      final settings = container.read(settingsProvider);
+      expect(settings.timerScale, const Settings().timerScale);
+      expect(
+        settings.competitionLineup,
+        CompetitionLineup.ab,
+        reason: 'gehört zum Wettkampf',
+      );
     });
   });
 }

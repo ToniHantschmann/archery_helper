@@ -158,6 +158,19 @@ class SettingsTexts {
     en: 'Seconds (240)',
   );
 
+  // 100 % ist kein „aus", sondern der Punkt, an dem die Uhr die Fläche genau
+  // ausfüllt — das steht im Untertitel, weil sonst niemand weiß, wogegen er
+  // stellt.
+  static const _displayScale = LocalizedText(
+    de: 'Anzeigegröße',
+    en: 'Display size',
+  );
+
+  static const _displayScaleSubtitle = LocalizedText(
+    de: 'Uhr und Phasenwort, 100 % = füllt die Fläche',
+    en: 'Clock and phase word, 100% = fills the area',
+  );
+
   static const _arrowsPerArcher = LocalizedText(
     de: 'Pfeile pro Schütze',
     en: 'Arrows per Archer',
@@ -339,6 +352,9 @@ class SettingsTexts {
   String get fullscreen => _fullscreen.get(_currentLanguage);
   String get fullscreenNote => _fullscreenNote.get(_currentLanguage);
 
+  String get displayScale => _displayScale.get(_currentLanguage);
+  String get displayScaleSubtitle =>
+      _displayScaleSubtitle.get(_currentLanguage);
   String get arrowsPerArcher => _arrowsPerArcher.get(_currentLanguage);
   String get arrowsPerArcherSubtitle =>
       _arrowsPerArcherSubtitle.get(_currentLanguage);

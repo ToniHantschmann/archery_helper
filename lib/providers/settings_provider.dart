@@ -105,6 +105,15 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  /// Anzeigegröße der Ampel. Die Grenzen sitzen hier und nicht beim Aufrufer,
+  /// damit auch der Weg über die Maus nicht daran vorbei kann.
+  void setTimerScale(double scale) {
+    state = state.copyWith(
+      timerScale: scale.clamp(Settings.minTimerScale, Settings.maxTimerScale),
+    );
+    _save();
+  }
+
   void toggleAutoStart() {
     state = state.copyWith(autoStart: !state.autoStart);
     _save();
@@ -183,6 +192,7 @@ class SettingsNotifier extends Notifier<Settings> {
         showMilliseconds: defaults.showMilliseconds,
         timeFormat: defaults.timeFormat,
         alternatingArrows: defaults.alternatingArrows,
+        timerScale: defaults.timerScale,
         customPrepTime: defaults.customPrepTime,
         customMainTime: defaults.customMainTime,
       ),
@@ -250,6 +260,10 @@ final customMainTimeProvider = Provider<Duration>((ref) {
 
 final alternatingArrowsProvider = Provider<int>((ref) {
   return ref.watch(settingsProvider).alternatingArrows;
+});
+
+final timerScaleProvider = Provider<double>((ref) {
+  return ref.watch(settingsProvider).timerScale;
 });
 
 final competitionDisciplineProvider = Provider<CompetitionDiscipline>((ref) {

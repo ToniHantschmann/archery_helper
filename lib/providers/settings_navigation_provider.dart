@@ -26,6 +26,7 @@ enum SettingsItem {
   autoStart(SettingsSection.timer),
   showMilliseconds(SettingsSection.timer),
   timeFormat(SettingsSection.timer),
+  timerScale(SettingsSection.timer),
   alternatingArrows(SettingsSection.timer),
   customPrepTime(SettingsSection.timer),
   customMainTime(SettingsSection.timer),
@@ -203,6 +204,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.timeFormat:
       case SettingsItem.competitionTimeFormat:
       case SettingsItem.volume:
+      case SettingsItem.timerScale:
       case SettingsItem.alternatingArrows:
       case SettingsItem.customPrepTime:
       case SettingsItem.customMainTime:
@@ -299,6 +301,14 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         notifier.setTimeFormat(
           _cycle(TimeFormat.values, settings.timeFormat, delta),
         );
+
+      // In ganzen Prozent gerechnet, wie die Lautstärke in ganzen Blöcken:
+      // 5 % als Kommazahl aufzuaddieren würde die 100 % irgendwann verfehlen.
+      case SettingsItem.timerScale:
+        final percent =
+            (settings.timerScale * 100).round() +
+            delta * Settings.timerScaleStepPercent;
+        notifier.setTimerScale(percent / 100);
 
       // Ohne Beschleunigung: bei einem Bereich von 1 bis 6 wäre eine
       // wachsende Schrittweite nur im Weg.
