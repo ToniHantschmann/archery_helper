@@ -123,19 +123,26 @@ class _IdleScreenState extends ConsumerState<IdleScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            texts.formatClock(_now),
-                            style: AppType.clockSmall,
-                            maxLines: 1,
+                        // Flexible, so the FittedBox is constrained in height
+                        // as well: in a Column a plain child is laid out
+                        // unbounded, and scaleDown would then only ever react
+                        // to the width.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              texts.formatClock(_now),
+                              style: AppType.clockSmall,
+                              maxLines: 1,
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           texts.formatDate(_now),
-                          style: AppType.title.copyWith(
+                          style: AppType.display.copyWith(
                             color: AppPalette.textMuted,
+                            fontWeight: FontWeight.w500,
                             letterSpacing: 4,
                           ),
                         ),

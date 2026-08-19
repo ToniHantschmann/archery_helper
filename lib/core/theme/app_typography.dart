@@ -27,12 +27,16 @@ class AppType {
     fontFeatures: _tabular,
   );
 
-  /// Wall clock on the idle screen. Lighter than the countdown — it is
-  /// information, not an instruction.
+  /// Wall clock on the idle screen. A touch lighter than the countdown — it is
+  /// information, not an instruction — but not thin: hairline strokes are the
+  /// first thing to disappear across the tunnel. Like [clock] this is the
+  /// starting point of a `FittedBox`, so the number ends up as large as the
+  /// screen allows rather than at this size.
   static const TextStyle clockSmall = TextStyle(
-    fontSize: 260,
-    fontWeight: FontWeight.w300,
-    height: 1.0,
+    fontSize: 420,
+    fontWeight: FontWeight.w600,
+    height: 0.95,
+    letterSpacing: -4,
     color: AppPalette.textPrimary,
     fontFeatures: _tabular,
   );
