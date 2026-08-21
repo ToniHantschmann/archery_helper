@@ -34,12 +34,10 @@ final competitionFormattedTimeProvider = Provider.autoDispose<String>((ref) {
   );
 });
 
-/// „Passe 3/20".
+/// „Passe 3/20", beim Einschießen „Einschießen 2/4".
 final competitionEndTextProvider = Provider.autoDispose<String>((ref) {
   final state = ref.watch(competitionProvider);
-  return ref
-      .watch(competitionTextsProvider)
-      .endCounter(state.currentEnd, state.totalEnds);
+  return ref.watch(competitionTextsProvider).endCounter(state);
 });
 
 /// Was die Gruppenleiste braucht — als Record, weil Records strukturelle
@@ -162,7 +160,7 @@ final competitionLedGroupProvider = Provider.autoDispose<String?>((ref) {
   return rail.lineup.orderedLabels(reversed: rail.reversed)[rail.groupIndex];
 });
 
-/// Der Passenzähler auf der Wand: „3".
+/// Der Passenzähler auf der Wand: „3", beim Einschießen „P1".
 ///
 /// Bewusst nicht über [CompetitionTexts.endCounter]: dessen „Passe 3/20" hat
 /// ein Wort, und dafür ist in der Zelle kein Platz. Auch die Gesamtzahl ist
@@ -172,11 +170,17 @@ final competitionLedGroupProvider = Provider.autoDispose<String?>((ref) {
 /// gerade läuft. Was übrig bleibt, ist eine Zahl und damit in jeder Sprache
 /// dasselbe; hier gibt es also nichts zu übersetzen.
 ///
+/// Das „P" der Einschießpassen ist die eine Ausnahme davon, und auch das
+/// bewusst unübersetzt: Einschießen, Practice und Probe fangen alle damit an,
+/// und mehr als ein Zeichen ist neben der Zahl ohnehin nicht frei. Es muss dort
+/// stehen, weil die Zelle sonst dieselbe „1" für zwei verschiedene Passen zeigt.
+///
 /// Hängt am ganzen [competitionProvider] und rechnet damit im Sekundentakt neu,
 /// meldet aber nur bei geändertem String: ein `Provider` benachrichtigt auf
 /// `!=`, und zwei gleiche Zähler sind gleich.
 final competitionLedEndProvider = Provider.autoDispose<String>((ref) {
-  return '${ref.watch(competitionProvider).currentEnd}';
+  final state = ref.watch(competitionProvider);
+  return state.isPractice ? 'P${state.endNumber}' : '${state.endNumber}';
 });
 
 // ===== COMBINED =====

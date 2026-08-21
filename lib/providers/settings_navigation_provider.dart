@@ -37,6 +37,7 @@ enum SettingsItem {
   // ── Wettkampf ──────────────────────────────────────────
   competitionDiscipline(SettingsSection.competition),
   competitionEnds(SettingsSection.competition),
+  competitionPracticeEnds(SettingsSection.competition),
   competitionLineup(SettingsSection.competition),
   competitionDisplay(SettingsSection.competition),
   // Zweite Zeile auf dasselbe Feld wie [timeFormat]: ein SettingsItem ist eine
@@ -216,6 +217,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.customMainTime:
       case SettingsItem.competitionDiscipline:
       case SettingsItem.competitionEnds:
+      case SettingsItem.competitionPracticeEnds:
       case SettingsItem.competitionDisplay:
       case SettingsItem.competitionLineup:
         _adjust(1);
@@ -351,6 +353,11 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       // Schrittweite würde die 20 der Halle nur überspringen.
       case SettingsItem.competitionEnds:
         notifier.setCompetitionEnds(settings.competitionEnds + delta);
+
+      case SettingsItem.competitionPracticeEnds:
+        notifier.setCompetitionPracticeEnds(
+          settings.competitionPracticeEnds + delta,
+        );
 
       case SettingsItem.competitionDiscipline:
         notifier.setCompetitionDiscipline(

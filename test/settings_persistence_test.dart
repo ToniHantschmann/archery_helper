@@ -46,6 +46,7 @@ void main() {
     timerScale: 1.15,
     competitionDiscipline: CompetitionDiscipline.outdoor,
     competitionEnds: 9,
+    competitionPracticeEnds: 2,
     competitionLineup: CompetitionLineup.ab,
     // Bewusst der letzte Wert des Enums: ein Index, der beim Lesen aus dem
     // Gespeicherten am ehesten aus der Liste fällt.
@@ -70,6 +71,7 @@ void main() {
     expect(loaded.timerScale, custom.timerScale);
     expect(loaded.competitionDiscipline, custom.competitionDiscipline);
     expect(loaded.competitionEnds, custom.competitionEnds);
+    expect(loaded.competitionPracticeEnds, custom.competitionPracticeEnds);
     expect(loaded.competitionLineup, custom.competitionLineup);
     expect(loaded.competitionDisplay, custom.competitionDisplay);
   });
@@ -92,6 +94,7 @@ void main() {
       'timerScale',
       'competitionDiscipline',
       'competitionEnds',
+      'competitionPracticeEnds',
       'competitionLineup',
       'competitionDisplay',
     });
@@ -143,6 +146,18 @@ void main() {
 
       final loaded = await repository.loadSettings();
       expect(loaded.competitionEnds, Settings.minCompetitionEnds);
+    });
+
+    test('a practice end count outside the allowed range', () async {
+      SharedPreferences.setMockInitialValues({
+        storageKey: jsonEncode({'competitionPracticeEnds': 12}),
+      });
+
+      final loaded = await repository.loadSettings();
+      expect(
+        loaded.competitionPracticeEnds,
+        Settings.maxCompetitionPracticeEnds,
+      );
     });
 
     test('an out of range lineup index', () async {
@@ -263,6 +278,7 @@ void main() {
         ..setCompetitionDiscipline(CompetitionDiscipline.outdoor)
         ..setCompetitionLineup(CompetitionLineup.ab)
         ..setCompetitionDisplay(CompetitionDisplay.led)
+        ..setCompetitionPracticeEnds(0)
         ..setAlternatingArrows(5);
 
       notifier.resetSection(SettingsSection.competition);
@@ -272,6 +288,10 @@ void main() {
 
       expect(settings.competitionDiscipline, defaults.competitionDiscipline);
       expect(settings.competitionEnds, defaults.competitionEnds);
+      expect(
+        settings.competitionPracticeEnds,
+        defaults.competitionPracticeEnds,
+      );
       expect(settings.competitionLineup, defaults.competitionLineup);
       expect(settings.competitionDisplay, defaults.competitionDisplay);
       expect(settings.alternatingArrows, 5, reason: 'gehört zur Ampel');

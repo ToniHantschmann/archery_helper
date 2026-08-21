@@ -1,6 +1,9 @@
+import 'package:archery_helper/core/l10n/app_language.dart';
+import 'package:archery_helper/core/l10n/competition_texts.dart';
 import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/competition_provider.dart';
+import 'package:archery_helper/providers/competition_ui_providers.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,9 +32,18 @@ void main() {
   /// Beendet alles Laufende, damit kein Timer den Test überlebt.
   void stop() => notifier().reset();
 
-  /// Kürzt eine Runde auf [ends] Passen, bevor sie gelesen wird.
-  void setEnds(int ends) =>
-      container.read(settingsProvider.notifier).setCompetitionEnds(ends);
+  /// Kürzt eine Runde auf [ends] Wettkampfpassen und [practice] Einschieß-
+  /// passen, bevor sie gelesen wird.
+  ///
+  /// Ohne Einschießen, obwohl die Einstellung von Haus aus auf vier steht: die
+  /// Tests hier beschreiben den Wettkampfblock, und vier vorgeschaltete Passen
+  /// wären in jeder Erwartung nur ein Offset. Das Einschießen hat seine eigene
+  /// Gruppe.
+  void setEnds(int ends, {int practice = 0}) {
+    container.read(settingsProvider.notifier)
+      ..setCompetitionEnds(ends)
+      ..setCompetitionPracticeEnds(practice);
+  }
 
   group('initial state', () {
     test('starts idle on the first end with the shooting time on screen', () {
@@ -496,6 +508,146 @@ void main() {
         expect(round().isRunning, isFalse);
       },
     );
+  });
+
+  /// Die Einschießpassen laufen genau wie die Wettkampfpassen ab und zählen nur
+  /// nicht mit. Geprüft wird deshalb vor allem, dass sie *keinen* Sonderfall
+  /// bilden: derselbe Ablauf, dasselbe Spulen, nur eine andere Beschriftung.
+  group('practice ends', () {
+    const texts = CompetitionTexts(AppLanguage.german);
+
+    /// Ein Durchgang weiter, lautlos — mit AB/CD sind zwei davon eine Passe.
+    void forward(int passages) {
+      for (var i = 0; i < passages; i++) {
+        notifier().fastForward();
+      }
+    }
+
+    test('the round begins in the practice block', () {
+      setEnds(20, practice: 2);
+
+      expect(round().practiceEnds, 2);
+      expect(round().isPractice, isTrue);
+      expect(round().endNumber, 1);
+      expect(round().endsInBlock, 2);
+      expect(round().lastEnd, 22, reason: 'zwei Einschieß- und 20 Wettkampf');
+    });
+
+    test('the counter names the block it is in', () {
+      setEnds(20, practice: 2);
+
+      expect(texts.endCounter(round()), 'Einschießen 1/2');
+      expect(container.read(competitionLedEndProvider), 'P1');
+
+      forward(4);
+
+      expect(round().currentEnd, 3);
+      expect(round().isPractice, isFalse);
+      expect(
+        texts.endCounter(round()),
+        'Passe 1/20',
+        reason: 'der Wettkampf zählt wieder bei eins an',
+      );
+      expect(container.read(competitionLedEndProvider), '1');
+    });
+
+    testWidgets('a practice end runs like any other end', (tester) async {
+      setEnds(20, practice: 1);
+      notifier().start();
+
+      expect(round().isPractice, isTrue);
+      expect(round().phase, TimerPhase.preparation);
+
+      // Dieselbe Passe wie im Wettkampf: 2 × (10s + 120s).
+      await tester.pump(const Duration(seconds: 260));
+
+      expect(round().currentEnd, 2);
+      expect(round().isPractice, isFalse);
+      expect(round().endNumber, 1);
+      expect(
+        round().isWaitingBetweenEnds,
+        isTrue,
+        reason: 'auch nach dem Einschießen werden erst die Pfeile geholt',
+      );
+
+      stop();
+    });
+
+    testWidgets('the round ends after the competition block', (tester) async {
+      setEnds(1, practice: 1);
+      notifier().start();
+      await tester.pump(const Duration(seconds: 260));
+
+      expect(round().isFinished, isFalse, reason: 'erst die Einschießpasse');
+
+      notifier().advance();
+      await tester.pump(const Duration(seconds: 260));
+
+      expect(round().isFinished, isTrue);
+    });
+
+    test('the group order starts over with the competition', () {
+      setEnds(20, practice: 3);
+
+      expect(round().groupOrder, ['AB', 'CD']);
+
+      forward(2);
+      expect(round().currentEnd, 2);
+      expect(
+        round().groupOrder,
+        ['CD', 'AB'],
+        reason: 'innerhalb des Einschießens wechselt die Reihenfolge auch',
+      );
+
+      forward(4);
+      expect(round().currentEnd, 4);
+      expect(round().isPractice, isFalse);
+      expect(
+        round().groupOrder,
+        ['AB', 'CD'],
+        reason: 'Passe 1 beginnt mit AB, egal wie oft eingeschossen wurde',
+      );
+    });
+
+    test('rewinding steps back into the practice ends', () {
+      setEnds(20, practice: 2);
+      forward(4);
+      expect(round().currentEnd, 3);
+
+      notifier().rewind();
+
+      expect(round().currentEnd, 2);
+      expect(round().isPractice, isTrue);
+      expect(round().endNumber, 2);
+      expect(round().currentGroup, 'AB', reason: 'der letzte Durchgang von P2');
+    });
+
+    test('without practice ends the round is what it always was', () {
+      setEnds(20);
+
+      expect(round().practiceEnds, 0);
+      expect(round().isPractice, isFalse);
+      expect(round().endNumber, round().currentEnd);
+      expect(round().lastEnd, 20);
+      expect(texts.endCounter(round()), 'Passe 1/20');
+    });
+
+    testWidgets('changing the practice ends starts a fresh round', (
+      tester,
+    ) async {
+      setEnds(20, practice: 2);
+      notifier().start();
+      await tester.pump(const Duration(seconds: 5));
+
+      container.read(settingsProvider.notifier).setCompetitionPracticeEnds(4);
+
+      expect(round().phase, TimerPhase.idle);
+      expect(round().currentEnd, 1);
+      expect(round().practiceEnds, 4);
+      expect(round().isRunning, isFalse);
+
+      await tester.pump(const Duration(milliseconds: 400));
+    });
   });
 
   group('settings changes', () {

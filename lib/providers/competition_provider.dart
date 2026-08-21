@@ -54,12 +54,13 @@ class CompetitionNotifier extends Notifier<CompetitionState>
         return;
       }
 
-      // Disziplin, Passenzahl und Aufstellung beschreiben den Aufbau der ganzen
-      // Runde. Sie mitten in einer laufenden Runde umzubauen hätte keine
-      // Bedeutung — also wird die Runde neu aufgesetzt, wie im custom-Modus der
-      // Ampel.
+      // Disziplin, Passenzahl, Einschießpassen und Aufstellung beschreiben den
+      // Aufbau der ganzen Runde. Sie mitten in einer laufenden Runde umzubauen
+      // hätte keine Bedeutung — also wird die Runde neu aufgesetzt, wie im
+      // custom-Modus der Ampel.
       if (previous?.competitionDiscipline != next.competitionDiscipline ||
           previous?.competitionEnds != next.competitionEnds ||
+          previous?.competitionPracticeEnds != next.competitionPracticeEnds ||
           previous?.competitionLineup != next.competitionLineup) {
         stopTicking();
         state = _initialState();
@@ -209,6 +210,7 @@ class CompetitionNotifier extends Notifier<CompetitionState>
       remainingTime: discipline.shootingTime,
       phase: TimerPhase.idle,
       totalEnds: settings.competitionEnds,
+      practiceEnds: settings.competitionPracticeEnds,
       lineup: settings.competitionLineup,
       discipline: discipline,
       preparationTime: competitionPreparationTime,

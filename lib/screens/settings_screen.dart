@@ -159,6 +159,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             rowKey: _itemKeys[SettingsItem.competitionDiscipline]!,
           ),
           _EndsRow(rowKey: _itemKeys[SettingsItem.competitionEnds]!),
+          _PracticeEndsRow(
+            rowKey: _itemKeys[SettingsItem.competitionPracticeEnds]!,
+          ),
 
           _SectionHeader(texts.targetSection),
           _LineupRow(rowKey: _itemKeys[SettingsItem.competitionLineup]!),
@@ -1037,6 +1040,29 @@ class _EndsRow extends ConsumerWidget {
       subtitle: texts.endsSubtitle,
       control: _ValueStepper(
         item: SettingsItem.competitionEnds,
+        value: '$ends',
+      ),
+    );
+  }
+}
+
+class _PracticeEndsRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _PracticeEndsRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final ends = ref.watch(competitionPracticeEndsProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.competitionPracticeEnds,
+      rowKey: rowKey,
+      title: texts.practiceEnds,
+      subtitle: texts.practiceEndsSubtitle,
+      control: _ValueStepper(
+        item: SettingsItem.competitionPracticeEnds,
         value: '$ends',
       ),
     );

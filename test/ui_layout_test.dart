@@ -394,9 +394,14 @@ void main() {
     test('every end counter the round can reach fits its cell', () {
       // Nicht nur die Samples, sondern jede Zahl, die eine Runde annehmen kann:
       // die Zahl mit der breitesten Ziffernfolge ist nicht zwingend die größte.
-      for (var current = 1; current <= Settings.maxCompetitionEnds; current++) {
-        final text = '$current';
+      final counters = [
+        for (var end = 1; end <= Settings.maxCompetitionEnds; end++) '$end',
+        // Das Einschießen zählt in derselben Zelle, nur mit dem „P" davor.
+        for (var end = 1; end <= Settings.maxCompetitionPracticeEnds; end++)
+          'P$end',
+      ];
 
+      for (final text in counters) {
         expect(
           widthOf(text, LedPanelSpec.endStyle),
           lessThanOrEqualTo(LedPanelSpec.labelWidth + 0.01),
@@ -405,13 +410,17 @@ void main() {
       }
     });
 
-    test('the end sample stays tied to the settings limit', () {
-      // Die Schriftgröße ist an [endSamples] bemessen. Wird die Obergrenze in
-      // den Einstellungen heraufgesetzt, muss der Zähler mitschrumpfen — der
-      // Test schlägt an, wenn das Sample stattdessen stehen bleibt.
+    test('the end samples stay tied to the settings limits', () {
+      // Die Schriftgröße ist an [endSamples] bemessen. Wird eine der beiden
+      // Obergrenzen in den Einstellungen heraufgesetzt, muss der Zähler
+      // mitschrumpfen — der Test schlägt an, wenn ein Sample stattdessen stehen
+      // bleibt.
       expect(
         LedPanelSpec.endSamples,
-        contains('${Settings.maxCompetitionEnds}'),
+        containsAll([
+          '${Settings.maxCompetitionEnds}',
+          'P${Settings.maxCompetitionPracticeEnds}',
+        ]),
       );
     });
 

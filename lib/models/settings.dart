@@ -57,6 +57,12 @@ class Settings {
   /// Wie viele Passen eine Wettkampfrunde hat.
   final int competitionEnds;
 
+  /// Wie viele Einschießpassen der Runde vorausgehen.
+  ///
+  /// Sie laufen genau wie die Wettkampfpassen ab und zählen nur nicht mit —
+  /// deshalb eine eigene Zahl neben [competitionEnds] und kein Aufschlag darauf.
+  final int competitionPracticeEnds;
+
   /// Wie die Schützen an der Scheibe aufgeteilt sind.
   final CompetitionLineup competitionLineup;
 
@@ -78,6 +84,7 @@ class Settings {
     this.timerScale = 1.0,
     this.competitionDiscipline = CompetitionDiscipline.indoor,
     this.competitionEnds = 20,
+    this.competitionPracticeEnds = 4,
     this.competitionLineup = CompetitionLineup.abcd,
     this.competitionDisplay = CompetitionDisplay.standard,
   });
@@ -91,6 +98,16 @@ class Settings {
   /// Freiluftrunde; darunter liegt jedes kürzere Vereinsformat.
   static const minCompetitionEnds = 1;
   static const maxCompetitionEnds = 30;
+
+  /// Grenzen für [competitionPracticeEnds]. Vier sind die Turniernorm, null
+  /// heißt „ohne Einschießen".
+  ///
+  /// Die Obergrenze ist keine Regel, sondern das LED-Raster: der Zähler steht
+  /// dort als „P4" in einer Zelle, die für zwei Zeichen bemessen ist. Eine
+  /// zehnte Einschießpasse würde die Schrift der ganzen Infozeile — auch „AB"
+  /// und die Passenzahl — dauerhaft kleiner machen (siehe `LedPanelSpec`).
+  static const minCompetitionPracticeEnds = 0;
+  static const maxCompetitionPracticeEnds = 9;
 
   /// Grenzen und Schrittweite für [timerScale], in Prozent gerechnet: mit
   /// Kommazahlen zu schrittweise addieren würde sich aufaddierende Rundungs-
@@ -114,6 +131,7 @@ class Settings {
     double? timerScale,
     CompetitionDiscipline? competitionDiscipline,
     int? competitionEnds,
+    int? competitionPracticeEnds,
     CompetitionLineup? competitionLineup,
     CompetitionDisplay? competitionDisplay,
   }) {
@@ -133,6 +151,8 @@ class Settings {
       competitionDiscipline:
           competitionDiscipline ?? this.competitionDiscipline,
       competitionEnds: competitionEnds ?? this.competitionEnds,
+      competitionPracticeEnds:
+          competitionPracticeEnds ?? this.competitionPracticeEnds,
       competitionLineup: competitionLineup ?? this.competitionLineup,
       competitionDisplay: competitionDisplay ?? this.competitionDisplay,
     );
@@ -155,6 +175,7 @@ class Settings {
       "timerScale": timerScale,
       "competitionDiscipline": competitionDiscipline.index,
       "competitionEnds": competitionEnds,
+      "competitionPracticeEnds": competitionPracticeEnds,
       "competitionLineup": competitionLineup.index,
       "competitionDisplay": competitionDisplay.index,
     };
@@ -189,6 +210,9 @@ class Settings {
         CompetitionDiscipline.indoor,
       ),
       competitionEnds: _parseEnds(json['competitionEnds'] as int?),
+      competitionPracticeEnds: _parsePracticeEnds(
+        json['competitionPracticeEnds'] as int?,
+      ),
       competitionLineup: _parseEnum(
         CompetitionLineup.values,
         json['competitionLineup'] as int?,
@@ -220,6 +244,12 @@ class Settings {
   static int _parseEnds(int? ends) {
     if (ends == null) return const Settings().competitionEnds;
     return ends.clamp(minCompetitionEnds, maxCompetitionEnds);
+  }
+
+  /// Helper: keep the practice end count inside its range (with fallback)
+  static int _parsePracticeEnds(int? ends) {
+    if (ends == null) return const Settings().competitionPracticeEnds;
+    return ends.clamp(minCompetitionPracticeEnds, maxCompetitionPracticeEnds);
   }
 
   /// Helper: keep the display scale inside its range (with fallback)

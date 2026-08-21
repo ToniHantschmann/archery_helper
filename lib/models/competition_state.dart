@@ -120,10 +120,22 @@ class CompetitionState {
   final Duration remainingTime;
   final TimerPhase phase;
 
-  /// Die laufende Passe, ab 1 gezählt.
+  /// Die laufende Passe, ab 1 gezählt — **durchlaufend** über die ganze Runde,
+  /// Einschießpassen zuerst.
+  ///
+  /// Also nicht die Zahl, die auf dem Schirm steht: das ist [endNumber]. Eine
+  /// Runde ist eine Folge von Passen, deren erste [practiceEnds] das Einschießen
+  /// sind — mit einer einzigen Zählung darüber braucht der Übergang vom
+  /// Einschießen in den Wettkampf keinen Sonderfall (dazwischen werden Pfeile
+  /// geholt wie zwischen allen anderen Passen auch), und Vor- und Zurückspulen
+  /// bleiben ein simples ±1.
   final int currentEnd;
 
+  /// Wie viele Passen der Wettkampf hat — ohne das Einschießen.
   final int totalEnds;
+
+  /// Wie viele Einschießpassen ihm vorausgehen, 0 wenn ohne.
+  final int practiceEnds;
 
   /// Welche Gruppe der Passe gerade dran ist — Index in [groupOrder].
   final int groupIndex;
@@ -147,18 +159,37 @@ class CompetitionState {
     required this.preparationTime,
     required this.shootingTime,
     this.currentEnd = 1,
+    this.practiceEnds = 0,
     this.groupIndex = 0,
     this.warningThreshold = competitionWarningThreshold,
     this.isRunning = false,
     this.isPaused = false,
   });
 
+  /// Die letzte Passe der Runde — Einschießen und Wettkampf zusammen.
+  int get lastEnd => practiceEnds + totalEnds;
+
+  /// Ob die laufende Passe eine Einschießpasse ist.
+  bool get isPractice => currentEnd <= practiceEnds;
+
+  /// Die Zahl, die auf dem Schirm steht: innerhalb ihres Blocks gezählt, also
+  /// „1" sowohl für die erste Einschieß- als auch für die erste Wettkampfpasse.
+  int get endNumber => isPractice ? currentEnd : currentEnd - practiceEnds;
+
+  /// Wie viele Passen der laufende Block hat — der Nenner des Zählers.
+  int get endsInBlock => isPractice ? practiceEnds : totalEnds;
+
   /// Ob die Gruppen dieser Passe in umgekehrter Reihenfolge schießen.
   ///
   /// Regel: nach jeder Passe beginnt die andere Gruppe — Passe 1 AB/CD,
   /// Passe 2 CD/AB, Passe 3 wieder AB/CD. Über die ganze Runde kommt so jede
   /// Gruppe gleich oft zuerst dran.
-  bool get isOrderReversed => currentEnd.isEven;
+  ///
+  /// Gezählt wird auf [endNumber] und nicht durchlaufend: der Wechsel fängt im
+  /// Wettkampf wieder von vorn an, damit Passe 1 mit AB beginnt, ganz gleich wie
+  /// viele Einschießpassen davor lagen. Innerhalb des Einschießens wechselt er
+  /// genauso — dort schießen dieselben Gruppen im selben Rhythmus.
+  bool get isOrderReversed => endNumber.isEven;
 
   /// Die Gruppen dieser Passe in Schussreihenfolge.
   List<String> get groupOrder =>
@@ -171,7 +202,7 @@ class CompetitionState {
   /// Ob in dieser Passe nach der laufenden Gruppe noch eine folgt.
   bool get hasNextGroup => groupIndex + 1 < groupOrder.length;
 
-  bool get hasNextEnd => currentEnd < totalEnds;
+  bool get hasNextEnd => currentEnd < lastEnd;
 
   /// Ob in dieser Passe vor der laufenden Gruppe schon eine dran war.
   bool get hasPreviousGroup => groupIndex > 0;
@@ -219,6 +250,7 @@ class CompetitionState {
     TimerPhase? phase,
     int? currentEnd,
     int? totalEnds,
+    int? practiceEnds,
     int? groupIndex,
     CompetitionLineup? lineup,
     CompetitionDiscipline? discipline,
@@ -233,6 +265,7 @@ class CompetitionState {
       phase: phase ?? this.phase,
       currentEnd: currentEnd ?? this.currentEnd,
       totalEnds: totalEnds ?? this.totalEnds,
+      practiceEnds: practiceEnds ?? this.practiceEnds,
       groupIndex: groupIndex ?? this.groupIndex,
       lineup: lineup ?? this.lineup,
       discipline: discipline ?? this.discipline,

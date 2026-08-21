@@ -166,6 +166,8 @@ void main() {
       tester,
     ) async {
       settings().setCompetitionEnds(1);
+      // Ohne Einschießen: die Runde soll nach dieser einen Passe zu Ende sein.
+      settings().setCompetitionPracticeEnds(0);
 
       competition().start();
       expect(player.taken, [AudioSignal.toTheLine], reason: 'an die Linie');

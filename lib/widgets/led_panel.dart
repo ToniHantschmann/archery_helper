@@ -96,13 +96,19 @@ class LedPanelSpec {
   /// Alle Gruppenkürzel, die es gibt (siehe `CompetitionLineup`).
   static const groupSamples = ['AB', 'CD'];
 
-  /// Der breiteste Passenzähler, den es geben kann.
+  /// Die breitesten Passenzähler, die es geben kann — Wettkampf und
+  /// Einschießen, denn beide stehen in derselben Zelle.
   ///
-  /// Aus [Settings.maxCompetitionEnds] gebaut statt hingeschrieben: eine
-  /// heraufgesetzte Obergrenze in den Einstellungen darf die Schrift nicht
-  /// stillschweigend zu groß stehen lassen — bei dreistelligen Passen wäre die
-  /// Zelle zu schmal.
-  static final endSamples = ['${Settings.maxCompetitionEnds}'];
+  /// Aus den Obergrenzen der Einstellungen gebaut statt hingeschrieben: eine
+  /// heraufgesetzte Grenze darf die Schrift nicht stillschweigend zu groß
+  /// stehen lassen — bei dreistelligen Passen wäre die Zelle zu schmal. Genau
+  /// das ist auch der Grund, warum [Settings.maxCompetitionPracticeEnds] bei
+  /// neun liegt: „P9" ist zwei Zeichen breit wie „30" und „AB", „P10" wäre drei
+  /// und würde die ganze Zeile kleiner setzen.
+  static final endSamples = [
+    '${Settings.maxCompetitionEnds}',
+    'P${Settings.maxCompetitionPracticeEnds}',
+  ];
 
   /// Alle drei Stile erben **nicht** vom umgebenden `DefaultTextStyle`.
   ///

@@ -68,6 +68,16 @@ class SettingsTexts {
     en: 'How many ends are shot',
   );
 
+  static const _practiceEnds = LocalizedText(
+    de: 'Einschießen',
+    en: 'Practice ends',
+  );
+
+  static const _practiceEndsSubtitle = LocalizedText(
+    de: 'Wie viele Passen vor dem Wettkampf eingeschossen werden',
+    en: 'How many practice ends precede the round',
+  );
+
   static const _lineup = LocalizedText(de: 'Aufstellung', en: 'Lineup');
 
   static const _lineupSubtitle = LocalizedText(
@@ -334,6 +344,9 @@ class SettingsTexts {
   String get disciplineSubtitle => _disciplineSubtitle.get(_currentLanguage);
   String get ends => _ends.get(_currentLanguage);
   String get endsSubtitle => _endsSubtitle.get(_currentLanguage);
+  String get practiceEnds => _practiceEnds.get(_currentLanguage);
+  String get practiceEndsSubtitle =>
+      _practiceEndsSubtitle.get(_currentLanguage);
   String get lineup => _lineup.get(_currentLanguage);
   String get lineupSubtitle => _lineupSubtitle.get(_currentLanguage);
   String get display => _display.get(_currentLanguage);

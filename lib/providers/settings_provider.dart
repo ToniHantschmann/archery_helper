@@ -155,6 +155,16 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  void setCompetitionPracticeEnds(int ends) {
+    state = state.copyWith(
+      competitionPracticeEnds: ends.clamp(
+        Settings.minCompetitionPracticeEnds,
+        Settings.maxCompetitionPracticeEnds,
+      ),
+    );
+    _save();
+  }
+
   void setCompetitionLineup(CompetitionLineup lineup) {
     state = state.copyWith(competitionLineup: lineup);
     _save();
@@ -205,6 +215,7 @@ class SettingsNotifier extends Notifier<Settings> {
         timeFormat: defaults.timeFormat,
         competitionDiscipline: defaults.competitionDiscipline,
         competitionEnds: defaults.competitionEnds,
+        competitionPracticeEnds: defaults.competitionPracticeEnds,
         competitionLineup: defaults.competitionLineup,
         competitionDisplay: defaults.competitionDisplay,
       ),
@@ -273,6 +284,10 @@ final competitionDisciplineProvider = Provider<CompetitionDiscipline>((ref) {
 
 final competitionEndsProvider = Provider<int>((ref) {
   return ref.watch(settingsProvider).competitionEnds;
+});
+
+final competitionPracticeEndsProvider = Provider<int>((ref) {
+  return ref.watch(settingsProvider).competitionPracticeEnds;
 });
 
 final competitionLineupProvider = Provider<CompetitionLineup>((ref) {

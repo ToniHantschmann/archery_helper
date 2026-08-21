@@ -44,6 +44,10 @@ class CompetitionTexts {
 
   static const _end = LocalizedText(de: 'Passe', en: 'End');
 
+  /// Die Passen vor der Runde. Sie zählen nicht mit, also sagt der Zähler auch
+  /// nicht „Passe" — sonst stünde dieselbe Zahl zweimal in der Runde.
+  static const _practice = LocalizedText(de: 'Einschießen', en: 'Practice');
+
   static const _screenTitle = LocalizedText(de: 'Wettkampf', en: 'Competition');
 
   // ===== HINTS =====
@@ -116,9 +120,13 @@ class CompetitionTexts {
     }
   }
 
-  /// Der Passenzähler: „Passe 3/20".
-  String endCounter(int current, int total) =>
-      '${_end.get(_language)} $current/$total';
+  /// Der Passenzähler: „Passe 3/20", beim Einschießen „Einschießen 2/4".
+  ///
+  /// Nimmt den ganzen Stand und nicht zwei Zahlen: welcher Block gerade läuft,
+  /// gehört zur Beschriftung und nicht in den Aufrufer.
+  String endCounter(CompetitionState state) =>
+      '${(state.isPractice ? _practice : _end).get(_language)} '
+      '${state.endNumber}/${state.endsInBlock}';
 }
 
 final competitionTextsProvider = Provider<CompetitionTexts>((ref) {
