@@ -1,11 +1,11 @@
 {
-    "name": "archery_helper",
-    "short_name": "archery_helper",
+    "name": "Archery Helper",
+    "short_name": "Archery Helper",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Schießzeit-Ampel und Wettkampf-Uhr für den Bogensport.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
