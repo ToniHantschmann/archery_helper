@@ -29,10 +29,17 @@ class CompetitionLedScreen extends ConsumerWidget {
     // `SizedBox.expand` ist dabei nicht schmückend: der Rumpf eines `Scaffold`
     // bekommt lose Constraints, und ohne den Zwang aufs volle Bild bliebe die
     // `FittedBox` genau so groß wie ihr Kind und würde nichts skalieren.
-    return Scaffold(
-      backgroundColor: AppPalette.ledBlack,
-      body: SizedBox.expand(
-        child: FittedBox(fit: fit, child: const LedPanel()),
+    // Kein Mauszeiger, und zwar unabhängig davon, ob gerade getippt wurde: auf
+    // der Anzeigetafel wäre er ein heller Fleck mitten im Bild. Die innerste
+    // `MouseRegion` bestimmt den Zeiger, also überstimmt diese hier den
+    // `_PointerScope` um den ganzen `AppNavigator`.
+    return MouseRegion(
+      cursor: SystemMouseCursors.none,
+      child: Scaffold(
+        backgroundColor: AppPalette.ledBlack,
+        body: SizedBox.expand(
+          child: FittedBox(fit: fit, child: const LedPanel()),
+        ),
       ),
     );
   }

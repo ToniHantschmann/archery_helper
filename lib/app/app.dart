@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/app_theme.dart';
 import '../models/settings_section.dart';
 import '../providers/app_state_provider.dart';
+import '../providers/pointer_hidden_provider.dart';
 import '../screens/competition_screen.dart';
 import '../screens/idle_screen.dart';
 import '../screens/menu_screen.dart';
@@ -21,7 +22,35 @@ class ArcheryHelperApp extends ConsumerWidget {
       title: 'Archery Helper',
       theme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
-      home: const KeyboardScope(child: AppNavigator()),
+      home: const _PointerScope(child: KeyboardScope(child: AppNavigator())),
+    );
+  }
+}
+
+/// Blendet den Mauszeiger aus, solange über die Tastatur bedient wird.
+///
+/// Das Gegenstück zu `KeyboardScope`: dort kommt jede Taste herein und versteckt
+/// den Zeiger, hier bringt ihn jede Mausbewegung zurück. `onHover` feuert nur
+/// bei echter Bewegung — genau die gesuchte Bedingung — und erreicht diese
+/// Region auch dann, wenn der Zeiger über einer Kachel mit eigenem
+/// `MouseRegion` steht: Hover-Ereignisse laufen den ganzen Trefferpfad entlang,
+/// nur der *Zeiger* wird von der innersten Region bestimmt.
+///
+/// Deshalb [MouseCursor.defer] und nicht `basic`: im sichtbaren Zustand soll
+/// weiter gelten, was weiter innen steht (die Hand über den Menükacheln).
+class _PointerScope extends ConsumerWidget {
+  final Widget child;
+
+  const _PointerScope({required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hidden = ref.watch(pointerHiddenProvider);
+
+    return MouseRegion(
+      cursor: hidden ? SystemMouseCursors.none : MouseCursor.defer,
+      onHover: (_) => ref.read(pointerHiddenProvider.notifier).reveal(),
+      child: child,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_actions_provider.dart';
 import '../providers/app_state_provider.dart';
+import '../providers/pointer_hidden_provider.dart';
 
 /// App-wide keyboard entry point.
 ///
@@ -64,6 +65,12 @@ class _KeyboardScopeState extends ConsumerState<KeyboardScope> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    // Wer tippt, braucht keinen Mauszeiger im Bild — bewusst *jede* Taste und
+    // nicht nur die belegten: auch eine unbelegte Taste ist Tastaturbedienung.
+    if (event is KeyDownEvent || event is KeyRepeatEvent) {
+      ref.read(pointerHiddenProvider.notifier).hide();
+    }
+
     // KeyRepeatEvent is passed on so holding an arrow key keeps adjusting a
     // value; AppActionsNotifier decides which actions may repeat.
     if (event is KeyDownEvent) {

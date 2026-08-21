@@ -9,6 +9,7 @@ import '../core/theme/app_typography.dart';
 import '../models/keyboard_config.dart';
 import '../providers/app_actions_provider.dart';
 import '../providers/menu_navigation_provider.dart';
+import '../providers/pointer_hidden_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
 
@@ -246,7 +247,12 @@ class _MenuTile extends ConsumerWidget {
     final accent = armed ? AppPalette.caution : AppPalette.accent;
 
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      // Die einzige verschachtelte MouseRegion der App — und damit die einzige,
+      // die den versteckten Zeiger wieder hervorholen könnte, weil die innerste
+      // Region gewinnt. Sie hört deshalb auf denselben Zustand.
+      cursor: ref.watch(pointerHiddenProvider)
+          ? SystemMouseCursors.none
+          : SystemMouseCursors.click,
       // Hovering moves the same selection the arrow keys move: one state, two
       // input paths, and no second highlight treatment to keep in sync.
       onEnter: (_) => ref.read(menuNavigationProvider.notifier).select(item),
