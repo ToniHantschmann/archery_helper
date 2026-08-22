@@ -86,6 +86,13 @@ abstract class ScreenActionHandler {
     return KeyEventResult.handled;
   }
 
+  /// Zwischen der Anzeige des Screens und der Uhrzeit umschalten.
+  ///
+  /// Ohne Standardverhalten, anders als die drei Uhr-Tasten darüber: die
+  /// Uhrzeitanzeige gehört bisher allein dem Wettkampf, und ein Schirm, der sie
+  /// nicht hat, soll die Taste nicht klaglos schlucken.
+  KeyEventResult toggleClock() => KeyEventResult.ignored;
+
   /// Öffnet die Einstellungen, die zu diesem Screen gehören.
   ///
   /// Es gibt kein globales Einstellungsmenü mehr — S bedeutet „stell das ein,
@@ -229,6 +236,15 @@ class CompetitionScreenActions extends ScreenActionHandler {
   @override
   KeyEventResult resetTimer() {
     _competition.reset();
+    return KeyEventResult.handled;
+  }
+
+  /// Vor dem Turnierstart die Uhrzeit über die Schießlinie hängen — und wieder
+  /// zurück zur Runde. Auf der LED-Wand gilt dieselbe Taste (geerbt), dort ist
+  /// die Uhrzeit dann das ganze Panel.
+  @override
+  KeyEventResult toggleClock() {
+    _competition.toggleClock();
     return KeyEventResult.handled;
   }
 
@@ -569,6 +585,8 @@ class AppActionsNotifier {
         return screen.toggleTimer();
       case AppAction.skipTimer:
         return screen.skipTimer();
+      case AppAction.toggleClock:
+        return screen.toggleClock();
       case AppAction.toggleSettings:
         return screen.openSettings();
 

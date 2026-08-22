@@ -424,6 +424,71 @@ void main() {
     });
   });
 
+  /// U hängt die Uhrzeit über die Schießlinie — und wieder ab. Die einzige
+  /// Taste, die nur eine Anzeige umschaltet statt eine Uhr zu bedienen, und
+  /// deshalb auch die einzige, die außerhalb des Wettkampfs nichts tut.
+  group('the wall clock key', () {
+    CompetitionState round() => container.read(competitionProvider);
+
+    /// Nach dem Einschalten der Uhr nicht `pumpAndSettle`: das minütliche
+    /// Neustellen der Wanduhr planscht sonst bis zur nächsten vollen Minute.
+    Future<void> pressClockKey(WidgetTester tester) async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyU);
+      await tester.pump(const Duration(milliseconds: 600));
+    }
+
+    testWidgets('shows the clock on the competition screen and back', (
+      tester,
+    ) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+      expect(round().showClock, isFalse);
+
+      await pressClockKey(tester);
+      expect(round().showClock, isTrue);
+
+      await pressClockKey(tester);
+      expect(round().showClock, isFalse);
+    });
+
+    testWidgets('works on the LED wall too', (tester) async {
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDisplay(CompetitionDisplay.led);
+      await pumpApp(tester, startAt: AppScreen.competition);
+
+      await pressClockKey(tester);
+      expect(round().showClock, isTrue);
+
+      await flushPendingSaves(tester);
+    });
+
+    testWidgets('the start signal takes the display back', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+
+      await pressClockKey(tester);
+      expect(round().showClock, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(round().phase, TimerPhase.preparation);
+      expect(round().showClock, isFalse);
+
+      container.read(competitionProvider.notifier).reset();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('does nothing on the Ampel screen', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.timer);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyU);
+      await tester.pumpAndSettle();
+
+      expect(container.read(timerProvider).phase, TimerPhase.idle);
+      expect(round().showClock, isFalse);
+    });
+  });
+
   /// Vollbild gilt für die ganze App: F11 schaltet dasselbe persistierte
   /// Setting wie die Zeile in den allgemeinen Einstellungen — es gibt keinen
   /// zweiten Zustand, der davon abweichen könnte.

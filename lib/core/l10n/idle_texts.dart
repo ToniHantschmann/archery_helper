@@ -25,28 +25,9 @@ class IdleTexts {
   String get subtitle => _subtitle.get(_language);
   String get wakeHint => _wakeHint.get(_language);
 
-  /// Wall clock, always 24h — this is a German club and a 12h clock would be
-  /// ambiguous on a display nobody interacts with.
-  String formatClock(DateTime time) {
-    final hours = time.hour.toString().padLeft(2, '0');
-    final minutes = time.minute.toString().padLeft(2, '0');
-    return '$hours:$minutes';
-  }
-
-  /// Numeric date, in the order the language expects. Deliberately without
-  /// weekday or month names: two more translation tables for something that is
-  /// read at a glance would not earn their keep.
-  String formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-
-    switch (_language) {
-      case AppLanguage.german:
-        return '$day.$month.${date.year}';
-      case AppLanguage.english:
-        return '${date.year}-$month-$day';
-    }
-  }
+  // Uhrzeit und Datum stehen nicht hier, sondern in `ClockTexts`: die
+  // Ruheanzeige ist nicht mehr die einzige Anzeige, die sie braucht, und
+  // `WallClockFace` holt sie sich von dort selbst.
 }
 
 // ===== PROVIDER =====

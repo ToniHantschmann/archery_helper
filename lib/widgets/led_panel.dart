@@ -3,10 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/l10n/clock_texts.dart';
 import '../core/theme/app_palette.dart';
 import '../models/settings.dart';
 import '../providers/competition_ui_providers.dart';
 import '../providers/settings_provider.dart';
+import 'wall_clock.dart';
 
 /// Die Maße der LED-Wand am Außenstand.
 ///
@@ -93,6 +95,12 @@ class LedPanelSpec {
     timeSamplesByFormat.values,
   );
 
+  /// Der breiteste `HH:mm`, den die Uhrzeitanzeige zeigen kann.
+  ///
+  /// Ein Zeichen mehr als „4:00" — die Wanduhr bekommt deshalb ihre eigene
+  /// Schriftgröße und nicht die der Restzeit, sonst liefe sie über.
+  static const clockSample = '23:59';
+
   /// Alle Gruppenkürzel, die es gibt (siehe `CompetitionLineup`).
   static const groupSamples = ['AB', 'CD'];
 
@@ -155,6 +163,7 @@ class LedPanelSpec {
   );
 
   static double? _timeFontSize;
+  static double? _clockFontSize;
   static double? _labelFontSize;
 
   /// Die größte Schrift, in der [timeSamples] noch in [timeWidth] passt.
@@ -212,13 +221,56 @@ class LedPanelSpec {
   /// zwischen Oberlänge und Versalhöhe. Beides ist bei einer Uhr leer, und
   /// beides ist verschieden groß — ohne Ausgleich säße die Zahl um rund acht
   /// Pixel zu hoch in der Wand, also gut vier Zentimeter.
-  static double get timeNudgeY {
-    final baseline = _baselineOf(timeSamples.first, timeStyle);
-    final emptyBelow = timeFontSize - baseline;
-    final emptyAbove = baseline - _capHeightRatio * timeFontSize;
+  static double get timeNudgeY =>
+      _nudgeY(timeSamples.first, timeStyle, timeFontSize, timeScaleY);
 
-    return (emptyBelow - emptyAbove) / 2 * timeScaleY;
+  /// Der Ausgleich aus [timeNudgeY], für eine beliebige Zeile.
+  ///
+  /// Zwei Zeilen mit verschiedener Schriftgröße brauchen ihn verschieden groß,
+  /// die Rechnung dahinter ist aber dieselbe — und sie zweimal dastehen zu haben
+  /// hieße, sie zweimal richtig halten zu müssen.
+  static double _nudgeY(
+    String sample,
+    TextStyle style,
+    double fontSize,
+    double scaleY,
+  ) {
+    final baseline = _baselineOf(sample, style);
+    final emptyBelow = fontSize - baseline;
+    final emptyAbove = baseline - _capHeightRatio * fontSize;
+
+    return (emptyBelow - emptyAbove) / 2 * scaleY;
   }
+
+  // ===== UHRZEIT =====
+  //
+  // Vor dem Turnierstart ist die Uhrzeit das ganze Panel: keine Ampelfläche,
+  // keine Gruppe, keine Passe. Sie bekommt deshalb nicht das Zeitband der
+  // Restzeit, sondern die volle Höhe der Wand.
+
+  /// Die größte Schrift, in der [clockSample] noch in [timeWidth] passt.
+  ///
+  /// Wie die Restzeit ist die Uhrzeit **breiten**begrenzt — nur eben um ein
+  /// Zeichen breiter, und damit von sich aus kleiner.
+  static double get clockFontSize =>
+      _clockFontSize ??= _fit([clockSample], _timeBase, timeWidth, height);
+
+  /// Die vertikale Streckung der Uhrzeit — gedeckelt auf die der Restzeit.
+  ///
+  /// Über die volle Höhe gezogen wäre „23:59" sichtbar verzerrt: fünf Zeichen
+  /// setzen die Schrift kleiner als vier, und was an Höhe fehlt, müsste die
+  /// Streckung holen. Die Grenze ist deshalb keine neue Zahl, sondern der Wert,
+  /// den das Panel im Betrieb ohnehin zeigt: die Uhrzeit darf nie stärker
+  /// verzerrt sein als die Restzeit. Was dann an Höhe übrig bleibt, wird zu
+  /// Rand — die Uhr steht mittig in der Wand.
+  static double get clockScaleY =>
+      math.min(height / clockFontSize, timeScaleY);
+
+  static double get clockNudgeY =>
+      _nudgeY(clockSample, clockStyle, clockFontSize, clockScaleY);
+
+  static TextStyle get clockStyle =>
+      _timeBase.copyWith(fontSize: clockFontSize);
 
   /// Die Schriftgröße **beider** Beschriftungen der Infozeile.
   ///
@@ -279,6 +331,7 @@ class LedPanelSpec {
 const ledTimeKey = ValueKey('led-time');
 const ledGroupKey = ValueKey('led-group');
 const ledEndKey = ValueKey('led-end');
+const ledClockKey = ValueKey('led-clock');
 
 /// Der Wettkampfstand auf 192 × 128 Pixeln: Restzeit, Gruppe, Passe,
 /// Ampelfarbe.
@@ -292,21 +345,60 @@ class LedPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const ColoredBox(
+    // Vor dem Turnierstart die Uhrzeit, und wirklich nur sie: eine Ampelfläche
+    // ohne laufende Runde wäre ein Signal, das nichts bedeutet, und ein
+    // Passenzähler ohne Passe eine Zahl, die niemand braucht.
+    final showClock = ref.watch(competitionShowClockProvider);
+
+    return ColoredBox(
       color: AppPalette.ledBlack,
       child: SizedBox(
         width: LedPanelSpec.width,
         height: LedPanelSpec.height,
-        child: Column(
-          children: [
-            SizedBox(
-              height: LedPanelSpec.timeHeight,
-              width: double.infinity,
-              child: _LedTime(),
+        child: showClock
+            ? const _LedWallClock()
+            : const Column(
+                children: [
+                  SizedBox(
+                    height: LedPanelSpec.timeHeight,
+                    width: double.infinity,
+                    child: _LedTime(),
+                  ),
+                  SizedBox(height: LedPanelSpec.rowGutter),
+                  SizedBox(
+                    height: LedPanelSpec.rowHeight,
+                    child: _LedInfoRow(),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// Die Uhrzeit über die ganze Wand.
+///
+/// Mittig statt rechtsbündig wie die Restzeit: `HH:mm` ist immer fünf Zeichen
+/// breit, es gibt also keinen Stellenwechsel, bei dem eine Ziffer ihre Spalte
+/// verlieren könnte. Weiß und nicht in einer Ampelfarbe — vor dem Start gibt es
+/// kein Signal zu geben, und [AppPalette.ledDim] heißt hier „pausiert".
+class _LedWallClock extends StatelessWidget {
+  const _LedWallClock();
+
+  @override
+  Widget build(BuildContext context) {
+    return WallClock(
+      builder: (context, now) => Center(
+        child: Transform.translate(
+          offset: Offset(0, LedPanelSpec.clockNudgeY),
+          child: Transform.scale(
+            scaleY: LedPanelSpec.clockScaleY,
+            child: Text(
+              ClockTexts.formatClock(now),
+              key: ledClockKey,
+              style: LedPanelSpec.clockStyle,
             ),
-            SizedBox(height: LedPanelSpec.rowGutter),
-            SizedBox(height: LedPanelSpec.rowHeight, child: _LedInfoRow()),
-          ],
+          ),
         ),
       ),
     );

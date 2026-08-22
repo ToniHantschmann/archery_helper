@@ -9,6 +9,7 @@ enum AppAction {
   next, // context-sensitive next action
   previous, // context-sensitive step back
   forward, // context-sensitive step ahead, without starting anything
+  toggleClock, // show the wall clock instead of the round
   // ── Modi ───────────────────────────────────────────────
   nextMode, // next timer mode
   previousMode, // previous timer mode
@@ -46,6 +47,9 @@ class KeyboardConfig {
         LogicalKeyboardKey.keyR: AppAction.resetTimer,
         LogicalKeyboardKey.keyM: AppAction.nextMode,
         LogicalKeyboardKey.keyP: AppAction.toggleTimer,
+        // U wie Uhr — die einzige Aktion, die eine Anzeige umschaltet statt
+        // eine Uhr zu bedienen.
+        LogicalKeyboardKey.keyU: AppAction.toggleClock,
 
         // Screen navigation
         // Esc ist der einzige Rückweg: aus einem Werkzeug ins Hauptmenü, aus
@@ -108,6 +112,8 @@ class KeyboardConfig {
         return 'Eine Position zurück';
       case AppAction.forward:
         return 'Eine Position vor';
+      case AppAction.toggleClock:
+        return 'Uhrzeit anzeigen';
       case AppAction.nextMode:
         return 'Nächster Modus';
       case AppAction.previousMode:

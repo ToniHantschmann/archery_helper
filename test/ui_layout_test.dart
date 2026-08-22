@@ -1,4 +1,5 @@
 import 'package:archery_helper/app/app.dart';
+import 'package:archery_helper/core/l10n/clock_texts.dart';
 import 'package:archery_helper/core/l10n/menu_texts.dart';
 import 'package:archery_helper/core/l10n/settings_texts.dart';
 import 'package:archery_helper/core/l10n/timer_texts.dart';
@@ -250,6 +251,22 @@ void main() {
         await tester.pump();
       });
     }
+
+    for (final entry in sizes.entries) {
+      testWidgets('the competition screen fits the wall clock at ${entry.key}', (
+        tester,
+      ) async {
+        // Die Uhrzeit tritt an die Stelle der Restzeit, die Leisten bleiben
+        // stehen — und die Hinweisleiste hat mit der Uhrzeit-Taste einen
+        // Eintrag mehr als vor diesem Feature.
+        container.read(competitionProvider.notifier).toggleClock();
+        await pumpScreen(tester, entry.value, AppScreen.competition);
+
+        expect(tester.takeException(), isNull);
+
+        await leaveScreen(tester);
+      });
+    }
   });
 
   /// Die LED-Wand am Außenstand ist 192 × 128 Pixel groß. Der übliche
@@ -369,6 +386,73 @@ void main() {
       // Drei gleiche Zellen gehen nur auf, solange die Wand durch drei teilbar
       // ist — bei einer anderen Panelbreite bliebe sonst ein Pixel offen.
       expect(3 * LedPanelSpec.cellWidth, LedPanelSpec.width);
+    });
+
+    test('every wall clock time fits the panel', () {
+      // Alle 1440 Minuten des Tages — die breiteste Ziffernfolge ist nicht
+      // zwingend die späteste, und die Uhrzeit hat kein Format zum Umschalten,
+      // an dem man sich sonst festhalten könnte.
+      for (var hour = 0; hour < 24; hour++) {
+        for (var minute = 0; minute < 60; minute++) {
+          final text = ClockTexts.formatClock(DateTime(2026, 1, 1, hour, minute));
+
+          expect(
+            widthOf(text, LedPanelSpec.clockStyle),
+            lessThanOrEqualTo(LedPanelSpec.timeWidth + 0.01),
+            reason: '"$text" muss auf die Wand passen',
+          );
+        }
+      }
+    });
+
+    test('the wall clock is never more distorted than the countdown', () {
+      // Der Deckel ist die ganze Begründung der Streckung: „23:59" ist ein
+      // Zeichen breiter als „4:00", steht damit von sich aus kleiner, und ohne
+      // Grenze würde die volle Wandhöhe die Ziffern sichtbar in die Länge
+      // ziehen.
+      expect(
+        LedPanelSpec.clockScaleY,
+        lessThanOrEqualTo(LedPanelSpec.timeScaleY + 0.01),
+      );
+      // Und nach unten wirkt sie trotzdem: eine Stauchung wäre ein zu niedriges
+      // Panel.
+      expect(LedPanelSpec.clockScaleY, greaterThanOrEqualTo(1));
+      // Gestreckt bleibt sie in der Wand.
+      expect(
+        LedPanelSpec.clockFontSize * LedPanelSpec.clockScaleY,
+        lessThanOrEqualTo(LedPanelSpec.height + 0.01),
+      );
+    });
+
+    testWidgets('shows nothing but the clock while it is switched on', (
+      tester,
+    ) async {
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDisplay(CompetitionDisplay.led);
+      container.read(competitionProvider.notifier).toggleClock();
+
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+
+      expect(find.byKey(ledClockKey), findsOneWidget);
+      expect(find.byKey(ledTimeKey), findsNothing);
+      expect(find.byKey(ledGroupKey), findsNothing);
+      expect(find.byKey(ledEndKey), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      // Und mit der Runde ist die Wand wieder vollständig.
+      container.read(competitionProvider.notifier).toggleClock();
+      await tester.pump();
+
+      expect(find.byKey(ledClockKey), findsNothing);
+      expect(find.byKey(ledTimeKey), findsOneWidget);
+      expect(find.byKey(ledGroupKey), findsOneWidget);
+      expect(find.byKey(ledEndKey), findsOneWidget);
+
+      await leaveScreen(tester);
+      // Der entprellte Schreibvorgang der Einstellungen darf den Test nicht
+      // überleben.
+      await tester.pump(const Duration(milliseconds: 400));
     });
 
     test('both labels of the info row are the same size', () {

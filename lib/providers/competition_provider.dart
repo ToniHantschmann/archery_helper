@@ -195,6 +195,14 @@ class CompetitionNotifier extends Notifier<CompetitionState>
     _awaitSlot();
   }
 
+  /// Schaltet zwischen Runde und Uhrzeit um.
+  ///
+  /// Gilt für beide Schirme — auf dem Monitor tritt die Uhr an die Stelle der
+  /// Restzeit, auf der LED-Wand ist sie das ganze Panel.
+  void toggleClock() {
+    state = state.copyWith(showClock: !state.showClock);
+  }
+
   void reset() {
     stopTicking();
     state = _initialState();
@@ -218,12 +226,19 @@ class CompetitionNotifier extends Notifier<CompetitionState>
     );
   }
 
+  /// Läuft die Runde wieder an, gehört die Anzeige ihr — die Uhrzeit geht von
+  /// selbst weg, damit niemand sie erst wegdrücken muss, während die
+  /// Vorbereitungszeit schon läuft. Das gilt für alle drei Stellen, an denen
+  /// eine Phase anläuft, und ausdrücklich *nicht* für [_awaitSlot], [rewind] und
+  /// [fastForward]: dort wartet die Runde weiter, und die Uhr bleibt stehen, wo
+  /// der Schießleiter sie hingestellt hat.
   void _startPreparation({DateTime? anchor}) {
     state = state.copyWith(
       phase: TimerPhase.preparation,
       remainingTime: state.preparationTime,
       isRunning: true,
       isPaused: false,
+      showClock: false,
     );
     // Zwei Töne — im Turnier heißt das "an die Schießlinie", und am
     // Gruppenwechsel gleichzeitig "die vorige Gruppe hört auf".
@@ -235,6 +250,7 @@ class CompetitionNotifier extends Notifier<CompetitionState>
     state = state.copyWith(
       phase: TimerPhase.active,
       remainingTime: state.shootingTime,
+      showClock: false,
     );
     _playSignal(AudioSignal.start);
     startTicking(state.remainingTime, anchor: anchor);
@@ -305,7 +321,7 @@ class CompetitionNotifier extends Notifier<CompetitionState>
   }
 
   void _resume() {
-    state = state.copyWith(isRunning: true, isPaused: false);
+    state = state.copyWith(isRunning: true, isPaused: false, showClock: false);
     startTicking(state.remainingTime);
   }
 

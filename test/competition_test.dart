@@ -694,6 +694,88 @@ void main() {
     });
   });
 
+  /// Die Uhrzeitanzeige vor dem Turnierstart: von Hand eingeschaltet, und von
+  /// der Runde wieder abgeschaltet, sobald sie die Anzeige braucht.
+  group('the wall clock', () {
+    test('is off until it is switched on, and toggles back', () {
+      expect(round().showClock, isFalse);
+
+      notifier().toggleClock();
+      expect(round().showClock, isTrue);
+      expect(
+        container.read(competitionShowClockProvider),
+        isTrue,
+        reason: 'der Schirm liest sie über den Anzeige-Provider',
+      );
+
+      notifier().toggleClock();
+      expect(round().showClock, isFalse);
+    });
+
+    testWidgets('the start signal takes the display back', (tester) async {
+      notifier().toggleClock();
+      notifier().start();
+
+      expect(round().phase, TimerPhase.preparation);
+      expect(round().showClock, isFalse);
+
+      // Und auch die Schusszeit dahinter lässt sie aus.
+      await tester.pump(const Duration(seconds: 10));
+      expect(round().phase, TimerPhase.active);
+      expect(round().showClock, isFalse);
+
+      stop();
+    });
+
+    testWidgets('resuming from a pause takes it back too', (tester) async {
+      notifier().start();
+      await tester.pump(const Duration(seconds: 5));
+      notifier().pause();
+
+      // Pausiert darf die Uhrzeit an — es läuft ja gerade nichts.
+      notifier().toggleClock();
+      expect(round().showClock, isTrue);
+
+      notifier().start();
+      expect(round().isRunning, isTrue);
+      expect(round().showClock, isFalse);
+
+      stop();
+    });
+
+    test('a reset clears it', () {
+      notifier().toggleClock();
+      notifier().reset();
+
+      expect(round().showClock, isFalse);
+    });
+
+    testWidgets('spooling the round leaves it alone', (tester) async {
+      setEnds(5);
+      notifier().start();
+      await tester.pump(const Duration(seconds: 260));
+
+      // Zwischen zwei Passen: die Runde wartet, es läuft nichts.
+      expect(round().isWaitingBetweenEnds, isTrue);
+
+      notifier().toggleClock();
+      notifier().fastForward();
+      expect(round().showClock, isTrue, reason: 'vorspulen startet nichts');
+
+      notifier().rewind();
+      expect(round().showClock, isTrue, reason: 'zurückspulen auch nicht');
+
+      stop();
+    });
+
+    test('the hint label names where the key leads', () {
+      expect(container.read(competitionClockLabelProvider), 'Uhrzeit');
+
+      notifier().toggleClock();
+      expect(container.read(competitionClockLabelProvider), 'Runde');
+    });
+  });
+
   /// Die LED-Wand zeigt ganze Sekunden — auf einer Anzeigetafel gehören
   /// Zehntel nicht hin. Sie ist aber nur eine Anzeige: an der Runde selbst
   /// ändert der Wechsel nichts.

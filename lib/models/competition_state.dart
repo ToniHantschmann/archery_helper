@@ -150,6 +150,19 @@ class CompetitionState {
   final bool isRunning;
   final bool isPaused;
 
+  /// Ob statt der Runde die Uhrzeit angezeigt wird.
+  ///
+  /// Vor dem Turnierstart steht die Anzeige lange herum, und die Schusszeit ist
+  /// dann nicht die Zahl, nach der sich jemand richtet — die Uhrzeit ist es.
+  /// Umgeschaltet wird von Hand: was über der Schießlinie steht, entscheidet der
+  /// Schießleiter und nicht der Rundenzustand. Deshalb ein Feld und keiner der
+  /// abgeleiteten Getter hier drüber: ein Umschalter lässt sich aus nichts
+  /// ableiten.
+  ///
+  /// Die Runde schaltet sie von selbst wieder ab, sobald sie die Anzeige
+  /// braucht (siehe `CompetitionNotifier`).
+  final bool showClock;
+
   const CompetitionState({
     required this.remainingTime,
     required this.phase,
@@ -164,6 +177,7 @@ class CompetitionState {
     this.warningThreshold = competitionWarningThreshold,
     this.isRunning = false,
     this.isPaused = false,
+    this.showClock = false,
   });
 
   /// Die letzte Passe der Runde — Einschießen und Wettkampf zusammen.
@@ -259,6 +273,7 @@ class CompetitionState {
     Duration? warningThreshold,
     bool? isRunning,
     bool? isPaused,
+    bool? showClock,
   }) {
     return CompetitionState(
       remainingTime: remainingTime ?? this.remainingTime,
@@ -274,6 +289,7 @@ class CompetitionState {
       warningThreshold: warningThreshold ?? this.warningThreshold,
       isRunning: isRunning ?? this.isRunning,
       isPaused: isPaused ?? this.isPaused,
+      showClock: showClock ?? this.showClock,
     );
   }
 }

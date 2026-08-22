@@ -13,6 +13,7 @@ import '../providers/hint_navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
+import '../widgets/wall_clock.dart';
 import 'competition_led_screen.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/timer_display.dart';
@@ -52,23 +53,46 @@ class CompetitionScreen extends ConsumerWidget {
           child: Column(
             children: [
               const _CompetitionStatusRail(),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xl,
-                    vertical: AppSpacing.md,
-                  ),
-                  child: TimerDisplay(
-                    uiStateProvider: competitionUIStateProvider,
-                  ),
-                ),
-              ),
+              const Expanded(child: _CompetitionCenter()),
               const _GroupRail(),
               const _CompetitionHintRail(),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Die Mitte des Schirms: die Runde — oder die Uhrzeit.
+///
+/// Beides steht an derselben Stelle, weil es beides die eine Zahl ist, nach der
+/// sich die Schießlinie richtet: vor dem Turnierstart ist das die Uhrzeit, ab
+/// dem Startsignal die Restzeit. Alles drumherum (Passenzähler, Gruppenleiste,
+/// Tastenlegende) bleibt in beiden Fällen stehen — der Schießleiter bedient von
+/// hier aus, auch während die Uhr zu sehen ist. Der getönte Hintergrund bleibt
+/// ebenfalls, damit der Schirm nicht aussieht, als wäre die App verlassen
+/// worden.
+class _CompetitionCenter extends ConsumerWidget {
+  const _CompetitionCenter();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(competitionShowClockProvider)) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+          child: WallClockFace(),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.md,
+      ),
+      child: TimerDisplay(uiStateProvider: competitionUIStateProvider),
     );
   }
 }
@@ -184,6 +208,7 @@ class _CompetitionHintRail extends ConsumerWidget {
         AppAction.forward => texts.hintForward,
         AppAction.toggleTimer => ref.watch(competitionToggleLabelProvider),
         AppAction.resetTimer => texts.hintReset,
+        AppAction.toggleClock => ref.watch(competitionClockLabelProvider),
         AppAction.toggleSettings => texts.hintSettings,
         AppAction.back => texts.hintMenu,
         _ => '',

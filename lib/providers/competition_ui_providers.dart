@@ -79,6 +79,18 @@ final competitionToggleLabelProvider = Provider.autoDispose<String>((ref) {
   return ref.watch(competitionTextsProvider).toggleLabel(state);
 });
 
+/// Ob statt der Runde die Uhrzeit angezeigt wird.
+final competitionShowClockProvider = Provider.autoDispose<bool>((ref) {
+  return ref.watch(competitionProvider).showClock;
+});
+
+/// Beschriftung der Uhrzeit-Taste. Dieselbe Taste in beide Richtungen, also sagt
+/// die Beschriftung, wohin sie führt, und nicht, was gerade zu sehen ist.
+final competitionClockLabelProvider = Provider.autoDispose<String>((ref) {
+  final showClock = ref.watch(competitionShowClockProvider);
+  return ref.watch(competitionTextsProvider).clockLabel(showClock: showClock);
+});
+
 /// Die Einträge der unteren Hinweisleiste, in der Reihenfolge, in der
 /// links/rechts durch sie läuft.
 final competitionHintActionsProvider = Provider.autoDispose<List<AppAction>>((ref) {
@@ -91,6 +103,10 @@ final competitionHintActionsProvider = Provider.autoDispose<List<AppAction>>((re
     AppAction.forward,
     AppAction.toggleTimer,
     AppAction.resetTimer,
+    // Die Uhrzeit ist eine Anzeige-Entscheidung wie die Einstellungen, keine
+    // Bedienung der Runde — deshalb hinter dem Zurücksetzen und nicht zwischen
+    // den Tasten, die die Runde bewegen.
+    AppAction.toggleClock,
     AppAction.toggleSettings,
     // Esc, wie bei der Ampel — siehe timerHintActionsProvider.
     AppAction.back,

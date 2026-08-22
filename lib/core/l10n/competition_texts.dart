@@ -79,6 +79,12 @@ class CompetitionTexts {
 
   static const _hintSelect = LocalizedText(de: 'Auswählen', en: 'Select');
 
+  static const _hintClock = LocalizedText(de: 'Uhrzeit', en: 'Clock');
+
+  /// Der Rückweg von der Uhrzeit. Bewusst nicht „Zurück" — das ist der Schritt
+  /// zurück durch die Runde.
+  static const _hintRound = LocalizedText(de: 'Runde', en: 'Round');
+
   // ===== PUBLIC =====
 
   String get screenTitle => _screenTitle.get(_language);
@@ -94,6 +100,15 @@ class CompetitionTexts {
   String get hintSettings => _hintSettings.get(_language);
   String get hintMenu => _hintMenu.get(_language);
   String get hintSelect => _hintSelect.get(_language);
+
+  /// Beschriftung der Uhrzeit-Taste. Sie schaltet in beide Richtungen, also
+  /// nennt sie das Ziel und nicht das, was gerade zu sehen ist.
+  ///
+  /// Nimmt nur das Flag und nicht den ganzen Stand, anders als [toggleLabel]:
+  /// die Umschaltung hängt an nichts sonst, und ein Provider, der am ganzen
+  /// Stand hinge, würde im Sekundentakt neu rechnen.
+  String clockLabel({required bool showClock}) =>
+      (showClock ? _hintRound : _hintClock).get(_language);
 
   /// Beschriftung der Start/Pause-Taste, passend zum Stand der Runde.
   String toggleLabel(CompetitionState state) {
