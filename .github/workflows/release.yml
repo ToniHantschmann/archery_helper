@@ -39,15 +39,16 @@ jobs:
     container: ubuntu:22.04
     steps:
       # Vor dem Checkout, weil das nackte Image kein git hat und
-      # actions/checkout sonst ohne git-Metadaten herunterlädt. git, curl,
-      # unzip und xz-utils sind auf dem Runner-Image vorinstalliert, hier
-      # nicht.
+      # actions/checkout sonst ohne git-Metadaten herunterlädt. Die erste
+      # Zeile ist das, was das Runner-Image vorinstalliert mitbringt und ein
+      # nacktes Ubuntu nicht: git und curl für den Checkout, jq, zip, unzip
+      # und xz-utils für das setup.sh von flutter-action.
       - name: Build-Abhängigkeiten installieren
         run: |
           apt-get update
           export DEBIAN_FRONTEND=noninteractive
           apt-get install -y --no-install-recommends \
-            ca-certificates curl git unzip xz-utils file sudo \
+            ca-certificates curl git jq zip unzip xz-utils file sudo \
             desktop-file-utils \
             clang cmake ninja-build pkg-config \
             libgtk-3-dev liblzma-dev \
