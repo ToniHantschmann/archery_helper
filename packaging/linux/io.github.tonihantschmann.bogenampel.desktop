@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Archery Helper
+GenericName=Schießzeit-Ampel
+Comment=Schießzeit-Ampel und Wettkampf-Uhr für den Bogensport
+Comment[en]=Shot clock and competition timer for archery
+Exec=archery_helper
+Icon=io.github.tonihantschmann.bogenampel
+Terminal=false
+Categories=Utility;Sports;
+Keywords=archery;timer;bogen;ampel;bogensport;
+# Der Runner ruft g_set_prgname(APPLICATION_ID) auf; darüber ordnet der Desktop
+# das laufende Fenster diesem Eintrag zu — der Dateiname muss die App-ID sein.
+StartupWMClass=io.github.tonihantschmann.bogenampel
