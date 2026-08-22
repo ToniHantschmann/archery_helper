@@ -32,6 +32,16 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
+# audioplayers_windows zieht über wil/cppwinrt.h (WIL 1.0.210803.1, im Plugin
+# fest verdrahtet) <experimental/coroutine> herein, weil hier C++17 gilt. Ab
+# MSVC 14.51 ist dieser Header kein Warnhinweis mehr, sondern ein harter
+# Fehler (STL1011) — der Windows-Build bricht dann in einem fremden Paket ab,
+# an dem wir nichts ändern können. Die Definition ist der von Microsoft in der
+# Fehlermeldung selbst genannte Ausweg und gilt, weil sie hier auf
+# Verzeichnisebene steht, auch für die weiter unten hinzugefügten Plugins.
+# Kann weg, sobald audioplayers eine WIL-Version mit <coroutine> zieht.
+add_definitions(-D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 # Compilation settings that should be applied to most targets.
 #
 # Be cautious about adding new options here, as plugins use this function by
