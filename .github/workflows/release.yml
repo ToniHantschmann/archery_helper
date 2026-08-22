@@ -1,0 +1,128 @@
+# Baut die Auslieferungspakete für Linux und Windows.
+#
+# Ein Tag-Push (v1.0.0) erzeugt ein GitHub Release mit drei Downloads. Der
+# manuelle Start über workflow_dispatch baut dieselben Artefakte, hängt sie
+# aber nur an den Lauf — zum Einfahren, ohne dass ein Tag verbraucht wird.
+#
+# Beide Build-Jobs müssen dort laufen, wo sie laufen: ein auf NixOS gebautes
+# Binary hat seine Bibliothekspfade fest in /nix/store, und Flutter kann
+# Windows nicht cross-kompilieren.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: 3.38.3
+
+jobs:
+  build-linux:
+    # Nicht ubuntu-latest: glibc ist abwärts-, nicht aufwärtskompatibel. Auf
+    # 24.04 gebaut startet das Binary auf Ubuntu 22.04 oder Debian 12 nicht.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build-Abhängigkeiten installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+
+      # Torwächter: kein Release aus einem Stand, der die Suite nicht besteht.
+      - run: flutter analyze
+      - run: flutter test
+
+      - run: flutter build linux --release
+
+      - run: packaging/linux/make_deb.sh
+      - run: packaging/linux/make_appimage.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: dist/*
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      # pubspec trägt "1.0.0+1" — vor dem Plus die Version, dahinter der
+      # Build-Zähler. Der Installer will nur den vorderen Teil.
+      - name: Version aus pubspec.yaml lesen
+        id: version
+        shell: pwsh
+        run: |
+          $line = Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$' | Select-Object -First 1
+          $version = $line.Matches[0].Groups[1].Value.Trim().Split('+')[0]
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $version"
+
+      # Flutter legt die VC++-Runtime nicht selbst ins Release-Verzeichnis. Auf
+      # Windows 10/11 ist sie meist vorhanden, garantiert nicht. App-lokal
+      # danebenzulegen ist erlaubt und billiger als ein Redist-Installer.
+      - name: VC++-Runtime beilegen
+        shell: pwsh
+        run: |
+          $target = "build\windows\x64\runner\Release"
+          $redist = Get-ChildItem "C:\Program Files*\Microsoft Visual Studio\*\*\VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT" -Directory |
+                    Sort-Object FullName | Select-Object -Last 1
+          if (-not $redist) { throw "Kein VC-Redist-Verzeichnis auf dem Runner gefunden." }
+          Write-Host "Runtime aus: $($redist.FullName)"
+          foreach ($dll in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
+            Copy-Item (Join-Path $redist.FullName $dll) $target -Force
+          }
+
+      - name: Installer bauen
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          & $iscc "packaging\windows\archery_helper.iss" "/DMyAppVersion=${{ steps.version.outputs.version }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/*.exe
+          if-no-files-found: error
+
+  release:
+    needs: [build-linux, build-windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
