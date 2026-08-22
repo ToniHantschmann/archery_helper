@@ -59,7 +59,8 @@ export DEBIAN_FRONTEND=noninteractive
 # dem GitHub-Runner sind sie vorinstalliert, hier nicht.
 apt-get update -qq
 apt-get install -y -qq --no-install-recommends \
-  ca-certificates curl git unzip xz-utils file \
+  ca-certificates curl git unzip xz-utils file sudo \
+  desktop-file-utils \
   clang cmake ninja-build pkg-config \
   libgtk-3-dev liblzma-dev \
   libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
