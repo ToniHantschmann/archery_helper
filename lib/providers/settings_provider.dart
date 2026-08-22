@@ -175,6 +175,25 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  void setCompetitionCountdownTime(Duration duration) {
+    state = state.copyWith(
+      competitionCountdownTime: Duration(
+        seconds: duration.inSeconds.clamp(
+          Settings.minCompetitionCountdown.inSeconds,
+          Settings.maxCompetitionCountdown.inSeconds,
+        ),
+      ),
+    );
+    _save();
+  }
+
+  void toggleCompetitionCountdownAutoStart() {
+    state = state.copyWith(
+      competitionCountdownAutoStart: !state.competitionCountdownAutoStart,
+    );
+    _save();
+  }
+
   // Settings zurücksetzen
   void resetToDefaults() {
     state =
@@ -218,6 +237,8 @@ class SettingsNotifier extends Notifier<Settings> {
         competitionPracticeEnds: defaults.competitionPracticeEnds,
         competitionLineup: defaults.competitionLineup,
         competitionDisplay: defaults.competitionDisplay,
+        competitionCountdownTime: defaults.competitionCountdownTime,
+        competitionCountdownAutoStart: defaults.competitionCountdownAutoStart,
       ),
     };
     _save();
@@ -296,4 +317,12 @@ final competitionLineupProvider = Provider<CompetitionLineup>((ref) {
 
 final competitionDisplayProvider = Provider<CompetitionDisplay>((ref) {
   return ref.watch(settingsProvider).competitionDisplay;
+});
+
+final competitionCountdownTimeProvider = Provider<Duration>((ref) {
+  return ref.watch(settingsProvider).competitionCountdownTime;
+});
+
+final competitionCountdownAutoStartProvider = Provider<bool>((ref) {
+  return ref.watch(settingsProvider).competitionCountdownAutoStart;
 });

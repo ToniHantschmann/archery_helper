@@ -28,16 +28,18 @@ class CompetitionNotifier extends Notifier<CompetitionState>
   void _playSignal(AudioSignal signal) =>
       ref.read(signalSoundsProvider).play(signal);
 
-  /// Im LED-Modus immer ganze Sekunden.
+  /// Im LED-Modus immer ganze Sekunden — und im Countdown ebenfalls.
   ///
   /// Das Panel zeigt ohnehin nur ganze Sekunden — und ein Zehntelraster würde
   /// die Uhr zehnmal pro Sekunde für eine Anzeige rechnen lassen, die sich
-  /// einmal ändert.
+  /// einmal ändert. Für den Countdown gilt dasselbe aus dem anderen Grund:
+  /// Zehntel auf einer Zwei-Minuten-Ansage sind Unruhe ohne Nutzen.
   @override
   Duration get displayStep =>
-      ref.read(competitionDisplayProvider) == CompetitionDisplay.standard
-      ? super.displayStep
-      : const Duration(seconds: 1);
+      state.isCountingDown ||
+          ref.read(competitionDisplayProvider) != CompetitionDisplay.standard
+      ? const Duration(seconds: 1)
+      : super.displayStep;
 
   @override
   CompetitionState build() {
@@ -200,7 +202,52 @@ class CompetitionNotifier extends Notifier<CompetitionState>
   /// Gilt für beide Schirme — auf dem Monitor tritt die Uhr an die Stelle der
   /// Restzeit, auf der LED-Wand ist sie das ganze Panel.
   void toggleClock() {
+    // Der Countdown ist die andere Vollbild-Anzeige vor dem Start; zwei davon
+    // gleichzeitig gibt es nicht, und die zuletzt gedrückte Taste gewinnt.
+    if (state.isCountingDown) stopCountdown();
     state = state.copyWith(showClock: !state.showClock);
+  }
+
+  /// Schaltet den Countdown bis zum Turnierstart an oder ab.
+  ///
+  /// Die Ansage „in zwei Minuten geht es los" bekommt damit eine Zahl über der
+  /// Schießlinie. Die Runde bleibt dabei in [TimerPhase.idle] stehen — sie
+  /// wartet weiter auf den Schießleiter, nur läuft jetzt sichtbar etwas ab.
+  ///
+  /// Nur vor der ersten Passe ([CompetitionState.isBeforeStart]), und nicht
+  /// überall dort, wo die Runde wartet: mitten in einer Passe wäre der
+  /// Countdown eine zweite Uhr auf demselben Schirm, und zwischen zwei Passen
+  /// eine falsche Ansage — dort wird nicht auf den Start gewartet, sondern auf
+  /// die geholten Pfeile.
+  void toggleCountdown() {
+    if (state.isCountingDown) {
+      stopCountdown();
+      return;
+    }
+
+    if (!state.isBeforeStart) return;
+
+    stopTicking();
+    state = state.copyWith(
+      isCountingDown: true,
+      showClock: false,
+      isPaused: false,
+      remainingTime: ref.read(competitionCountdownTimeProvider),
+    );
+    startTicking(state.remainingTime);
+  }
+
+  /// Bricht den Countdown ab und stellt die wartende Runde wieder her.
+  void stopCountdown() {
+    if (!state.isCountingDown) return;
+
+    stopTicking();
+    state = state.copyWith(
+      isCountingDown: false,
+      // Wie in [_awaitSlot]: wartet die Runde, steht die Schusszeit auf dem
+      // Schirm.
+      remainingTime: state.shootingTime,
+    );
   }
 
   void reset() {
@@ -239,6 +286,7 @@ class CompetitionNotifier extends Notifier<CompetitionState>
       isRunning: true,
       isPaused: false,
       showClock: false,
+      isCountingDown: false,
     );
     // Zwei Töne — im Turnier heißt das "an die Schießlinie", und am
     // Gruppenwechsel gleichzeitig "die vorige Gruppe hört auf".
@@ -251,6 +299,7 @@ class CompetitionNotifier extends Notifier<CompetitionState>
       phase: TimerPhase.active,
       remainingTime: state.shootingTime,
       showClock: false,
+      isCountingDown: false,
     );
     _playSignal(AudioSignal.start);
     startTicking(state.remainingTime, anchor: anchor);
@@ -305,6 +354,9 @@ class CompetitionNotifier extends Notifier<CompetitionState>
       phase: TimerPhase.idle,
       isRunning: false,
       isPaused: false,
+      // Anders als die Uhrzeit: der Countdown gehört zum Turnierstart, und wer
+      // in der Runde spult, ist längst gestartet.
+      isCountingDown: false,
       // Wie vor der ersten Passe steht die Schusszeit auf dem Schirm: sie ist
       // die Zahl, um die es im kommenden Durchgang geht.
       remainingTime: state.shootingTime,
@@ -321,7 +373,12 @@ class CompetitionNotifier extends Notifier<CompetitionState>
   }
 
   void _resume() {
-    state = state.copyWith(isRunning: true, isPaused: false, showClock: false);
+    state = state.copyWith(
+      isRunning: true,
+      isPaused: false,
+      showClock: false,
+      isCountingDown: false,
+    );
     startTicking(state.remainingTime);
   }
 
@@ -330,8 +387,33 @@ class CompetitionNotifier extends Notifier<CompetitionState>
     state = state.copyWith(remainingTime: remaining);
   }
 
+  /// Das Ende des Countdowns: entweder läuft die Runde jetzt an, oder die
+  /// Anzeige geht einfach zurück auf die wartende Runde.
+  ///
+  /// Ohne Auto-Start bleibt es still — der Ton gehört zum Startsignal, und das
+  /// gibt in diesem Fall weiter der Schießleiter.
+  void _finishCountdown({DateTime? anchor}) {
+    if (ref.read(competitionCountdownAutoStartProvider)) {
+      _startPreparation(anchor: anchor);
+      return;
+    }
+
+    stopTicking();
+    state = state.copyWith(
+      isCountingDown: false,
+      remainingTime: state.shootingTime,
+    );
+  }
+
   @override
   void onPhaseElapsed({DateTime? anchor}) {
+    // Vor der Phasenfrage: der Countdown läuft in `idle` mit, und der landete
+    // sonst im Zweig, der die Runde beendet.
+    if (state.isCountingDown) {
+      _finishCountdown(anchor: anchor);
+      return;
+    }
+
     switch (state.phase) {
       case TimerPhase.preparation:
         _startShooting(anchor: anchor);
@@ -361,6 +443,10 @@ final competitionRemainingProvider = Provider<Duration>((ref) {
 
 final isCompetitionRunningProvider = Provider<bool>((ref) {
   return ref.watch(competitionProvider).isRunning;
+});
+
+final isCompetitionCountingDownProvider = Provider<bool>((ref) {
+  return ref.watch(competitionProvider).isCountingDown;
 });
 
 final isCompetitionInWarningProvider = Provider<bool>((ref) {

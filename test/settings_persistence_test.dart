@@ -51,6 +51,8 @@ void main() {
     // Bewusst der letzte Wert des Enums: ein Index, der beim Lesen aus dem
     // Gespeicherten am ehesten aus der Liste fällt.
     competitionDisplay: CompetitionDisplay.ledStretched,
+    competitionCountdownTime: Duration(seconds: 90),
+    competitionCountdownAutoStart: true,
   );
 
   test('saved settings survive a round trip unchanged', () async {
@@ -74,6 +76,11 @@ void main() {
     expect(loaded.competitionPracticeEnds, custom.competitionPracticeEnds);
     expect(loaded.competitionLineup, custom.competitionLineup);
     expect(loaded.competitionDisplay, custom.competitionDisplay);
+    expect(loaded.competitionCountdownTime, custom.competitionCountdownTime);
+    expect(
+      loaded.competitionCountdownAutoStart,
+      custom.competitionCountdownAutoStart,
+    );
   });
 
   test('every field is written to the stored json', () {
@@ -97,6 +104,8 @@ void main() {
       'competitionPracticeEnds',
       'competitionLineup',
       'competitionDisplay',
+      'competitionCountdownTime',
+      'competitionCountdownAutoStart',
     });
   });
 
@@ -279,6 +288,8 @@ void main() {
         ..setCompetitionLineup(CompetitionLineup.ab)
         ..setCompetitionDisplay(CompetitionDisplay.led)
         ..setCompetitionPracticeEnds(0)
+        ..setCompetitionCountdownTime(const Duration(seconds: 30))
+        ..toggleCompetitionCountdownAutoStart()
         ..setAlternatingArrows(5);
 
       notifier.resetSection(SettingsSection.competition);
@@ -294,6 +305,14 @@ void main() {
       );
       expect(settings.competitionLineup, defaults.competitionLineup);
       expect(settings.competitionDisplay, defaults.competitionDisplay);
+      expect(
+        settings.competitionCountdownTime,
+        defaults.competitionCountdownTime,
+      );
+      expect(
+        settings.competitionCountdownAutoStart,
+        defaults.competitionCountdownAutoStart,
+      );
       expect(settings.alternatingArrows, 5, reason: 'gehört zur Ampel');
     });
 

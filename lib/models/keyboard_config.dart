@@ -10,6 +10,7 @@ enum AppAction {
   previous, // context-sensitive step back
   forward, // context-sensitive step ahead, without starting anything
   toggleClock, // show the wall clock instead of the round
+  toggleCountdown, // count down to the start of the tournament
   // ── Modi ───────────────────────────────────────────────
   nextMode, // next timer mode
   previousMode, // previous timer mode
@@ -50,6 +51,9 @@ class KeyboardConfig {
         // U wie Uhr — die einzige Aktion, die eine Anzeige umschaltet statt
         // eine Uhr zu bedienen.
         LogicalKeyboardKey.keyU: AppAction.toggleClock,
+        // C wie Countdown — die zweite Anzeige vor dem Turnierstart, und die
+        // einzige davon, hinter der eine Uhr läuft.
+        LogicalKeyboardKey.keyC: AppAction.toggleCountdown,
 
         // Screen navigation
         // Esc ist der einzige Rückweg: aus einem Werkzeug ins Hauptmenü, aus
@@ -114,6 +118,8 @@ class KeyboardConfig {
         return 'Eine Position vor';
       case AppAction.toggleClock:
         return 'Uhrzeit anzeigen';
+      case AppAction.toggleCountdown:
+        return 'Countdown bis zum Start';
       case AppAction.nextMode:
         return 'Nächster Modus';
       case AppAction.previousMode:

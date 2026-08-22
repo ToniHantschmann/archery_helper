@@ -166,6 +166,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SectionHeader(texts.targetSection),
           _LineupRow(rowKey: _itemKeys[SettingsItem.competitionLineup]!),
 
+          _SectionHeader(texts.countdownSection),
+          _CountdownTimeRow(
+            rowKey: _itemKeys[SettingsItem.competitionCountdownTime]!,
+          ),
+          _CountdownAutoStartRow(
+            rowKey: _itemKeys[SettingsItem.competitionCountdownAutoStart]!,
+          ),
+
           _SectionHeader(texts.displaySection),
           _DisplayRow(rowKey: _itemKeys[SettingsItem.competitionDisplay]!),
           const _LedKeysNote(),
@@ -1087,6 +1095,54 @@ class _LineupRow extends ConsumerWidget {
       control: _ValueStepper(
         item: SettingsItem.competitionLineup,
         value: texts.getLineupName(lineup),
+      ),
+    );
+  }
+}
+
+/// Wie lange der Countdown vor dem Turnierstart läuft — die Zeit der Ansage,
+/// nicht die einer Phase der Runde.
+class _CountdownTimeRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _CountdownTimeRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final duration = ref.watch(competitionCountdownTimeProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.competitionCountdownTime,
+      rowKey: rowKey,
+      title: texts.countdownTime,
+      subtitle: texts.countdownTimeSubtitle,
+      control: _ValueStepper(
+        item: SettingsItem.competitionCountdownTime,
+        value: texts.formatDurationDisplay(duration),
+      ),
+    );
+  }
+}
+
+class _CountdownAutoStartRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _CountdownAutoStartRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final autoStart = ref.watch(competitionCountdownAutoStartProvider);
+
+    return _SettingsRow(
+      item: SettingsItem.competitionCountdownAutoStart,
+      rowKey: rowKey,
+      title: texts.countdownAutoStart,
+      subtitle: texts.countdownAutoStartSubtitle,
+      control: _TogglePill(
+        item: SettingsItem.competitionCountdownAutoStart,
+        value: autoStart,
       ),
     );
   }

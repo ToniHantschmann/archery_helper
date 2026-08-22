@@ -50,6 +50,11 @@ class SettingsTexts {
 
   static const _targetSection = LocalizedText(de: 'Scheibe', en: 'Target');
 
+  static const _countdownSection = LocalizedText(
+    de: 'Countdown',
+    en: 'Countdown',
+  );
+
   static const _displaySection = LocalizedText(de: 'Anzeige', en: 'Display');
 
   // ===== WETTKAMPF =====
@@ -90,6 +95,25 @@ class SettingsTexts {
   static const _lineupAb = LocalizedText(de: 'A / B', en: 'A / B');
 
   static const _lineupSingle = LocalizedText(de: 'Alle', en: 'All');
+
+  static const _countdownTime = LocalizedText(de: 'Dauer', en: 'Duration');
+
+  /// Sagt, wofür die Zeit gedacht ist — die Taste selbst steht in der
+  /// Tastenleiste des Wettkampfschirms.
+  static const _countdownTimeSubtitle = LocalizedText(
+    de: 'Zeit bis zum Turnierstart, mit C gestartet',
+    en: 'Time until the tournament starts, started with C',
+  );
+
+  static const _countdownAutoStart = LocalizedText(
+    de: 'Automatisch starten',
+    en: 'Start automatically',
+  );
+
+  static const _countdownAutoStartSubtitle = LocalizedText(
+    de: 'Am Ende des Countdowns beginnt die erste Passe von selbst',
+    en: 'The first end begins on its own when the countdown runs out',
+  );
 
   static const _display = LocalizedText(de: 'Ausgabe', en: 'Output');
 
@@ -338,6 +362,7 @@ class SettingsTexts {
   String get languageSection => _languageSection.get(_currentLanguage);
   String get roundSection => _roundSection.get(_currentLanguage);
   String get targetSection => _targetSection.get(_currentLanguage);
+  String get countdownSection => _countdownSection.get(_currentLanguage);
   String get displaySection => _displaySection.get(_currentLanguage);
 
   String get discipline => _discipline.get(_currentLanguage);
@@ -349,6 +374,12 @@ class SettingsTexts {
       _practiceEndsSubtitle.get(_currentLanguage);
   String get lineup => _lineup.get(_currentLanguage);
   String get lineupSubtitle => _lineupSubtitle.get(_currentLanguage);
+  String get countdownTime => _countdownTime.get(_currentLanguage);
+  String get countdownTimeSubtitle =>
+      _countdownTimeSubtitle.get(_currentLanguage);
+  String get countdownAutoStart => _countdownAutoStart.get(_currentLanguage);
+  String get countdownAutoStartSubtitle =>
+      _countdownAutoStartSubtitle.get(_currentLanguage);
   String get display => _display.get(_currentLanguage);
   String get displaySubtitle => _displaySubtitle.get(_currentLanguage);
   String get ledKeysNote => _ledKeysNote.get(_currentLanguage);

@@ -163,6 +163,20 @@ class CompetitionState {
   /// braucht (siehe `CompetitionNotifier`).
   final bool showClock;
 
+  /// Ob statt der Runde der Countdown bis zum Turnierstart läuft.
+  ///
+  /// „In zwei Minuten geht es los" ist eine Ansage, die auf der Anzeige
+  /// weiterlaufen soll — die Schusszeit der ersten Passe sagt dazu nichts. Wie
+  /// [showClock] eine Entscheidung des Schießleiters und deshalb ein Feld;
+  /// anders als sie hängt aber eine Uhr daran: die Restzeit in [remainingTime]
+  /// ist währenddessen die Zeit bis zum Start.
+  ///
+  /// Keine eigene [TimerPhase]: der Countdown läuft *vor* der Runde, die Runde
+  /// steht dabei in [TimerPhase.idle] und wartet — wie immer — auf den
+  /// Schießleiter. Was am Ende passiert, entscheidet die Einstellung
+  /// `competitionCountdownAutoStart`.
+  final bool isCountingDown;
+
   const CompetitionState({
     required this.remainingTime,
     required this.phase,
@@ -178,6 +192,7 @@ class CompetitionState {
     this.isRunning = false,
     this.isPaused = false,
     this.showClock = false,
+    this.isCountingDown = false,
   });
 
   /// Die letzte Passe der Runde — Einschießen und Wettkampf zusammen.
@@ -241,6 +256,19 @@ class CompetitionState {
   bool get isWaitingBetweenEnds =>
       phase == TimerPhase.idle && currentEnd > 1 && groupIndex == 0;
 
+  /// Ob die Runde noch vor ihrer ersten Passe steht.
+  ///
+  /// Die Gegenprobe zu [isWaitingBetweenEnds] und nach derselben Regel
+  /// abgelesen: `idle` heißt immer „wartet auf den Schießleiter", und wo in der
+  /// Runde gewartet wird, ist die ganze Auskunft. Hierher gehört der Countdown
+  /// auf den Turnierstart — zwischen zwei Passen wäre „Start in" die falsche
+  /// Ansage, dort geht es ums Pfeileholen.
+  ///
+  /// An den Anfang zurückgespult steht die Runde wieder vor ihrer ersten Passe.
+  /// Das ist gewollt: der Schießleiter hat sie genau dorthin gestellt.
+  bool get isBeforeStart =>
+      phase == TimerPhase.idle && currentEnd == 1 && groupIndex == 0;
+
   /// Ob überhaupt zwischen Gruppen unterschieden wird. Schießen alle zusammen,
   /// gibt es keine Gruppenanzeige — es gäbe nichts zu unterscheiden.
   bool get hasGroups => lineup.groupLabels.length > 1;
@@ -274,6 +302,7 @@ class CompetitionState {
     bool? isRunning,
     bool? isPaused,
     bool? showClock,
+    bool? isCountingDown,
   }) {
     return CompetitionState(
       remainingTime: remainingTime ?? this.remainingTime,
@@ -290,6 +319,7 @@ class CompetitionState {
       isRunning: isRunning ?? this.isRunning,
       isPaused: isPaused ?? this.isPaused,
       showClock: showClock ?? this.showClock,
+      isCountingDown: isCountingDown ?? this.isCountingDown,
     );
   }
 }

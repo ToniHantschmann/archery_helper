@@ -93,6 +93,12 @@ abstract class ScreenActionHandler {
   /// nicht hat, soll die Taste nicht klaglos schlucken.
   KeyEventResult toggleClock() => KeyEventResult.ignored;
 
+  /// Den Countdown bis zum Turnierstart an- oder abschalten.
+  ///
+  /// Ohne Standardverhalten wie [toggleClock] und aus demselben Grund: er
+  /// gehört zum Turnierstart, also zum Wettkampfschirm.
+  KeyEventResult toggleCountdown() => KeyEventResult.ignored;
+
   /// Öffnet die Einstellungen, die zu diesem Screen gehören.
   ///
   /// Es gibt kein globales Einstellungsmenü mehr — S bedeutet „stell das ein,
@@ -245,6 +251,14 @@ class CompetitionScreenActions extends ScreenActionHandler {
   @override
   KeyEventResult toggleClock() {
     _competition.toggleClock();
+    return KeyEventResult.handled;
+  }
+
+  /// Der Countdown auf den Turnierstart — dieselbe Stelle wie die Uhrzeit, und
+  /// wie sie auf der Wand das ganze Panel.
+  @override
+  KeyEventResult toggleCountdown() {
+    _competition.toggleCountdown();
     return KeyEventResult.handled;
   }
 
@@ -587,6 +601,8 @@ class AppActionsNotifier {
         return screen.skipTimer();
       case AppAction.toggleClock:
         return screen.toggleClock();
+      case AppAction.toggleCountdown:
+        return screen.toggleCountdown();
       case AppAction.toggleSettings:
         return screen.openSettings();
 

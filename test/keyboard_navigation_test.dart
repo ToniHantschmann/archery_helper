@@ -489,6 +489,55 @@ void main() {
     });
   });
 
+  /// C zählt bis zum Turnierstart herunter — wie U eine reine Anzeige-Taste,
+  /// nur mit einer Uhr dahinter, und deshalb ebenfalls nur im Wettkampf.
+  group('the countdown key', () {
+    CompetitionState round() => container.read(competitionProvider);
+
+    /// Nach dem Start läuft der Countdown; nicht `pumpAndSettle`, das liefe bis
+    /// zu seinem Ende durch.
+    Future<void> pressCountdownKey(WidgetTester tester) async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await tester.pump(const Duration(milliseconds: 600));
+    }
+
+    testWidgets('starts and cancels the countdown on the competition screen', (
+      tester,
+    ) async {
+      await pumpApp(tester, startAt: AppScreen.competition);
+      expect(round().isCountingDown, isFalse);
+
+      await pressCountdownKey(tester);
+      expect(round().isCountingDown, isTrue);
+
+      await pressCountdownKey(tester);
+      expect(round().isCountingDown, isFalse);
+    });
+
+    testWidgets('works on the LED wall too', (tester) async {
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDisplay(CompetitionDisplay.led);
+      await pumpApp(tester, startAt: AppScreen.competition);
+
+      await pressCountdownKey(tester);
+      expect(round().isCountingDown, isTrue);
+
+      await pressCountdownKey(tester);
+      await flushPendingSaves(tester);
+    });
+
+    testWidgets('does nothing on the Ampel screen', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.timer);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await tester.pumpAndSettle();
+
+      expect(container.read(timerProvider).phase, TimerPhase.idle);
+      expect(round().isCountingDown, isFalse);
+    });
+  });
+
   /// Vollbild gilt für die ganze App: F11 schaltet dasselbe persistierte
   /// Setting wie die Zeile in den allgemeinen Einstellungen — es gibt keinen
   /// zweiten Zustand, der davon abweichen könnte.

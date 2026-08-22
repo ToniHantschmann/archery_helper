@@ -208,6 +208,9 @@ class _CompetitionHintRail extends ConsumerWidget {
         AppAction.forward => texts.hintForward,
         AppAction.toggleTimer => ref.watch(competitionToggleLabelProvider),
         AppAction.resetTimer => texts.hintReset,
+        AppAction.toggleCountdown => ref.watch(
+          competitionCountdownLabelProvider,
+        ),
         AppAction.toggleClock => ref.watch(competitionClockLabelProvider),
         AppAction.toggleSettings => texts.hintSettings,
         AppAction.back => texts.hintMenu,

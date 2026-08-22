@@ -776,6 +776,181 @@ void main() {
     });
   });
 
+  /// Der Countdown vor dem Turnierstart: läuft in `idle` mit, ohne die Runde
+  /// anzufassen — und am Ende entscheidet die Einstellung, ob sie anläuft.
+  group('the countdown before the start', () {
+    void setCountdown(Duration duration) => container
+        .read(settingsProvider.notifier)
+        .setCompetitionCountdownTime(duration);
+
+    void enableAutoStart() => container
+        .read(settingsProvider.notifier)
+        .toggleCompetitionCountdownAutoStart();
+
+    testWidgets('counts down without moving the round', (tester) async {
+      setCountdown(const Duration(seconds: 30));
+      notifier().toggleCountdown();
+
+      expect(round().isCountingDown, isTrue);
+      expect(round().remainingTime, const Duration(seconds: 30));
+      expect(round().phase, TimerPhase.idle, reason: 'die Runde wartet weiter');
+      expect(round().isRunning, isFalse);
+      expect(round().currentEnd, 1);
+
+      await tester.pump(const Duration(seconds: 10));
+      expect(round().remainingTime, const Duration(seconds: 20));
+
+      stop();
+    });
+
+    test('the same key cancels it and puts the shooting time back', () {
+      setCountdown(const Duration(seconds: 30));
+      notifier().toggleCountdown();
+      notifier().toggleCountdown();
+
+      expect(round().isCountingDown, isFalse);
+      expect(round().remainingTime, round().shootingTime);
+      expect(round().phase, TimerPhase.idle);
+    });
+
+    testWidgets('starts the round by itself when that is switched on', (
+      tester,
+    ) async {
+      setCountdown(const Duration(seconds: 20));
+      enableAutoStart();
+      notifier().toggleCountdown();
+
+      await tester.pump(const Duration(seconds: 20));
+
+      expect(round().isCountingDown, isFalse);
+      expect(round().phase, TimerPhase.preparation);
+      expect(round().isRunning, isTrue);
+      expect(round().remainingTime, round().preparationTime);
+
+      stop();
+    });
+
+    testWidgets('otherwise it just hands the display back', (tester) async {
+      setCountdown(const Duration(seconds: 20));
+      notifier().toggleCountdown();
+
+      await tester.pump(const Duration(seconds: 20));
+
+      expect(round().isCountingDown, isFalse);
+      expect(round().phase, TimerPhase.idle);
+      expect(round().isRunning, isFalse);
+      expect(
+        round().remainingTime,
+        round().shootingTime,
+        reason: 'wieder die Zahl, um die es in der ersten Passe geht',
+      );
+
+      stop();
+    });
+
+    testWidgets('the start signal ends it early', (tester) async {
+      setCountdown(const Duration(seconds: 60));
+      notifier().toggleCountdown();
+      await tester.pump(const Duration(seconds: 5));
+
+      notifier().advance();
+
+      expect(round().isCountingDown, isFalse);
+      expect(round().phase, TimerPhase.preparation);
+      expect(round().remainingTime, round().preparationTime);
+
+      stop();
+    });
+
+    test('it and the wall clock switch each other off', () {
+      notifier().toggleCountdown();
+      notifier().toggleClock();
+
+      expect(round().showClock, isTrue);
+      expect(round().isCountingDown, isFalse);
+
+      notifier().toggleCountdown();
+      expect(round().isCountingDown, isTrue);
+      expect(round().showClock, isFalse);
+
+      stop();
+    });
+
+    testWidgets('a running round has no use for it', (tester) async {
+      notifier().start();
+      await tester.pump(const Duration(seconds: 5));
+
+      notifier().toggleCountdown();
+      expect(round().isCountingDown, isFalse);
+      expect(round().phase, TimerPhase.preparation);
+
+      stop();
+    });
+
+    testWidgets('and neither has the wait between two ends', (tester) async {
+      setEnds(2);
+      notifier().start();
+      await tester.pump(const Duration(seconds: 260));
+      expect(round().isWaitingBetweenEnds, isTrue);
+
+      notifier().toggleCountdown();
+      expect(
+        round().isCountingDown,
+        isFalse,
+        reason: 'dort wird auf die Pfeile gewartet, nicht auf den Start',
+      );
+      expect(round().remainingTime, round().shootingTime);
+
+      stop();
+    });
+
+    testWidgets('rewound to the beginning it works again', (tester) async {
+      setEnds(2);
+      notifier().start();
+      await tester.pump(const Duration(seconds: 260));
+
+      // Zurück durch die erste Passe: an ihren letzten Durchgang, dann an
+      // ihren ersten — und dort steht die Runde wieder vor dem Start.
+      notifier().rewind();
+      notifier().rewind();
+      expect(round().isBeforeStart, isTrue);
+
+      notifier().toggleCountdown();
+      expect(round().isCountingDown, isTrue);
+
+      stop();
+    });
+
+    test('whole seconds, even with milliseconds switched on', () {
+      container.read(settingsProvider.notifier).toggleShowMilliseconds();
+      expect(notifier().displayStep, const Duration(milliseconds: 100));
+
+      notifier().toggleCountdown();
+      expect(
+        notifier().displayStep,
+        const Duration(seconds: 1),
+        reason: 'Zehntel auf einer Minutenansage sind Unruhe ohne Nutzen',
+      );
+
+      stop();
+    });
+
+    test('the phase word says what the number leads to', () {
+      const texts = CompetitionTexts(AppLanguage.german);
+
+      notifier().toggleCountdown();
+      expect(texts.phaseText(round()), 'Start in');
+      expect(
+        container.read(competitionCountdownLabelProvider),
+        'Countdown aus',
+      );
+
+      notifier().toggleCountdown();
+      expect(texts.phaseText(round()), 'Bereit');
+      expect(container.read(competitionCountdownLabelProvider), 'Countdown');
+    });
+  });
+
   /// Die LED-Wand zeigt ganze Sekunden — auf einer Anzeigetafel gehören
   /// Zehntel nicht hin. Sie ist aber nur eine Anzeige: an der Runde selbst
   /// ändert der Wechsel nichts.

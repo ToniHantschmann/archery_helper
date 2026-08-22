@@ -69,6 +69,20 @@ class Settings {
   /// Auf welchem Schirm der Wettkampf angezeigt wird — Monitor oder LED-Wand.
   final CompetitionDisplay competitionDisplay;
 
+  /// Wie lang der Countdown vor dem Turnierstart läuft.
+  ///
+  /// Die Zeit der Ansage („in zwei Minuten geht es los"), nicht die einer Phase
+  /// der Runde — deshalb frei einstellbar, während die Vorbereitungszeit als
+  /// Regel fest ist (siehe `competitionPreparationTime`).
+  final Duration competitionCountdownTime;
+
+  /// Ob die Runde am Ende des Countdowns von selbst anläuft.
+  ///
+  /// Aus heißt: der Countdown läuft auf null und die Anzeige geht zurück auf die
+  /// wartende Runde — das Startsignal gibt weiter der Schießleiter. Das ist der
+  /// Normalfall, deshalb ist es die Voreinstellung.
+  final bool competitionCountdownAutoStart;
+
   const Settings({
     this.soundEnabled = true,
     this.volume = 0.8,
@@ -87,6 +101,8 @@ class Settings {
     this.competitionPracticeEnds = 4,
     this.competitionLineup = CompetitionLineup.abcd,
     this.competitionDisplay = CompetitionDisplay.standard,
+    this.competitionCountdownTime = const Duration(minutes: 2),
+    this.competitionCountdownAutoStart = false,
   });
 
   /// Grenzen für [alternatingArrows]. Drei Pfeile sind der Wettkampf-Fall,
@@ -108,6 +124,13 @@ class Settings {
   /// und die Passenzahl — dauerhaft kleiner machen (siehe `LedPanelSpec`).
   static const minCompetitionPracticeEnds = 0;
   static const maxCompetitionPracticeEnds = 9;
+
+  /// Grenzen für [competitionCountdownTime]. Zehn Sekunden sind die kürzeste
+  /// Ansage, die noch eine ist; die Obergrenze ist dieselbe Stunde wie bei den
+  /// Ampelzeiten — und sie hält die Zahl bei höchstens fünf Zeichen, mehr passt
+  /// auf der LED-Wand nicht (siehe `LedPanelSpec.clockSample`).
+  static const minCompetitionCountdown = Duration(seconds: 10);
+  static const maxCompetitionCountdown = Duration(hours: 1);
 
   /// Grenzen und Schrittweite für [timerScale], in Prozent gerechnet: mit
   /// Kommazahlen zu schrittweise addieren würde sich aufaddierende Rundungs-
@@ -134,6 +157,8 @@ class Settings {
     int? competitionPracticeEnds,
     CompetitionLineup? competitionLineup,
     CompetitionDisplay? competitionDisplay,
+    Duration? competitionCountdownTime,
+    bool? competitionCountdownAutoStart,
   }) {
     return Settings(
       soundEnabled: soundEnabled ?? this.soundEnabled,
@@ -155,6 +180,10 @@ class Settings {
           competitionPracticeEnds ?? this.competitionPracticeEnds,
       competitionLineup: competitionLineup ?? this.competitionLineup,
       competitionDisplay: competitionDisplay ?? this.competitionDisplay,
+      competitionCountdownTime:
+          competitionCountdownTime ?? this.competitionCountdownTime,
+      competitionCountdownAutoStart:
+          competitionCountdownAutoStart ?? this.competitionCountdownAutoStart,
     );
   }
 
@@ -178,6 +207,8 @@ class Settings {
       "competitionPracticeEnds": competitionPracticeEnds,
       "competitionLineup": competitionLineup.index,
       "competitionDisplay": competitionDisplay.index,
+      "competitionCountdownTime": competitionCountdownTime.inSeconds,
+      "competitionCountdownAutoStart": competitionCountdownAutoStart,
     };
   }
 
@@ -222,6 +253,22 @@ class Settings {
         CompetitionDisplay.values,
         json['competitionDisplay'] as int?,
         CompetitionDisplay.standard,
+      ),
+      competitionCountdownTime: _parseCountdown(
+        json['competitionCountdownTime'] as int?,
+      ),
+      competitionCountdownAutoStart:
+          json['competitionCountdownAutoStart'] as bool? ?? false,
+    );
+  }
+
+  /// Helper: keep the countdown inside its range (with fallback)
+  static Duration _parseCountdown(int? seconds) {
+    if (seconds == null) return const Settings().competitionCountdownTime;
+    return Duration(
+      seconds: seconds.clamp(
+        minCompetitionCountdown.inSeconds,
+        maxCompetitionCountdown.inSeconds,
       ),
     );
   }

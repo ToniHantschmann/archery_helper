@@ -40,6 +40,10 @@ class CompetitionTexts {
 
   static const _paused = LocalizedText(de: 'Pause', en: 'Paused');
 
+  /// Das Wort über dem Countdown vor dem Turnierstart. Es sagt, worauf die Zahl
+  /// zuläuft — „Bereit" stünde dort sonst über einer Zeit, die abläuft.
+  static const _startsIn = LocalizedText(de: 'Start in', en: 'Starting in');
+
   // ===== ANZEIGE =====
 
   static const _end = LocalizedText(de: 'Passe', en: 'End');
@@ -85,6 +89,16 @@ class CompetitionTexts {
   /// zurück durch die Runde.
   static const _hintRound = LocalizedText(de: 'Runde', en: 'Round');
 
+  static const _hintCountdown = LocalizedText(de: 'Countdown', en: 'Countdown');
+
+  /// Der Rückweg aus dem Countdown. Wie [_hintRound] nennt die Beschriftung das
+  /// Ziel — nur heißt es hier „abbrechen", weil eine laufende Uhr abbricht und
+  /// nicht bloß aus dem Bild geht.
+  static const _hintCountdownOff = LocalizedText(
+    de: 'Countdown aus',
+    en: 'Cancel countdown',
+  );
+
   // ===== PUBLIC =====
 
   String get screenTitle => _screenTitle.get(_language);
@@ -110,6 +124,11 @@ class CompetitionTexts {
   String clockLabel({required bool showClock}) =>
       (showClock ? _hintRound : _hintClock).get(_language);
 
+  /// Beschriftung der Countdown-Taste — dieselbe Überlegung wie bei
+  /// [clockLabel].
+  String countdownLabel({required bool isCountingDown}) =>
+      (isCountingDown ? _hintCountdownOff : _hintCountdown).get(_language);
+
   /// Beschriftung der Start/Pause-Taste, passend zum Stand der Runde.
   String toggleLabel(CompetitionState state) {
     if (state.isPaused) return _hintResume.get(_language);
@@ -119,6 +138,9 @@ class CompetitionTexts {
 
   /// Das Wort über der Uhr.
   String phaseText(CompetitionState state) {
+    // Vor der Phasenfrage: der Countdown läuft in `idle` mit, und dort stünde
+    // sonst „Bereit" über einer laufenden Zahl.
+    if (state.isCountingDown) return _startsIn.get(_language);
     if (state.isPaused) return _paused.get(_language);
 
     switch (state.phase) {

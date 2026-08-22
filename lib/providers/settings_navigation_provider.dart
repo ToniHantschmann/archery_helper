@@ -39,6 +39,8 @@ enum SettingsItem {
   competitionEnds(SettingsSection.competition),
   competitionPracticeEnds(SettingsSection.competition),
   competitionLineup(SettingsSection.competition),
+  competitionCountdownTime(SettingsSection.competition),
+  competitionCountdownAutoStart(SettingsSection.competition),
   competitionDisplay(SettingsSection.competition),
   // Zweite Zeile auf dasselbe Feld wie [timeFormat]: ein SettingsItem ist eine
   // Zeile, keine Einstellung. Das Zeitformat gilt für beide Uhren, und wer vor
@@ -194,6 +196,9 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.showMilliseconds:
         notifier.toggleShowMilliseconds();
 
+      case SettingsItem.competitionCountdownAutoStart:
+        notifier.toggleCompetitionCountdownAutoStart();
+
       case SettingsItem.resetGeneral:
       case SettingsItem.resetTimer:
       case SettingsItem.resetCompetition:
@@ -220,6 +225,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.competitionPracticeEnds:
       case SettingsItem.competitionDisplay:
       case SettingsItem.competitionLineup:
+      case SettingsItem.competitionCountdownTime:
         _adjust(1);
     }
   }
@@ -372,6 +378,18 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         notifier.setCompetitionLineup(
           _cycle(CompetitionLineup.values, settings.competitionLineup, delta),
         );
+
+      // Mit Beschleunigung wie die Ampelzeiten: von zehn Sekunden auf zehn
+      // Minuten wäre es sonst ein langer Weg.
+      case SettingsItem.competitionCountdownTime:
+        notifier.setCompetitionCountdownTime(
+          _step(settings.competitionCountdownTime, delta),
+        );
+
+      case SettingsItem.competitionCountdownAutoStart:
+        if (settings.competitionCountdownAutoStart != (delta > 0)) {
+          notifier.toggleCompetitionCountdownAutoStart();
+        }
 
       case SettingsItem.competitionDisplay:
         notifier.setCompetitionDisplay(

@@ -267,6 +267,22 @@ void main() {
         await leaveScreen(tester);
       });
     }
+
+    for (final entry in sizes.entries) {
+      testWidgets('the competition screen fits the countdown at ${entry.key}', (
+        tester,
+      ) async {
+        // Wie bei der Uhrzeit bleiben die Leisten stehen — und die
+        // Hinweisleiste hat mit der Countdown-Taste noch einen Eintrag mehr.
+        container.read(competitionProvider.notifier).toggleCountdown();
+        await pumpScreen(tester, entry.value, AppScreen.competition);
+
+        expect(tester.takeException(), isNull);
+
+        container.read(competitionProvider.notifier).reset();
+        await leaveScreen(tester);
+      });
+    }
   });
 
   /// Die LED-Wand am Außenstand ist 192 × 128 Pixel groß. Der übliche
@@ -453,6 +469,51 @@ void main() {
       // Der entprellte Schreibvorgang der Einstellungen darf den Test nicht
       // überleben.
       await tester.pump(const Duration(milliseconds: 400));
+    });
+
+    testWidgets('the countdown takes the whole wall, like the clock', (
+      tester,
+    ) async {
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDisplay(CompetitionDisplay.led);
+      container.read(competitionProvider.notifier).toggleCountdown();
+
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+
+      expect(find.byKey(ledCountdownKey), findsOneWidget);
+      expect(find.byKey(ledClockKey), findsNothing);
+      expect(find.byKey(ledTimeKey), findsNothing);
+      expect(find.byKey(ledGroupKey), findsNothing);
+      expect(find.byKey(ledEndKey), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      // Abgebrochen ist die Wand wieder vollständig.
+      container.read(competitionProvider.notifier).toggleCountdown();
+      await tester.pump();
+
+      expect(find.byKey(ledCountdownKey), findsNothing);
+      expect(find.byKey(ledTimeKey), findsOneWidget);
+
+      await leaveScreen(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+    });
+
+    test('the longest countdown still fits the wall', () {
+      // Der Countdown teilt sich die Schriftmaße mit der Uhrzeit; die Grenze
+      // dafür ist die Obergrenze der Einstellung.
+      for (final format in TimeFormat.values) {
+        final text = TimerTexts.formatTime(
+          Settings.maxCompetitionCountdown,
+          format: format,
+        );
+
+        expect(
+          widthOf(text, LedPanelSpec.clockStyle),
+          lessThanOrEqualTo(LedPanelSpec.timeWidth + 0.01),
+          reason: '"$text" muss auf die Wand passen',
+        );
+      }
     });
 
     test('both labels of the info row are the same size', () {

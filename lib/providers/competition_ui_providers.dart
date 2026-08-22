@@ -91,6 +91,20 @@ final competitionClockLabelProvider = Provider.autoDispose<String>((ref) {
   return ref.watch(competitionTextsProvider).clockLabel(showClock: showClock);
 });
 
+/// Ob der Countdown bis zum Turnierstart läuft.
+final competitionIsCountingDownProvider = Provider.autoDispose<bool>((ref) {
+  return ref.watch(competitionProvider).isCountingDown;
+});
+
+/// Beschriftung der Countdown-Taste — wie beim Uhrzeit-Umschalter nennt sie das
+/// Ziel und nicht das, was gerade zu sehen ist.
+final competitionCountdownLabelProvider = Provider.autoDispose<String>((ref) {
+  final isCountingDown = ref.watch(competitionIsCountingDownProvider);
+  return ref
+      .watch(competitionTextsProvider)
+      .countdownLabel(isCountingDown: isCountingDown);
+});
+
 /// Die Einträge der unteren Hinweisleiste, in der Reihenfolge, in der
 /// links/rechts durch sie läuft.
 final competitionHintActionsProvider = Provider.autoDispose<List<AppAction>>((ref) {
@@ -105,7 +119,9 @@ final competitionHintActionsProvider = Provider.autoDispose<List<AppAction>>((re
     AppAction.resetTimer,
     // Die Uhrzeit ist eine Anzeige-Entscheidung wie die Einstellungen, keine
     // Bedienung der Runde — deshalb hinter dem Zurücksetzen und nicht zwischen
-    // den Tasten, die die Runde bewegen.
+    // den Tasten, die die Runde bewegen. Der Countdown steht daneben: er ist
+    // dieselbe Art Entscheidung, nur mit einer Uhr dahinter.
+    AppAction.toggleCountdown,
     AppAction.toggleClock,
     AppAction.toggleSettings,
     // Esc, wie bei der Ampel — siehe timerHintActionsProvider.

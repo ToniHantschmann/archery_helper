@@ -332,6 +332,7 @@ const ledTimeKey = ValueKey('led-time');
 const ledGroupKey = ValueKey('led-group');
 const ledEndKey = ValueKey('led-end');
 const ledClockKey = ValueKey('led-clock');
+const ledCountdownKey = ValueKey('led-countdown');
 
 /// Der Wettkampfstand auf 192 × 128 Pixeln: Restzeit, Gruppe, Passe,
 /// Ampelfarbe.
@@ -345,9 +346,12 @@ class LedPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Vor dem Turnierstart die Uhrzeit, und wirklich nur sie: eine Ampelfläche
-    // ohne laufende Runde wäre ein Signal, das nichts bedeutet, und ein
-    // Passenzähler ohne Passe eine Zahl, die niemand braucht.
+    // Vor dem Turnierstart die Uhrzeit oder der Countdown, und wirklich nur
+    // sie: eine Ampelfläche ohne laufende Runde wäre ein Signal, das nichts
+    // bedeutet, und ein Passenzähler ohne Passe eine Zahl, die niemand braucht.
+    // Der Countdown steht vorn, weil er die jüngere Ansage ist — beide zugleich
+    // schließt der `CompetitionNotifier` ohnehin aus.
+    final isCountingDown = ref.watch(competitionIsCountingDownProvider);
     final showClock = ref.watch(competitionShowClockProvider);
 
     return ColoredBox(
@@ -355,7 +359,9 @@ class LedPanel extends ConsumerWidget {
       child: SizedBox(
         width: LedPanelSpec.width,
         height: LedPanelSpec.height,
-        child: showClock
+        child: isCountingDown
+            ? const _LedCountdown()
+            : showClock
             ? const _LedWallClock()
             : const Column(
                 children: [
@@ -377,28 +383,62 @@ class LedPanel extends ConsumerWidget {
 }
 
 /// Die Uhrzeit über die ganze Wand.
-///
-/// Mittig statt rechtsbündig wie die Restzeit: `HH:mm` ist immer fünf Zeichen
-/// breit, es gibt also keinen Stellenwechsel, bei dem eine Ziffer ihre Spalte
-/// verlieren könnte. Weiß und nicht in einer Ampelfarbe — vor dem Start gibt es
-/// kein Signal zu geben, und [AppPalette.ledDim] heißt hier „pausiert".
 class _LedWallClock extends StatelessWidget {
   const _LedWallClock();
 
   @override
   Widget build(BuildContext context) {
     return WallClock(
-      builder: (context, now) => Center(
-        child: Transform.translate(
-          offset: Offset(0, LedPanelSpec.clockNudgeY),
-          child: Transform.scale(
-            scaleY: LedPanelSpec.clockScaleY,
-            child: Text(
-              ClockTexts.formatClock(now),
-              key: ledClockKey,
-              style: LedPanelSpec.clockStyle,
-            ),
-          ),
+      builder: (context, now) => _LedFullPanelText(
+        text: ClockTexts.formatClock(now),
+        textKey: ledClockKey,
+      ),
+    );
+  }
+}
+
+/// Der Countdown bis zum Turnierstart über die ganze Wand.
+///
+/// Dieselbe Fläche und dieselbe Geometrie wie die Uhrzeit, und aus demselben
+/// Grund: bis die Runde läuft, gibt es kein Signal zu geben und keine Passe zu
+/// zählen — es gibt nur diese eine Zahl. Die Schriftmaße der Uhrzeit passen
+/// dafür ohne eigenen Wert: `23:59` ist fünf Zeichen breit und damit die
+/// Obergrenze auch für den längsten Countdown (`60:00`, Tabellenziffern).
+class _LedCountdown extends ConsumerWidget {
+  const _LedCountdown();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _LedFullPanelText(
+      // Derselbe Provider wie für die Restzeit: im Countdown *ist* die Restzeit
+      // die Zeit bis zum Start, und formatiert wird sie an genau einer Stelle.
+      text: ref.watch(competitionLedTimeProvider),
+      textKey: ledCountdownKey,
+    );
+  }
+}
+
+/// Eine Zahl über die ganze Wand — die gemeinsame Darstellung von Uhrzeit und
+/// Countdown.
+///
+/// Mittig statt rechtsbündig wie die Restzeit: beide zählen nicht so weit
+/// herunter, dass eine Ziffer ihre Spalte verlöre. Weiß und nicht in einer
+/// Ampelfarbe — vor dem Start gibt es kein Signal zu geben, und
+/// [AppPalette.ledDim] heißt hier „pausiert".
+class _LedFullPanelText extends StatelessWidget {
+  final String text;
+  final Key textKey;
+
+  const _LedFullPanelText({required this.text, required this.textKey});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Transform.translate(
+        offset: Offset(0, LedPanelSpec.clockNudgeY),
+        child: Transform.scale(
+          scaleY: LedPanelSpec.clockScaleY,
+          child: Text(text, key: textKey, style: LedPanelSpec.clockStyle),
         ),
       ),
     );
