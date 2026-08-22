@@ -22,19 +22,44 @@ env:
 
 jobs:
   build-linux:
-    # Nicht ubuntu-latest: glibc ist abwärts-, nicht aufwärtskompatibel. Auf
-    # 24.04 gebaut startet das Binary auf Ubuntu 22.04 oder Debian 12 nicht.
-    runs-on: ubuntu-22.04
+    # Gebaut wird in einem nackten ubuntu:22.04, nicht auf dem gleichnamigen
+    # Runner-Image. Zwei Gründe:
+    #
+    # glibc ist abwärts-, nicht aufwärtskompatibel — auf 24.04 gebaut startet
+    # das Binary auf Ubuntu 22.04 oder Debian 12 nicht. Das Runner-Image
+    # ubuntu-22.04 geht aber ab 2026-09-17 in die Deprecation und wird vorher
+    # schon zeitweise absichtlich rot gemacht; der Container hängt an keinem
+    # solchen Zeitplan.
+    #
+    # Und das Runner-Image bringt ein LLVM-Repo mit, dessen Pakete
+    # libunwind-dev blockieren — ohne das lässt sich libgstreamer1.0-dev dort
+    # nicht installieren, und ohne GStreamer gibt es keine Signaltöne. Ein
+    # nacktes Image hat den Konflikt nicht.
+    runs-on: ubuntu-latest
+    container: ubuntu:22.04
     steps:
-      - uses: actions/checkout@v4
-
+      # Vor dem Checkout, weil das nackte Image kein git hat und
+      # actions/checkout sonst ohne git-Metadaten herunterlädt. git, curl,
+      # unzip und xz-utils sind auf dem Runner-Image vorinstalliert, hier
+      # nicht.
       - name: Build-Abhängigkeiten installieren
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          apt-get update
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install -y --no-install-recommends \
+            ca-certificates curl git unzip xz-utils file sudo \
+            desktop-file-utils \
             clang cmake ninja-build pkg-config \
             libgtk-3-dev liblzma-dev \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+      - uses: actions/checkout@v4
+
+      # Im Container läuft alles als root, dem weder das ausgecheckte
+      # Verzeichnis noch das gleich danach entpackte Flutter-SDK gehört — ohne
+      # das hält git beide für fremdes Eigentum und verweigert die Auskunft.
+      # Der Wildcard ist hier vertretbar: der Container ist nach dem Lauf weg.
+      - run: git config --global --add safe.directory '*'
 
       - uses: subosito/flutter-action@v2
         with:
