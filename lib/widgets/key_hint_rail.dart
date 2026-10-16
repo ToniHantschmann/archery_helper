@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_dimens.dart';
 import '../core/theme/app_palette.dart';
 import '../core/theme/app_typography.dart';
+import 'slide_away.dart';
 
 /// One entry of a [KeyHintRail]: the key(s) to press and what they do.
 class KeyHint {
@@ -38,9 +39,8 @@ class KeyHint {
 ///
 /// While a clock is running the rail is [hidden]: it is for whoever operates
 /// the display, and at the shooting line it is only movement at the edge of
-/// the picture. It slides down under a clip instead of collapsing — the rail
-/// keeps its place in the layout, so the countdown above does not change size
-/// and nothing is laid out again while it moves; only a transform animates.
+/// the picture. It slides down under a clip ([SlideAway]) instead of
+/// collapsing, so the countdown above does not change size.
 class KeyHintRail extends StatelessWidget {
   final List<KeyHint> hints;
   final Color accent;
@@ -55,13 +55,10 @@ class KeyHintRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: AnimatedSlide(
-        offset: hidden ? const Offset(0, 1) : Offset.zero,
-        duration: AppMotion.slow,
-        curve: AppMotion.curve,
-        child: IgnorePointer(ignoring: hidden, child: _buildRail()),
-      ),
+    return SlideAway(
+      hidden: hidden,
+      offset: const Offset(0, 1),
+      child: _buildRail(),
     );
   }
 

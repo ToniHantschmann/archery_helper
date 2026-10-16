@@ -10,6 +10,7 @@ import '../providers/hint_navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
+import '../widgets/slide_away.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/timer_display.dart';
 
@@ -85,16 +86,27 @@ class _StatusRail extends ConsumerWidget {
         children: [
           // The chevrons keep previousMode reachable with the mouse; it has no
           // default key binding.
-          _ModeArrow(
-            icon: Icons.chevron_left,
-            onTap: () => actions.handleAction(AppAction.previousMode),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          StatusChip(label: modeText),
-          const SizedBox(width: AppSpacing.sm),
-          _ModeArrow(
-            icon: Icons.chevron_right,
-            onTap: () => actions.handleAction(AppAction.nextMode),
+          // Wie die Tastenleiste: solange die Uhr läuft, fährt der Modus weg —
+          // er ist für den, der die Anzeige bedient, nicht für die Schießlinie.
+          SlideAway(
+            hidden: ref.watch(timerHintRailHiddenProvider),
+            offset: const Offset(0, -1),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ModeArrow(
+                  icon: Icons.chevron_left,
+                  onTap: () => actions.handleAction(AppAction.previousMode),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                StatusChip(label: modeText),
+                const SizedBox(width: AppSpacing.sm),
+                _ModeArrow(
+                  icon: Icons.chevron_right,
+                  onTap: () => actions.handleAction(AppAction.nextMode),
+                ),
+              ],
+            ),
           ),
 
           const Spacer(),

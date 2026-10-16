@@ -85,8 +85,9 @@ final startButtonTextProvider = Provider.autoDispose<String>((ref) {
   }
 });
 
-/// Whether the timer screen's hint rail is slid out of view — while the clock
-/// runs. A pause or the end of the round brings it back.
+/// Whether the timer screen's hint rail — and the mode chip at the top — is
+/// slid out of view: while the clock runs. A pause or the end of the round
+/// brings it back.
 final timerHintRailHiddenProvider = Provider.autoDispose<bool>((ref) {
   return ref.watch(timerProvider.select((state) => state.isRunning));
 });

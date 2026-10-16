@@ -13,6 +13,7 @@ import '../providers/hint_navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
+import '../widgets/slide_away.dart';
 import '../widgets/wall_clock.dart';
 import 'competition_led_screen.dart';
 import '../widgets/status_chip.dart';
@@ -121,7 +122,15 @@ class _CompetitionStatusRail extends ConsumerWidget {
         children: [
           StatusChip(label: endText),
           const Spacer(),
-          StatusChip(label: settingsTexts.getDisciplineName(discipline)),
+          // Die Passe bleibt stehen, die Disziplin fährt mit der Tastenleiste
+          // weg — sie ändert sich während der Runde nie.
+          SlideAway(
+            hidden: ref.watch(competitionHintRailHiddenProvider),
+            offset: const Offset(0, -1),
+            child: StatusChip(
+              label: settingsTexts.getDisciplineName(discipline),
+            ),
+          ),
         ],
       ),
     );

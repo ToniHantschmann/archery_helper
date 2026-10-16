@@ -6,6 +6,7 @@ import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/hint_navigation_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
 import 'package:archery_helper/widgets/key_hint_rail.dart';
+import 'package:archery_helper/widgets/status_chip.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,6 +56,23 @@ void main() {
     return slide.offset != Offset.zero;
   }
 
+  /// Dasselbe für einen Statuschip oben: ob er weggefahren ist, `null` wenn
+  /// er gar nicht wegfahren kann (kein [AnimatedSlide] über ihm).
+  bool? chipHidden(WidgetTester tester, Finder chip) {
+    final slides = find.ancestor(
+      of: chip,
+      matching: find.byType(AnimatedSlide),
+    );
+    if (slides.evaluate().isEmpty) return null;
+    return tester.widget<AnimatedSlide>(slides.first).offset != Offset.zero;
+  }
+
+  /// Timer: der Moduschip; Wettkampf: der Passenchip. Beide stehen links.
+  Finder leftChip() => find.byType(StatusChip).first;
+
+  /// Wettkampf: der Disziplinchip rechts.
+  Finder rightChip() => find.byType(StatusChip).last;
+
   Future<void> press(WidgetTester tester, LogicalKeyboardKey key) async {
     await tester.sendKeyEvent(key);
     await tester.pumpAndSettle();
@@ -81,6 +99,19 @@ void main() {
       await press(tester, LogicalKeyboardKey.keyR);
       expect(container.read(timerProvider).isRunning, isFalse);
       expect(railHidden(tester), isFalse);
+    });
+
+    testWidgets('mode chip hides with the rail', (tester) async {
+      await pumpApp(tester, AppScreen.timer);
+      expect(chipHidden(tester, leftChip()), isFalse);
+
+      await press(tester, LogicalKeyboardKey.space);
+      expect(chipHidden(tester, leftChip()), isTrue);
+
+      await press(tester, LogicalKeyboardKey.keyP);
+      expect(chipHidden(tester, leftChip()), isFalse);
+
+      await press(tester, LogicalKeyboardKey.keyR);
     });
   });
 
@@ -206,6 +237,22 @@ void main() {
 
       container.read(competitionProvider.notifier).reset();
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('discipline chip hides with the rail, the end chip stays', (
+      tester,
+    ) async {
+      await pumpApp(tester, AppScreen.competition);
+      expect(chipHidden(tester, rightChip()), isFalse);
+      expect(chipHidden(tester, leftChip()), isNull);
+
+      await press(tester, LogicalKeyboardKey.space);
+      expect(chipHidden(tester, rightChip()), isTrue);
+      expect(chipHidden(tester, leftChip()), isNull);
+
+      container.read(competitionProvider.notifier).reset();
+      await tester.pumpAndSettle();
+      expect(chipHidden(tester, rightChip()), isFalse);
     });
 
     testWidgets('rail hides during the countdown to the start', (
