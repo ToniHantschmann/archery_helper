@@ -132,6 +132,55 @@ void main() {
       container.read(competitionProvider.notifier).reset();
       await tester.pumpAndSettle();
     });
+
+    AppScreen screen() => container.read(currentScreenProvider);
+
+    testWidgets('timer: Esc cannot leave a running clock', (tester) async {
+      await pumpApp(tester, AppScreen.timer);
+      await press(tester, LogicalKeyboardKey.space);
+
+      await press(tester, LogicalKeyboardKey.escape);
+      expect(screen(), AppScreen.timer);
+      expect(container.read(timerProvider).isRunning, isTrue);
+
+      // Pausiert darf man gehen — es läuft dann ja nichts mehr.
+      await press(tester, LogicalKeyboardKey.keyP);
+      await press(tester, LogicalKeyboardKey.escape);
+      expect(screen(), AppScreen.menu);
+
+      container.read(timerProvider.notifier).resetTimer();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('competition: Esc cannot leave a running round', (
+      tester,
+    ) async {
+      await pumpApp(tester, AppScreen.competition);
+      await press(tester, LogicalKeyboardKey.space);
+
+      await press(tester, LogicalKeyboardKey.escape);
+      expect(screen(), AppScreen.competition);
+      expect(container.read(competitionProvider).isRunning, isTrue);
+
+      await press(tester, LogicalKeyboardKey.keyR);
+      await press(tester, LogicalKeyboardKey.escape);
+      expect(screen(), AppScreen.menu);
+    });
+
+    testWidgets('competition: Esc cannot leave a running countdown', (
+      tester,
+    ) async {
+      await pumpApp(tester, AppScreen.competition);
+      await press(tester, LogicalKeyboardKey.keyC);
+      expect(container.read(competitionProvider).isCountingDown, isTrue);
+
+      await press(tester, LogicalKeyboardKey.escape);
+      expect(screen(), AppScreen.competition);
+
+      await press(tester, LogicalKeyboardKey.keyC);
+      await press(tester, LogicalKeyboardKey.escape);
+      expect(screen(), AppScreen.menu);
+    });
   });
 
   group('competition', () {

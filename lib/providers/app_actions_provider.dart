@@ -69,7 +69,8 @@ abstract class ScreenActionHandler {
   KeyEventResult back() => KeyEventResult.ignored;
 
   /// Reset. Defaults to resetting the Ampel timer, which is what the key means
-  /// on every screen — the timer keeps running while you are elsewhere.
+  /// on every screen — a paused timer stays paused while you are elsewhere
+  /// (a running one cannot be left, see [TimerScreenActions.back]).
   KeyEventResult resetTimer() {
     ref.read(timerProvider.notifier).resetTimer();
     return KeyEventResult.handled;
@@ -121,9 +122,10 @@ class TimerScreenActions extends ScreenActionHandler {
   HintNavigationNotifier get _hints =>
       ref.read(timerHintNavigationProvider.notifier);
 
-  /// Whether the hint rail is slid away. Arrow keys and Enter act on a
-  /// selection nobody can see then, so they are ignored rather than letting
-  /// Enter fire whatever hint happened to be focused — e.g. reset mid-end.
+  /// Whether the hint rail is slid away, i.e. the clock runs. Arrow keys and
+  /// Enter act on a selection nobody can see then, so they are ignored rather
+  /// than letting Enter fire whatever hint happened to be focused — e.g. reset
+  /// mid-end. Esc is ignored too, see [back].
   bool get _railHidden => ref.read(timerHintRailHiddenProvider);
 
   /// Left/right step through the bottom hint rail; up/down are unused here.
@@ -167,8 +169,12 @@ class TimerScreenActions extends ScreenActionHandler {
     return KeyEventResult.handled;
   }
 
+  /// Leaving is blocked while the clock runs: it would keep running unseen
+  /// behind the menu, and another tool's clock could be started next to it.
+  /// Pause (P) or reset (R) first.
   @override
   KeyEventResult back() {
+    if (_railHidden) return KeyEventResult.ignored;
     goTo(AppScreen.menu);
     return KeyEventResult.handled;
   }
@@ -190,7 +196,7 @@ class CompetitionScreenActions extends ScreenActionHandler {
       ref.read(competitionProvider.notifier);
 
   /// Wie beim Timer: Pfeile und Enter wirken nur auf eine Leiste, die man
-  /// sieht.
+  /// sieht — und Esc ist gesperrt, solange eine Uhr läuft (siehe [back]).
   bool get _railHidden => ref.read(competitionHintRailHiddenProvider);
 
   @override
@@ -283,8 +289,13 @@ class CompetitionScreenActions extends ScreenActionHandler {
     return KeyEventResult.handled;
   }
 
+  /// Wie beim Timer: solange Runde oder Countdown laufen, führt Esc nicht ins
+  /// Menü — die Uhr liefe dort ungesehen weiter, und daneben ließe sich die
+  /// Ampel starten. Erst pausieren (P) oder zurücksetzen (R). Gilt geerbt auch
+  /// auf der LED-Wand.
   @override
   KeyEventResult back() {
+    if (_railHidden) return KeyEventResult.ignored;
     goTo(AppScreen.menu);
     return KeyEventResult.handled;
   }
