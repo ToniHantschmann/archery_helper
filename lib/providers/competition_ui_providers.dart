@@ -105,6 +105,17 @@ final competitionCountdownLabelProvider = Provider.autoDispose<String>((ref) {
       .countdownLabel(isCountingDown: isCountingDown);
 });
 
+/// Ob die Hinweisleiste weggefahren ist — solange eine Uhr läuft, also auch
+/// der Countdown bis zum Turnierstart. Pause, Rundenende und das Warten aufs
+/// Pfeileholen holen sie zurück.
+final competitionHintRailHiddenProvider = Provider.autoDispose<bool>((ref) {
+  return ref.watch(
+    competitionProvider.select(
+      (state) => state.isRunning || state.isCountingDown,
+    ),
+  );
+});
+
 /// Die Einträge der unteren Hinweisleiste, in der Reihenfolge, in der
 /// links/rechts durch sie läuft.
 final competitionHintActionsProvider = Provider.autoDispose<List<AppAction>>((ref) {

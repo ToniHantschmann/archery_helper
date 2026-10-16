@@ -7,6 +7,7 @@ import '../models/keyboard_config.dart';
 import '../models/timer_state.dart';
 import 'app_state_provider.dart';
 import 'competition_provider.dart';
+import 'competition_ui_providers.dart';
 import 'hint_navigation_provider.dart';
 import 'keyboard_config_provider.dart';
 import 'menu_navigation_provider.dart';
@@ -14,6 +15,7 @@ import 'settings_navigation_provider.dart';
 import 'settings_provider.dart';
 import 'timer_provider.dart';
 import 'traffic_light_provider.dart';
+import 'ui_providers.dart';
 
 /// Direction of an in-screen navigation step.
 ///
@@ -119,12 +121,18 @@ class TimerScreenActions extends ScreenActionHandler {
   HintNavigationNotifier get _hints =>
       ref.read(timerHintNavigationProvider.notifier);
 
+  /// Whether the hint rail is slid away. Arrow keys and Enter act on a
+  /// selection nobody can see then, so they are ignored rather than letting
+  /// Enter fire whatever hint happened to be focused — e.g. reset mid-end.
+  bool get _railHidden => ref.read(timerHintRailHiddenProvider);
+
   /// Left/right step through the bottom hint rail; up/down are unused here.
   @override
   KeyEventResult navigate(
     NavigationDirection direction, {
     bool isRepeat = false,
   }) {
+    if (_railHidden) return KeyEventResult.ignored;
     switch (direction) {
       case NavigationDirection.left:
         _hints.moveLeft();
@@ -142,6 +150,7 @@ class TimerScreenActions extends ScreenActionHandler {
   /// selection instead of a hard-coded action.
   @override
   KeyEventResult confirm() {
+    if (_railHidden) return KeyEventResult.ignored;
     _hints.activate();
     return KeyEventResult.handled;
   }
@@ -180,11 +189,16 @@ class CompetitionScreenActions extends ScreenActionHandler {
   CompetitionNotifier get _competition =>
       ref.read(competitionProvider.notifier);
 
+  /// Wie beim Timer: Pfeile und Enter wirken nur auf eine Leiste, die man
+  /// sieht.
+  bool get _railHidden => ref.read(competitionHintRailHiddenProvider);
+
   @override
   KeyEventResult navigate(
     NavigationDirection direction, {
     bool isRepeat = false,
   }) {
+    if (_railHidden) return KeyEventResult.ignored;
     switch (direction) {
       case NavigationDirection.left:
         _hints.moveLeft();
@@ -199,6 +213,7 @@ class CompetitionScreenActions extends ScreenActionHandler {
 
   @override
   KeyEventResult confirm() {
+    if (_railHidden) return KeyEventResult.ignored;
     _hints.activate();
     return KeyEventResult.handled;
   }

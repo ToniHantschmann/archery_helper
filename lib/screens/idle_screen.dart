@@ -5,17 +5,14 @@ import '../core/l10n/idle_texts.dart';
 import '../core/theme/app_dimens.dart';
 import '../core/theme/app_palette.dart';
 import '../core/theme/app_typography.dart';
-import '../models/keyboard_config.dart';
-import '../providers/app_actions_provider.dart';
-import '../providers/ui_providers.dart';
-import '../widgets/key_hint_rail.dart';
 import '../widgets/wall_clock.dart';
 
-/// Standby display: a wall clock, the club context, and how to get going.
+/// Standby display: a wall clock and the club context.
 ///
 /// This is what hangs above the shooting line when nobody is using the timer,
-/// so it is deliberately quiet — no signal colours, no motion, one number.
-/// Any meaningful key wakes it into the timer (see IdleScreenActions).
+/// so it is deliberately quiet — no signal colours, no motion, one number, and
+/// no key legend: whoever switched it on knows how to leave it. Any meaningful
+/// key wakes it into the timer (see IdleScreenActions).
 class IdleScreen extends ConsumerWidget {
   const IdleScreen({super.key});
 
@@ -81,33 +78,10 @@ class IdleScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-
-              _IdleHintRail(texts: texts),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class _IdleHintRail extends ConsumerWidget {
-  final IdleTexts texts;
-
-  const _IdleHintRail({required this.texts});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return KeyHintRail(
-      hints: [
-        KeyHint(
-          keys: [ref.watch(actionKeyLabelProvider(AppAction.next))],
-          label: texts.wakeHint,
-          emphasised: true,
-          onTap: () =>
-              ref.read(appActionsProvider).handleAction(AppAction.next),
-        ),
-      ],
     );
   }
 }

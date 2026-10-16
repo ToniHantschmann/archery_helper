@@ -180,6 +180,7 @@ class _TimerHintRail extends ConsumerWidget {
     // by the phase: the signal colours mean "shoot / do not shoot", and a red
     // key cap would be borrowing that meaning for a piece of chrome.
     return KeyHintRail(
+      hidden: ref.watch(timerHintRailHiddenProvider),
       hints: [for (var i = 0; i < hintActions.length; i++) hintFor(i)],
     );
   }

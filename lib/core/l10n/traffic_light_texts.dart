@@ -18,16 +18,8 @@ class TrafficLightTexts {
 
   static const _stop = LocalizedText(de: 'Stopp', en: 'Stop');
 
-  // ===== HINTS =====
-
-  static const _hintToggle = LocalizedText(de: 'Umschalten', en: 'Switch');
-
-  static const _hintMenu = LocalizedText(de: 'Menü', en: 'Menu');
-
   String get shoot => _shoot.get(_language);
   String get stop => _stop.get(_language);
-  String get hintToggle => _hintToggle.get(_language);
-  String get hintMenu => _hintMenu.get(_language);
 }
 
 // ===== PROVIDER =====

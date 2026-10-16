@@ -16,14 +16,8 @@ class IdleTexts {
     en: 'Shooting tunnel',
   );
 
-  static const _wakeHint = LocalizedText(
-    de: 'Taste drücken zum Fortfahren',
-    en: 'Press a key to continue',
-  );
-
   String get title => _title.get(_language);
   String get subtitle => _subtitle.get(_language);
-  String get wakeHint => _wakeHint.get(_language);
 
   // Uhrzeit und Datum stehen nicht hier, sondern in `ClockTexts`: die
   // Ruheanzeige ist nicht mehr die einzige Anzeige, die sie braucht, und

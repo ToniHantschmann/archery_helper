@@ -85,6 +85,12 @@ final startButtonTextProvider = Provider.autoDispose<String>((ref) {
   }
 });
 
+/// Whether the timer screen's hint rail is slid out of view — while the clock
+/// runs. A pause or the end of the round brings it back.
+final timerHintRailHiddenProvider = Provider.autoDispose<bool>((ref) {
+  return ref.watch(timerProvider.select((state) => state.isRunning));
+});
+
 /// Actions shown in the timer screen's bottom hint rail, in the same order
 /// [TimerScreenActions] steps through with left/right — see
 /// `hint_navigation_provider.dart`. Kept next to the other hint-rail

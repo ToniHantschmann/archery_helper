@@ -35,18 +35,37 @@ class KeyHint {
 /// must not compete with the countdown, hence the muted tones and the smallest
 /// type in the app. It wraps instead of scrolling, so a narrow window loses no
 /// hint and never overflows.
+///
+/// While a clock is running the rail is [hidden]: it is for whoever operates
+/// the display, and at the shooting line it is only movement at the edge of
+/// the picture. It slides down under a clip instead of collapsing — the rail
+/// keeps its place in the layout, so the countdown above does not change size
+/// and nothing is laid out again while it moves; only a transform animates.
 class KeyHintRail extends StatelessWidget {
   final List<KeyHint> hints;
   final Color accent;
+  final bool hidden;
 
   const KeyHintRail({
     super.key,
     required this.hints,
     this.accent = AppPalette.accent,
+    this.hidden = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    return ClipRect(
+      child: AnimatedSlide(
+        offset: hidden ? const Offset(0, 1) : Offset.zero,
+        duration: AppMotion.slow,
+        curve: AppMotion.curve,
+        child: IgnorePointer(ignoring: hidden, child: _buildRail()),
+      ),
+    );
+  }
+
+  Widget _buildRail() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(

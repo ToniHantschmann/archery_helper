@@ -227,6 +227,7 @@ class _CompetitionHintRail extends ConsumerWidget {
     }
 
     return KeyHintRail(
+      hidden: ref.watch(competitionHintRailHiddenProvider),
       hints: [for (var i = 0; i < hintActions.length; i++) hintFor(i)],
     );
   }
