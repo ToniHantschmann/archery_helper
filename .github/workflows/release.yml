@@ -21,7 +21,28 @@ env:
   FLUTTER_VERSION: 3.38.3
 
 jobs:
+  # Die Paketnamen und die Windows-Version kommen aus pubspec.yaml, nicht aus
+  # dem Tag. Ein v1.2.0 auf einem Stand mit 1.1.0 im pubspec gäbe ein Release
+  # "v1.2.0" voller 1.1.0-Downloads — deshalb bricht ein Tag-Push hier ab,
+  # bevor gebaut wird. Der Job selbst läuft immer: wäre er übersprungen,
+  # übersprängen die Builds, die auf ihn warten, auch den manuellen Start.
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag gegen pubspec.yaml prüfen
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(sed -n 's/^version:[[:space:]]*\([^+[:space:]]*\).*/\1/p' pubspec.yaml)"
+          echo "Tag: $tag, pubspec.yaml: $version"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag v$tag passt nicht zu version $version in pubspec.yaml"
+            exit 1
+          fi
+
   build-linux:
+    needs: check-version
     # Gebaut wird in einem nackten ubuntu:22.04, nicht auf dem gleichnamigen
     # Runner-Image. Zwei Gründe:
     #
@@ -85,6 +106,7 @@ jobs:
           if-no-files-found: error
 
   build-windows:
+    needs: check-version
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
