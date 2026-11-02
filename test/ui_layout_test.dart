@@ -1,4 +1,5 @@
 import 'package:archery_helper/app/app.dart';
+import 'package:archery_helper/app/led_window_app.dart';
 import 'package:archery_helper/core/l10n/clock_texts.dart';
 import 'package:archery_helper/core/l10n/menu_texts.dart';
 import 'package:archery_helper/core/l10n/settings_texts.dart';
@@ -70,6 +71,23 @@ void main() {
     // Let the implicit animations (lamp crossfade, gradient, selection) run out
     // without waiting for the idle screen's clock timer, which pumpAndSettle
     // would chase for a full minute.
+    await tester.pump(const Duration(milliseconds: 600));
+  }
+
+  /// Pumpt, was das LED-Fenster zeigt — mit den echten Notifiern statt der
+  /// Spiegel, die im Fenster nur deren Stand übernehmen.
+  Future<void> pumpLedWindow(WidgetTester tester, Size size) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const LedWindowApp(),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 600));
   }
 
@@ -273,19 +291,20 @@ void main() {
     }
 
     for (final entry in sizes.entries) {
-      testWidgets('the competition screen fits the wall clock at ${entry.key}', (
-        tester,
-      ) async {
-        // Die Uhrzeit tritt an die Stelle der Restzeit, die Leisten bleiben
-        // stehen — und die Hinweisleiste hat mit der Uhrzeit-Taste einen
-        // Eintrag mehr als vor diesem Feature.
-        container.read(competitionProvider.notifier).toggleClock();
-        await pumpScreen(tester, entry.value, AppScreen.competition);
+      testWidgets(
+        'the competition screen fits the wall clock at ${entry.key}',
+        (tester) async {
+          // Die Uhrzeit tritt an die Stelle der Restzeit, die Leisten bleiben
+          // stehen — und die Hinweisleiste hat mit der Uhrzeit-Taste einen
+          // Eintrag mehr als vor diesem Feature.
+          container.read(competitionProvider.notifier).toggleClock();
+          await pumpScreen(tester, entry.value, AppScreen.competition);
 
-        expect(tester.takeException(), isNull);
+          expect(tester.takeException(), isNull);
 
-        await leaveScreen(tester);
-      });
+          await leaveScreen(tester);
+        },
+      );
     }
 
     // Der längste Name, den die Einstellung zulässt, und aus breiten Zeichen —
@@ -470,7 +489,9 @@ void main() {
       // an dem man sich sonst festhalten könnte.
       for (var hour = 0; hour < 24; hour++) {
         for (var minute = 0; minute < 60; minute++) {
-          final text = ClockTexts.formatClock(DateTime(2026, 1, 1, hour, minute));
+          final text = ClockTexts.formatClock(
+            DateTime(2026, 1, 1, hour, minute),
+          );
 
           expect(
             widthOf(text, LedPanelSpec.clockStyle),
@@ -508,7 +529,7 @@ void main() {
           .setCompetitionDisplay(CompetitionDisplay.led);
       container.read(competitionProvider.notifier).toggleClock();
 
-      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+      await pumpLedWindow(tester, const Size(1920, 1080));
 
       expect(find.byKey(ledClockKey), findsOneWidget);
       expect(find.byKey(ledTimeKey), findsNothing);
@@ -538,7 +559,7 @@ void main() {
         ..setCompetitionDisplay(CompetitionDisplay.led)
         ..setCompetitionDiscipline(CompetitionDiscipline.league);
 
-      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+      await pumpLedWindow(tester, const Size(1920, 1080));
 
       expect(find.byKey(ledTimeKey), findsOneWidget);
       expect(find.byKey(ledGroupKey), findsNothing);
@@ -580,7 +601,7 @@ void main() {
         ..setClubName('W' * Settings.maxClubNameLength);
       container.read(competitionProvider.notifier).toggleClock();
 
-      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+      await pumpLedWindow(tester, const Size(1920, 1080));
 
       expect(find.byKey(ledClockKey), findsOneWidget);
       expect(find.byKey(ledClubNameKey), findsOneWidget);
@@ -607,7 +628,7 @@ void main() {
           .setCompetitionDisplay(CompetitionDisplay.led);
       container.read(competitionProvider.notifier).toggleCountdown();
 
-      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+      await pumpLedWindow(tester, const Size(1920, 1080));
 
       expect(find.byKey(ledCountdownKey), findsOneWidget);
       expect(find.byKey(ledClockKey), findsNothing);
@@ -730,7 +751,7 @@ void main() {
               .read(settingsProvider.notifier)
               .setCompetitionDisplay(display);
 
-          await pumpScreen(tester, entry.value, AppScreen.competition);
+          await pumpLedWindow(tester, entry.value);
 
           container.read(competitionProvider.notifier).start();
           await tester.pump(const Duration(milliseconds: 600));
@@ -755,7 +776,7 @@ void main() {
         ..setTimeFormat(TimeFormat.seconds)
         ..setCompetitionDisplay(CompetitionDisplay.led);
 
-      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+      await pumpLedWindow(tester, const Size(1920, 1080));
 
       final panel = tester.getRect(find.byType(LedPanel));
       final time = tester.getRect(find.byKey(ledTimeKey));
@@ -777,7 +798,7 @@ void main() {
         ..setCompetitionLineup(CompetitionLineup.single)
         ..setCompetitionDisplay(CompetitionDisplay.led);
 
-      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+      await pumpLedWindow(tester, const Size(1920, 1080));
 
       expect(tester.takeException(), isNull);
       expect(find.byKey(ledTimeKey), findsOneWidget);
@@ -804,7 +825,7 @@ void main() {
             .read(settingsProvider.notifier)
             .setCompetitionDisplay(CompetitionDisplay.ledStretched);
 
-        await pumpScreen(tester, entry.value, AppScreen.competition);
+        await pumpLedWindow(tester, entry.value);
 
         expect(tester.takeException(), isNull);
         expect(
@@ -823,7 +844,7 @@ void main() {
             .read(settingsProvider.notifier)
             .setCompetitionDisplay(CompetitionDisplay.led);
 
-        await pumpScreen(tester, entry.value, AppScreen.competition);
+        await pumpLedWindow(tester, entry.value);
 
         expect(tester.takeException(), isNull);
 
@@ -874,7 +895,7 @@ void main() {
   /// länger wird; geprüft wird deshalb auf allen drei Größen und mit der
   /// Sichtprüfung, dass der Satz wirklich hängt und der Test nicht ins Leere
   /// läuft.
-  group('the LED key note grows the competition settings', () {
+  group('the LED window note grows the competition settings', () {
     for (final entry in sizes.entries) {
       testWidgets('the note fits below the output row at ${entry.key}', (
         tester,
@@ -889,7 +910,7 @@ void main() {
         // gar nicht gebaut — die Liste muss erst hin, sonst prüft der Test auf
         // der Größe, auf der es am ehesten klemmt, überhaupt nichts.
         await tester.scrollUntilVisible(
-          find.text(container.read(settingsTextsProvider).ledKeysNote),
+          find.text(container.read(settingsTextsProvider).ledWindowNote),
           200,
           scrollable: find.byType(Scrollable).first,
         );
@@ -912,7 +933,7 @@ void main() {
       );
 
       expect(
-        find.text(container.read(settingsTextsProvider).ledKeysNote),
+        find.text(container.read(settingsTextsProvider).ledWindowNote),
         findsNothing,
       );
 
@@ -931,7 +952,7 @@ void main() {
           .read(settingsProvider.notifier)
           .setCompetitionDisplay(CompetitionDisplay.led);
 
-      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+      await pumpLedWindow(tester, const Size(1920, 1080));
 
       for (final key in [ledTimeKey, ledGroupKey, ledEndKey]) {
         final style = tester.widget<Text>(find.byKey(key)).style!;
@@ -948,7 +969,7 @@ void main() {
           .read(settingsProvider.notifier)
           .setCompetitionDisplay(CompetitionDisplay.led);
 
-      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+      await pumpLedWindow(tester, const Size(1920, 1080));
 
       // Nicht die Messung aus [LedPanelSpec], sondern was wirklich gezeichnet
       // wurde: nur so schlägt der Test an, wenn die Schrift eine andere ist.

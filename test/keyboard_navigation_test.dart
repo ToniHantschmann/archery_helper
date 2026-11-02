@@ -322,106 +322,26 @@ void main() {
     });
   });
 
-  /// Auf der LED-Wand fehlt die Tastenleiste, durch die links und rechts sonst
-  /// laufen — dort spulen die Pfeiltasten selbst.
-  group('competition on the LED wall', () {
-    CompetitionState round() => container.read(competitionProvider);
+  /// Das Panel läuft im eigenen LED-Fenster; das Steuerfenster behält dabei
+  /// seine Tastenleiste, und die Pfeiltasten laufen weiter durch sie.
+  testWidgets('the LED output leaves the keys of the control view alone', (
+    tester,
+  ) async {
+    container
+        .read(settingsProvider.notifier)
+        .setCompetitionDisplay(CompetitionDisplay.led);
+    await pumpApp(tester, startAt: AppScreen.competition);
 
-    Future<void> pumpLedRound(WidgetTester tester) async {
-      container
-          .read(settingsProvider.notifier)
-          .setCompetitionDisplay(CompetitionDisplay.led);
-      await pumpApp(tester, startAt: AppScreen.competition);
-    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
 
-    testWidgets('left rewinds and right forwards a passage', (tester) async {
-      await pumpLedRound(tester);
-      expect(round().groupIndex, 0);
+    expect(
+      container.read(competitionProvider).groupIndex,
+      0,
+      reason: 'die Pfeiltasten bewegen die Tastenleiste, nicht die Runde',
+    );
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pumpAndSettle();
-      expect(round().groupIndex, 1);
-      expect(
-        round().isRunning,
-        isFalse,
-        reason: 'vorspulen stellt nur vor, es startet nichts',
-      );
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
-      await tester.pumpAndSettle();
-      expect(round().groupIndex, 0);
-      expect(round().phase, TimerPhase.idle);
-
-      await flushPendingSaves(tester);
-    });
-
-    testWidgets('the arrows leave the round alone on the standard screen', (
-      tester,
-    ) async {
-      await pumpApp(tester, startAt: AppScreen.competition);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pumpAndSettle();
-
-      expect(
-        round().groupIndex,
-        0,
-        reason: 'dort bewegen die Pfeiltasten die Tastenleiste',
-      );
-    });
-
-    testWidgets('space still advances the round', (tester) async {
-      await pumpLedRound(tester);
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.space);
-      await tester.pumpAndSettle();
-
-      expect(round().phase, TimerPhase.preparation);
-      expect(round().isRunning, isTrue);
-
-      container.read(competitionProvider.notifier).reset();
-      await tester.pumpAndSettle();
-      await flushPendingSaves(tester);
-    });
-
-    /// Die Ausgabeart wird bei offener Runde umgestellt — vom Wettkampfschirm
-    /// aus mit S, und zurück mit Esc. Der Handler-Provider *watcht* sie
-    /// deshalb: ein `read` würde den alten Handler stehen lassen, bis der
-    /// Screen das nächste Mal wechselt, und die Pfeiltasten liefen dann noch
-    /// gegen eine Leiste, die keiner mehr sieht.
-    testWidgets('switching the output swaps the keys on the open round', (
-      tester,
-    ) async {
-      await pumpApp(tester, startAt: AppScreen.competition);
-
-      container
-          .read(settingsProvider.notifier)
-          .setCompetitionDisplay(CompetitionDisplay.led);
-      await tester.pumpAndSettle();
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pumpAndSettle();
-      expect(
-        round().groupIndex,
-        1,
-        reason: 'auf der Wand spulen die Pfeiltasten sofort',
-      );
-
-      container
-          .read(settingsProvider.notifier)
-          .setCompetitionDisplay(CompetitionDisplay.standard);
-      await tester.pumpAndSettle();
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pumpAndSettle();
-      expect(
-        round().groupIndex,
-        1,
-        reason: 'zurück auf dem Monitor gehört die Taste wieder der Leiste',
-      );
-
-      await flushPendingSaves(tester);
-    });
+    await flushPendingSaves(tester);
   });
 
   /// U hängt die Uhrzeit über die Schießlinie — und wieder ab. Die einzige

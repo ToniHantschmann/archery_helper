@@ -15,7 +15,6 @@ import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
 import '../widgets/slide_away.dart';
 import '../widgets/wall_clock.dart';
-import 'competition_led_screen.dart';
 import '../widgets/status_chip.dart';
 import '../widgets/timer_display.dart';
 
@@ -26,11 +25,9 @@ import '../widgets/timer_display.dart';
 /// einem einzelnen Countdown unterscheiden: in welcher Passe wir sind, und
 /// welche Gruppe gerade an der Schießlinie steht.
 ///
-/// Steht die Ausgabe auf LED-Wand, übernimmt [CompetitionLedScreen] — dieselbe
-/// Runde, nur auf 192 × 128 Pixel eingedampft. Die Verzweigung sitzt hier und
-/// nicht im `AppNavigator`, damit [AppScreen.competition] *ein* Screen bleibt:
-/// Tastenbelegung, Herkunft der Einstellungen und die Layout-Tests hängen alle
-/// daran, und eine zweite Zeile im Navigator würde sie auseinanderziehen.
+/// Steht die Ausgabe auf LED-Wand, bleibt dieser Schirm trotzdem die
+/// Steueransicht: das Panel läuft im eigenen LED-Fenster (siehe
+/// `lib/app/led_window_app.dart`), das sich der Bediener auf die Wand zieht.
 ///
 /// Keyboard handling is app-wide in KeyboardScope (see app.dart); nothing here
 /// listens for keys. Jeder Tap löst genau die [AppAction] aus, die seine Taste
@@ -40,9 +37,6 @@ class CompetitionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ledFit = ref.watch(competitionDisplayProvider).ledFit;
-    if (ledFit != null) return CompetitionLedScreen(fit: ledFit);
-
     final gradient = ref.watch(competitionBackgroundGradientProvider);
 
     return Scaffold(

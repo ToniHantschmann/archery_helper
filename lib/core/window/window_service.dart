@@ -3,6 +3,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:window_manager/window_manager.dart';
 
+import 'led_window.dart';
+
 /// Alles, was das echte Fenster betrifft — an genau einer Stelle.
 ///
 /// Der Rest der App kennt nur das Setting `fullscreen`; dass daraus ein
@@ -24,6 +26,10 @@ class WindowService {
     await windowManager.waitUntilReadyToShow(
       const WindowOptions(title: 'Archery Helper'),
       () async {
+        // Der Rahmen beendet die App wie der Menüeintrag — ohne das bliebe das
+        // LED-Fenster offen und hielte den Prozess am Leben.
+        await windowManager.setPreventClose(true);
+        windowManager.addListener(_QuitOnClose(this));
         await windowManager.setFullScreen(fullscreen);
         await windowManager.show();
         await windowManager.focus();
@@ -44,8 +50,18 @@ class WindowService {
   /// zumachen könnte — dort passiert wie überall in dieser Datei nichts.
   Future<void> quit() async {
     if (!isSupported) return;
+    await ledWindow.close();
     await windowManager.destroy();
   }
+}
+
+class _QuitOnClose with WindowListener {
+  final WindowService _service;
+
+  _QuitOnClose(this._service);
+
+  @override
+  void onWindowClose() => _service.quit();
 }
 
 const windowService = WindowService();
