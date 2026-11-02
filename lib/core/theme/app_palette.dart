@@ -77,6 +77,9 @@ class AppPalette {
   // nicht blenden zu lassen. Und die Signalfarben stehen voll gesättigt, weil
   // eine LED-Wand eine ganz andere Gammakurve hat als ein Monitor: die
   // abgetönten [redCore] & Co. werden dort stumpf statt weich.
+  //
+  // Das sind die Werte bei voller Helligkeit. Gezeichnet wird jeder von ihnen
+  // durch `TimerTheme.ledDimmed`, mit der Helligkeit aus den Einstellungen.
 
   static const Color ledBlack = Color(0xFF000000);
   static const Color ledWhite = Color(0xFFFFFFFF);

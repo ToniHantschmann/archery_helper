@@ -1,5 +1,7 @@
 import 'package:archery_helper/core/l10n/app_language.dart';
 import 'package:archery_helper/core/l10n/competition_texts.dart';
+import 'package:archery_helper/core/theme/app_palette.dart';
+import 'package:archery_helper/core/theme/timer_theme.dart';
 import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/competition_provider.dart';
@@ -954,6 +956,24 @@ void main() {
   /// Die LED-Wand zeigt ganze Sekunden — auf einer Anzeigetafel gehören
   /// Zehntel nicht hin. Sie ist aber nur eine Anzeige: an der Runde selbst
   /// ändert der Wechsel nichts.
+  group('dimming an LED colour', () {
+    test('full brightness leaves the colour alone', () {
+      expect(
+        TimerTheme.ledDimmed(AppPalette.ledAmber, 100),
+        AppPalette.ledAmber,
+      );
+    });
+
+    test('scales every channel and keeps the alpha', () {
+      final dimmed = TimerTheme.ledDimmed(AppPalette.ledAmber, 50);
+
+      expect(dimmed.r, closeTo(AppPalette.ledAmber.r * 0.5, 1e-6));
+      expect(dimmed.g, closeTo(AppPalette.ledAmber.g * 0.5, 1e-6));
+      expect(dimmed.b, closeTo(AppPalette.ledAmber.b * 0.5, 1e-6));
+      expect(dimmed.a, AppPalette.ledAmber.a);
+    });
+  });
+
   group('the LED display', () {
     void setDisplay(CompetitionDisplay display) => container
         .read(settingsProvider.notifier)
@@ -972,6 +992,34 @@ void main() {
       // Zurück auf den Monitor gilt wieder die allgemeine Einstellung.
       setDisplay(CompetitionDisplay.standard);
       expect(notifier().displayStep, const Duration(milliseconds: 100));
+    });
+
+    /// Die Wand hat keinen Regler, den die App erreicht — gedimmt wird über
+    /// die Farben selbst, und zwar alle mit demselben Faktor.
+    test('dims text, time and signal area by the same factor', () {
+      setDisplay(CompetitionDisplay.led);
+
+      expect(
+        container.read(competitionLedTextColorProvider),
+        AppPalette.ledWhite,
+        reason: 'volle Helligkeit ist die Voreinstellung',
+      );
+
+      container.read(settingsProvider.notifier).setCompetitionLedBrightness(50);
+
+      expect(
+        container.read(competitionLedTextColorProvider),
+        TimerTheme.ledDimmed(AppPalette.ledWhite, 50),
+      );
+      expect(
+        container.read(competitionLedTimeColorProvider),
+        TimerTheme.ledDimmed(AppPalette.ledWhite, 50),
+      );
+      // Vor dem Start steht die Runde auf Rot.
+      expect(
+        container.read(competitionLedSignalColorProvider),
+        TimerTheme.ledDimmed(AppPalette.ledRed, 50),
+      );
     });
 
     testWidgets('switching mid-round leaves end, group and time alone', (

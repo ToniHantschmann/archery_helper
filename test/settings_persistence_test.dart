@@ -51,6 +51,7 @@ void main() {
     // Bewusst der letzte Wert des Enums: ein Index, der beim Lesen aus dem
     // Gespeicherten am ehesten aus der Liste fällt.
     competitionDisplay: CompetitionDisplay.ledStretched,
+    competitionLedBrightness: 40,
     competitionCountdownTime: Duration(seconds: 90),
     competitionCountdownAutoStart: true,
   );
@@ -76,6 +77,7 @@ void main() {
     expect(loaded.competitionPracticeEnds, custom.competitionPracticeEnds);
     expect(loaded.competitionLineup, custom.competitionLineup);
     expect(loaded.competitionDisplay, custom.competitionDisplay);
+    expect(loaded.competitionLedBrightness, custom.competitionLedBrightness);
     expect(loaded.competitionCountdownTime, custom.competitionCountdownTime);
     expect(
       loaded.competitionCountdownAutoStart,
@@ -104,6 +106,7 @@ void main() {
       'competitionPracticeEnds',
       'competitionLineup',
       'competitionDisplay',
+      'competitionLedBrightness',
       'competitionCountdownTime',
       'competitionCountdownAutoStart',
     });
@@ -218,6 +221,22 @@ void main() {
       expect(loaded.volume, 0.25, reason: 'der Rest überlebt es');
     });
 
+    test('an LED brightness outside the allowed range', () async {
+      for (final entry in {
+        0: Settings.minLedBrightness,
+        250: Settings.maxLedBrightness,
+        // Als Kommazahl gespeichert darf sie nicht die Konfiguration kosten.
+        60.0: 60,
+      }.entries) {
+        SharedPreferences.setMockInitialValues({
+          storageKey: jsonEncode({'competitionLedBrightness': entry.key}),
+        });
+
+        final loaded = await repository.loadSettings();
+        expect(loaded.competitionLedBrightness, entry.value);
+      }
+    });
+
     test('an out of range mode index', () async {
       SharedPreferences.setMockInitialValues({
         storageKey: jsonEncode({'defaultMode': 99}),
@@ -287,6 +306,7 @@ void main() {
         ..setCompetitionDiscipline(CompetitionDiscipline.outdoor)
         ..setCompetitionLineup(CompetitionLineup.ab)
         ..setCompetitionDisplay(CompetitionDisplay.led)
+        ..setCompetitionLedBrightness(30)
         ..setCompetitionPracticeEnds(0)
         ..setCompetitionCountdownTime(const Duration(seconds: 30))
         ..toggleCompetitionCountdownAutoStart()
@@ -305,6 +325,10 @@ void main() {
       );
       expect(settings.competitionLineup, defaults.competitionLineup);
       expect(settings.competitionDisplay, defaults.competitionDisplay);
+      expect(
+        settings.competitionLedBrightness,
+        defaults.competitionLedBrightness,
+      );
       expect(
         settings.competitionCountdownTime,
         defaults.competitionCountdownTime,

@@ -120,6 +120,18 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  /// Helligkeit der LED-Wand in Prozent, mit den Grenzen hier statt beim
+  /// Aufrufer — aus demselben Grund wie bei [setTimerScale].
+  void setCompetitionLedBrightness(int percent) {
+    state = state.copyWith(
+      competitionLedBrightness: percent.clamp(
+        Settings.minLedBrightness,
+        Settings.maxLedBrightness,
+      ),
+    );
+    _save();
+  }
+
   /// Vollbild an/aus. Das Fenster folgt diesem Wert (siehe `main.dart`), F11
   /// und die Einstellungszeile schalten beide hier.
   void toggleFullscreen() {
@@ -237,6 +249,7 @@ class SettingsNotifier extends Notifier<Settings> {
         competitionPracticeEnds: defaults.competitionPracticeEnds,
         competitionLineup: defaults.competitionLineup,
         competitionDisplay: defaults.competitionDisplay,
+        competitionLedBrightness: defaults.competitionLedBrightness,
         competitionCountdownTime: defaults.competitionCountdownTime,
         competitionCountdownAutoStart: defaults.competitionCountdownAutoStart,
       ),
@@ -317,6 +330,10 @@ final competitionLineupProvider = Provider<CompetitionLineup>((ref) {
 
 final competitionDisplayProvider = Provider<CompetitionDisplay>((ref) {
   return ref.watch(settingsProvider).competitionDisplay;
+});
+
+final competitionLedBrightnessProvider = Provider<int>((ref) {
+  return ref.watch(settingsProvider).competitionLedBrightness;
 });
 
 final competitionCountdownTimeProvider = Provider<Duration>((ref) {

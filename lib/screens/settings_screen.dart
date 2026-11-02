@@ -177,6 +177,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SectionHeader(texts.displaySection),
           _DisplayRow(rowKey: _itemKeys[SettingsItem.competitionDisplay]!),
           const _LedKeysNote(),
+          _LedBrightnessRow(
+            rowKey: _itemKeys[SettingsItem.competitionLedBrightness]!,
+          ),
           _TimeFormatRow(
             item: SettingsItem.competitionTimeFormat,
             rowKey: _itemKeys[SettingsItem.competitionTimeFormat]!,
@@ -1199,6 +1202,33 @@ class _LedKeysNote extends ConsumerWidget {
       child: Text(
         texts.ledKeysNote,
         style: AppType.bodySecondary.copyWith(color: AppPalette.accentSoft),
+      ),
+    );
+  }
+}
+
+/// Helligkeit der LED-Wand. Ausgegraut, solange der Wettkampf auf dem Monitor
+/// läuft — wie die Lautstärke bei ausgeschaltetem Ton.
+class _LedBrightnessRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _LedBrightnessRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final brightness = ref.watch(competitionLedBrightnessProvider);
+    final enabled = ref.watch(competitionDisplayProvider).ledFit != null;
+
+    return _SettingsRow(
+      item: SettingsItem.competitionLedBrightness,
+      rowKey: rowKey,
+      title: texts.ledBrightness,
+      subtitle: enabled ? texts.ledBrightnessSubtitle : texts.ledOnlyNote,
+      enabled: enabled,
+      control: _ValueStepper(
+        item: SettingsItem.competitionLedBrightness,
+        value: texts.formatPercentage(brightness / 100),
       ),
     );
   }

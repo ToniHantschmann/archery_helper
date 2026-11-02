@@ -42,6 +42,7 @@ enum SettingsItem {
   competitionCountdownTime(SettingsSection.competition),
   competitionCountdownAutoStart(SettingsSection.competition),
   competitionDisplay(SettingsSection.competition),
+  competitionLedBrightness(SettingsSection.competition),
   // Zweite Zeile auf dasselbe Feld wie [timeFormat]: ein SettingsItem ist eine
   // Zeile, keine Einstellung. Das Zeitformat gilt für beide Uhren, und wer vor
   // der Wettkampfampel steht, soll es dort umstellen können, ohne erst in die
@@ -87,6 +88,10 @@ const _volumeSteps = 10;
 /// Zeilen, die ohne Ton nichts einstellen: welcher Ton wie laut käme, ist keine
 /// Frage, solange gar keiner kommt.
 const _needsSound = {SettingsItem.signalTone, SettingsItem.volume};
+
+/// Zeilen, die nur die LED-Wand betreffen — auf dem Monitor stellen sie nichts
+/// ein, also sind sie dort ausgegraut und beim Durchsteppen übersprungen.
+const _needsLed = {SettingsItem.competitionLedBrightness};
 
 class SettingsNavState {
   final SettingsItem selected;
@@ -224,6 +229,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.competitionEnds:
       case SettingsItem.competitionPracticeEnds:
       case SettingsItem.competitionDisplay:
+      case SettingsItem.competitionLedBrightness:
       case SettingsItem.competitionLineup:
       case SettingsItem.competitionCountdownTime:
         _adjust(1);
@@ -257,14 +263,17 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
 
   /// Rows that can currently hold focus: the ones on the open screen, minus the
   /// ones that cannot be used. Bei ausgeschaltetem Ton sind das die beiden
-  /// Zeilen darunter — sie sind ausgegraut und wären beim Durchsteppen tote
-  /// Stopps.
+  /// Zeilen darunter, ohne LED-Ausgabe die LED-Helligkeit — sie sind
+  /// ausgegraut und wären beim Durchsteppen tote Stopps.
   List<SettingsItem> _selectableItems() {
-    final soundEnabled = ref.read(settingsProvider).soundEnabled;
+    final settings = ref.read(settingsProvider);
+    final soundEnabled = settings.soundEnabled;
+    final isLed = settings.competitionDisplay.ledFit != null;
 
-    return SettingsItem.of(
-      state.section,
-    ).where((item) => soundEnabled || !_needsSound.contains(item)).toList();
+    return SettingsItem.of(state.section)
+        .where((item) => soundEnabled || !_needsSound.contains(item))
+        .where((item) => isLed || !_needsLed.contains(item))
+        .toList();
   }
 
   /// Lässt hören, was gerade eingestellt wird.
@@ -394,6 +403,12 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       case SettingsItem.competitionDisplay:
         notifier.setCompetitionDisplay(
           _cycle(CompetitionDisplay.values, settings.competitionDisplay, delta),
+        );
+
+      case SettingsItem.competitionLedBrightness:
+        notifier.setCompetitionLedBrightness(
+          settings.competitionLedBrightness +
+              delta * Settings.ledBrightnessStepPercent,
         );
 
       case SettingsItem.resetGeneral:

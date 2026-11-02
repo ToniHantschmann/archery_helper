@@ -69,6 +69,18 @@ class Settings {
   /// Auf welchem Schirm der Wettkampf angezeigt wird — Monitor oder LED-Wand.
   final CompetitionDisplay competitionDisplay;
 
+  /// Wie hell die LED-Wand leuchtet, in Prozent.
+  ///
+  /// Die echte Helligkeit der Wand stellt nur die Steuersoftware ihrer
+  /// Sendekarte ein — für die App ist die Wand ein Videoeingang ohne Regler.
+  /// Auf einer LED-Wand ist ein kleinerer Farbwert aber kein „grauer"
+  /// Ersatz, sondern echtes Dimmen: Schwarz ist die ausgeschaltete Diode, und
+  /// weniger Rot/Grün/Blau heißt weniger Leuchtzeit. Deshalb skaliert dieser
+  /// Faktor jede Farbe des Panels gleich (siehe `TimerTheme.ledDimmed`) —
+  /// Schrift und Signalfläche, und das Pausen-Grau bleibt im selben Verhältnis
+  /// dunkler als Weiß. Gilt nur für die LED-Ausgabe.
+  final int competitionLedBrightness;
+
   /// Wie lang der Countdown vor dem Turnierstart läuft.
   ///
   /// Die Zeit der Ansage („in zwei Minuten geht es los"), nicht die einer Phase
@@ -101,6 +113,7 @@ class Settings {
     this.competitionPracticeEnds = 4,
     this.competitionLineup = CompetitionLineup.abcd,
     this.competitionDisplay = CompetitionDisplay.standard,
+    this.competitionLedBrightness = 100,
     this.competitionCountdownTime = const Duration(minutes: 2),
     this.competitionCountdownAutoStart = false,
   });
@@ -132,6 +145,12 @@ class Settings {
   static const minCompetitionCountdown = Duration(seconds: 10);
   static const maxCompetitionCountdown = Duration(hours: 1);
 
+  /// Grenzen und Schrittweite für [competitionLedBrightness], in ganzen
+  /// Prozent. Null wäre eine schwarze Wand — das ist kein Dimmen mehr.
+  static const minLedBrightness = 10;
+  static const maxLedBrightness = 100;
+  static const ledBrightnessStepPercent = 10;
+
   /// Grenzen und Schrittweite für [timerScale], in Prozent gerechnet: mit
   /// Kommazahlen zu schrittweise addieren würde sich aufaddierende Rundungs-
   /// fehler einfangen, ganze Prozente treffen die 100 immer.
@@ -157,6 +176,7 @@ class Settings {
     int? competitionPracticeEnds,
     CompetitionLineup? competitionLineup,
     CompetitionDisplay? competitionDisplay,
+    int? competitionLedBrightness,
     Duration? competitionCountdownTime,
     bool? competitionCountdownAutoStart,
   }) {
@@ -180,6 +200,8 @@ class Settings {
           competitionPracticeEnds ?? this.competitionPracticeEnds,
       competitionLineup: competitionLineup ?? this.competitionLineup,
       competitionDisplay: competitionDisplay ?? this.competitionDisplay,
+      competitionLedBrightness:
+          competitionLedBrightness ?? this.competitionLedBrightness,
       competitionCountdownTime:
           competitionCountdownTime ?? this.competitionCountdownTime,
       competitionCountdownAutoStart:
@@ -207,6 +229,7 @@ class Settings {
       "competitionPracticeEnds": competitionPracticeEnds,
       "competitionLineup": competitionLineup.index,
       "competitionDisplay": competitionDisplay.index,
+      "competitionLedBrightness": competitionLedBrightness,
       "competitionCountdownTime": competitionCountdownTime.inSeconds,
       "competitionCountdownAutoStart": competitionCountdownAutoStart,
     };
@@ -253,6 +276,9 @@ class Settings {
         CompetitionDisplay.values,
         json['competitionDisplay'] as int?,
         CompetitionDisplay.standard,
+      ),
+      competitionLedBrightness: _parseLedBrightness(
+        json['competitionLedBrightness'],
       ),
       competitionCountdownTime: _parseCountdown(
         json['competitionCountdownTime'] as int?,
@@ -307,6 +333,15 @@ class Settings {
   static double _parseScale(Object? scale) {
     if (scale is! num) return 1.0;
     return scale.toDouble().clamp(minTimerScale, maxTimerScale);
+  }
+
+  /// Helper: keep the LED brightness inside its range (with fallback)
+  ///
+  /// `Object?` aus demselben Grund wie bei [_parseScale]: was als Zahl im JSON
+  /// steht, soll nicht an einem Cast die ganze Konfiguration verwerfen.
+  static int _parseLedBrightness(Object? brightness) {
+    if (brightness is! num) return const Settings().competitionLedBrightness;
+    return brightness.round().clamp(minLedBrightness, maxLedBrightness);
   }
 
   /// Helper: keep the volume inside its range (with fallback)

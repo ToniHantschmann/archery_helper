@@ -135,6 +135,21 @@ class SettingsTexts {
     en: 'On the LED panel: ← and → step silently back and ahead',
   );
 
+  static const _ledBrightness = LocalizedText(
+    de: 'LED-Helligkeit',
+    en: 'LED brightness',
+  );
+
+  static const _ledBrightnessSubtitle = LocalizedText(
+    de: 'Dimmt Schrift und Signalfläche der LED-Wand',
+    en: 'Dims text and signal area on the LED panel',
+  );
+
+  static const _ledOnlyNote = LocalizedText(
+    de: 'Nur bei Ausgabe auf der LED-Wand',
+    en: 'Only when output goes to the LED panel',
+  );
+
   static const _displayStandard = LocalizedText(de: 'Monitor', en: 'Monitor');
 
   static const _displayLed = LocalizedText(de: 'LED-Wand', en: 'LED panel');
@@ -383,6 +398,10 @@ class SettingsTexts {
   String get display => _display.get(_currentLanguage);
   String get displaySubtitle => _displaySubtitle.get(_currentLanguage);
   String get ledKeysNote => _ledKeysNote.get(_currentLanguage);
+  String get ledBrightness => _ledBrightness.get(_currentLanguage);
+  String get ledBrightnessSubtitle =>
+      _ledBrightnessSubtitle.get(_currentLanguage);
+  String get ledOnlyNote => _ledOnlyNote.get(_currentLanguage);
 
   String get soundEnabled => _soundEnabled.get(_currentLanguage);
   String get signalTone => _signalTone.get(_currentLanguage);

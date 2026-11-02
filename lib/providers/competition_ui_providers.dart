@@ -168,11 +168,22 @@ final competitionSignalColorProvider = Provider.autoDispose<Color>((ref) {
 // *Entscheidung*, welches Signal gilt, kommt weiterhin aus derselben Quelle.
 
 final competitionLedSignalColorProvider = Provider.autoDispose<Color>((ref) {
-  return TimerTheme.signalFor(ref.watch(competitionProvider).signal).led;
+  return TimerTheme.ledDimmed(
+    TimerTheme.signalFor(ref.watch(competitionProvider).signal).led,
+    ref.watch(competitionLedBrightnessProvider),
+  );
 });
 
 final competitionLedTimeColorProvider = Provider.autoDispose<Color>((ref) {
-  return TimerTheme.ledTimeColor(ref.watch(competitionProvider).signal);
+  return TimerTheme.ledTimeColor(
+    ref.watch(competitionProvider).signal,
+    ref.watch(competitionLedBrightnessProvider),
+  );
+});
+
+/// Gruppe, Passe, Uhrzeit und Countdown — alles, was auf der Wand weiß steht.
+final competitionLedTextColorProvider = Provider.autoDispose<Color>((ref) {
+  return TimerTheme.ledTextColor(ref.watch(competitionLedBrightnessProvider));
 });
 
 /// Die Zahl auf der Wand — die einzige Stelle, die sie formatiert.

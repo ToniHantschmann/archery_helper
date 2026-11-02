@@ -110,6 +110,32 @@ class TimerTheme {
   /// dort die Signalfläche daneben, und eine mitgefärbte Zahl wäre die zweite
   /// Kopie derselben Aussage. Übrig bleibt „pausiert" — das steht auf dem
   /// Panel sonst nirgends.
-  static Color ledTimeColor(SignalState state) =>
-      state.isPaused ? AppPalette.ledDim : AppPalette.ledWhite;
+  static Color ledTimeColor(SignalState state, int brightnessPercent) =>
+      ledDimmed(
+        state.isPaused ? AppPalette.ledDim : AppPalette.ledWhite,
+        brightnessPercent,
+      );
+
+  /// Die Schrift auf der LED-Wand, die keine Bedeutung trägt — Gruppe, Passe,
+  /// Uhrzeit und Countdown.
+  static Color ledTextColor(int brightnessPercent) =>
+      ledDimmed(AppPalette.ledWhite, brightnessPercent);
+
+  /// Eine LED-Farbe, gedimmt auf [brightnessPercent].
+  ///
+  /// Skaliert Rot, Grün und Blau mit demselben Faktor, also bleibt der Farbton
+  /// und jedes Verhältnis zwischen zwei Farben erhalten — das Pausen-Grau ist
+  /// bei jeder Helligkeit gleich viel dunkler als Weiß. Gerechnet wird auf den
+  /// sRGB-Werten, nicht im linearen Licht: deren Stufen liegen ungefähr so
+  /// gleichmäßig, wie das Auge sie wahrnimmt, und genau so soll ein Schritt von
+  /// 10 % aussehen. Auf der Wand ist das echtes Dimmen, weil ein kleinerer Wert
+  /// dort kürzere Leuchtzeit der Diode heißt (siehe `Settings`).
+  static Color ledDimmed(Color color, int brightnessPercent) {
+    final factor = brightnessPercent / 100;
+    return color.withValues(
+      red: color.r * factor,
+      green: color.g * factor,
+      blue: color.b * factor,
+    );
+  }
 }

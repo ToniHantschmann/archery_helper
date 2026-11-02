@@ -425,20 +425,26 @@ class _LedCountdown extends ConsumerWidget {
 /// herunter, dass eine Ziffer ihre Spalte verlöre. Weiß und nicht in einer
 /// Ampelfarbe — vor dem Start gibt es kein Signal zu geben, und
 /// [AppPalette.ledDim] heißt hier „pausiert".
-class _LedFullPanelText extends StatelessWidget {
+class _LedFullPanelText extends ConsumerWidget {
   final String text;
   final Key textKey;
 
   const _LedFullPanelText({required this.text, required this.textKey});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final color = ref.watch(competitionLedTextColorProvider);
+
     return Center(
       child: Transform.translate(
         offset: Offset(0, LedPanelSpec.clockNudgeY),
         child: Transform.scale(
           scaleY: LedPanelSpec.clockScaleY,
-          child: Text(text, key: textKey, style: LedPanelSpec.clockStyle),
+          child: Text(
+            text,
+            key: textKey,
+            style: LedPanelSpec.clockStyle.copyWith(color: color),
+          ),
         ),
       ),
     );
@@ -453,6 +459,7 @@ class _LedInfoRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final signalColor = ref.watch(competitionLedSignalColorProvider);
     final group = ref.watch(competitionLedGroupProvider);
+    final textColor = ref.watch(competitionLedTextColorProvider);
 
     // Schießen alle zusammen, gibt es keine Gruppe anzuzeigen — dann fällt ihre
     // Zelle an die Farbfläche, statt leer freigehalten zu werden. Sie reicht
@@ -475,7 +482,7 @@ class _LedInfoRow extends ConsumerWidget {
                 child: Text(
                   group,
                   key: ledGroupKey,
-                  style: LedPanelSpec.groupStyle,
+                  style: LedPanelSpec.groupStyle.copyWith(color: textColor),
                 ),
               ),
             ),
@@ -504,7 +511,9 @@ class _LedEnd extends ConsumerWidget {
     return Text(
       ref.watch(competitionLedEndProvider),
       key: ledEndKey,
-      style: LedPanelSpec.endStyle,
+      style: LedPanelSpec.endStyle.copyWith(
+        color: ref.watch(competitionLedTextColorProvider),
+      ),
     );
   }
 }

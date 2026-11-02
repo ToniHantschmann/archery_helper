@@ -604,7 +604,51 @@ void main() {
         seen.add(selectedItem());
       }
 
-      expect(seen, SettingsItem.of(SettingsSection.competition).toSet());
+      // Die LED-Helligkeit fehlt, weil die Ausgabe auf dem Monitor steht —
+      // siehe den Test dazu weiter unten.
+      expect(
+        seen,
+        SettingsItem.of(SettingsSection.competition).toSet()
+          ..remove(SettingsItem.competitionLedBrightness),
+      );
+    });
+
+    testWidgets('LED brightness is only reachable with LED output', (
+      tester,
+    ) async {
+      await pumpApp(tester, startAt: AppScreen.competitionSettings);
+
+      select(SettingsItem.competitionDisplay);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(
+        selectedItem(),
+        SettingsItem.competitionTimeFormat,
+        reason: 'on the monitor the brightness row would be a dead stop',
+      );
+
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDisplay(CompetitionDisplay.led);
+      await tester.pumpAndSettle();
+      select(SettingsItem.competitionDisplay);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(selectedItem(), SettingsItem.competitionLedBrightness);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      expect(settings().competitionLedBrightness, 90);
+
+      // Unten hält die Grenze, statt auf eine schwarze Wand zu laufen.
+      for (var i = 0; i < 12; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+        await tester.pumpAndSettle();
+      }
+      expect(settings().competitionLedBrightness, Settings.minLedBrightness);
+
+      await flushPendingSaves(tester);
     });
 
     testWidgets('signal tone and volume are skipped while sound is off', (
