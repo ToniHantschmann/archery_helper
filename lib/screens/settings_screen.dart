@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/l10n/settings_texts.dart';
@@ -107,6 +108,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     switch (widget.section) {
       case SettingsSection.general:
         return [
+          _SectionHeader(texts.clubSection),
+          _ClubNameRow(rowKey: _itemKeys[SettingsItem.clubName]!),
+
           _SectionHeader(texts.languageSection),
           _LanguageRow(rowKey: _itemKeys[SettingsItem.language]!),
 
@@ -348,6 +352,35 @@ class _SettingsHintRail extends ConsumerWidget {
 
     String keyFor(AppAction action) =>
         ref.watch(actionKeyLabelProvider(action));
+
+    // Während der Eingabe tun die Pfeile nichts, und Enter/Esc heißen etwas
+    // anderes — die Leiste zeigt dann, was die Tastatur gerade wirklich tut.
+    if (ref.watch(isSettingsEditingProvider)) {
+      final navigation = ref.read(settingsNavigationProvider.notifier);
+
+      return KeyHintRail(
+        hints: [
+          KeyHint(
+            // Die Taste selbst und nicht die Aktion `previous`, die zufällig
+            // auf ihr liegt: gelöscht wird mit Backspace, egal wie belegt.
+            keys: [KeyboardConfig.getKeyName(LogicalKeyboardKey.backspace)],
+            label: texts.labelEditDelete,
+            onTap: navigation.deleteLastChar,
+          ),
+          KeyHint(
+            keys: [keyFor(AppAction.confirm)],
+            label: texts.labelEditCommit,
+            emphasised: true,
+            onTap: navigation.commitEdit,
+          ),
+          KeyHint(
+            keys: [keyFor(AppAction.back)],
+            label: texts.labelEditCancel,
+            onTap: navigation.cancelEdit,
+          ),
+        ],
+      );
+    }
 
     return KeyHintRail(
       hints: [
@@ -723,6 +756,82 @@ class _VolumeMeter extends ConsumerWidget {
 }
 
 // ===== ROWS =====
+
+/// Der Vereinsname — die einzige Zeile, in die getippt wird.
+///
+/// Kein `TextField`: unter `KeyboardScope` lässt sich nichts fokussieren, und
+/// das soll so bleiben. Enter öffnet die Eingabe, die Tasten landen über
+/// `SettingsScreenActions.textInput` im Puffer des Navigations-Providers, und
+/// diese Zeile zeigt ihn nur an. Der Cursor blinkt nicht: keine Animation in
+/// Schleife, auch nicht hier.
+class _ClubNameRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  /// So breit wie ein [_ValueStepper] mit seinen beiden Pfeilen, damit die
+  /// Werte aller Zeilen in einer Spalte stehen.
+  static const _valueWidth = 364.0;
+
+  const _ClubNameRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final clubName = ref.watch(clubNameProvider);
+    final buffer = ref.watch(settingsClubNameEditBufferProvider);
+    final isSelected = ref.watch(
+      isSettingsItemSelectedProvider(SettingsItem.clubName),
+    );
+
+    final isEditing = buffer != null;
+    final isEmpty = !isEditing && clubName.isEmpty;
+
+    final String value;
+    if (isEditing) {
+      value = '$buffer▏';
+    } else if (isEmpty) {
+      value = texts.clubNameEmpty;
+    } else {
+      value = clubName;
+    }
+
+    return _SettingsRow(
+      item: SettingsItem.clubName,
+      rowKey: rowKey,
+      title: texts.clubName,
+      subtitle: texts.clubNameNote,
+      control: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          final navigation = ref.read(settingsNavigationProvider.notifier);
+          navigation.select(SettingsItem.clubName);
+          if (!isEditing) navigation.activate();
+        },
+        child: SizedBox(
+          width: _valueWidth,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                key: const ValueKey('club-name-value'),
+                maxLines: 1,
+                style: AppType.body.copyWith(
+                  fontWeight: isEmpty ? FontWeight.w500 : FontWeight.w700,
+                  color: isEmpty
+                      ? AppPalette.textMuted
+                      : isEditing || isSelected
+                      ? AppPalette.accent
+                      : AppPalette.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _LanguageRow extends ConsumerWidget {
   final GlobalKey rowKey;

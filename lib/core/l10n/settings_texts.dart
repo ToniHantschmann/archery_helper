@@ -44,6 +44,7 @@ class SettingsTexts {
     en: 'Custom Times',
   );
 
+  static const _clubSection = LocalizedText(de: 'Verein', en: 'Club');
   static const _languageSection = LocalizedText(de: 'Sprache', en: 'Language');
 
   static const _roundSection = LocalizedText(de: 'Runde', en: 'Round');
@@ -240,6 +241,15 @@ class SettingsTexts {
 
   // ===== LANGUAGE SETTINGS =====
 
+  static const _clubName = LocalizedText(de: 'Vereinsname', en: 'Club name');
+  static const _clubNameNote = LocalizedText(
+    de: 'Steht über der Uhrzeit',
+    en: 'Shown above the clock',
+  );
+  static const _clubNameEmpty = LocalizedText(
+    de: 'Nicht gesetzt',
+    en: 'Not set',
+  );
   static const _language = LocalizedText(de: 'Sprache', en: 'Language');
 
   static const _german = LocalizedText(de: 'Deutsch', en: 'German');
@@ -322,6 +332,9 @@ class SettingsTexts {
   static const _labelConfirm = LocalizedText(de: 'Bestätigen', en: 'Confirm');
 
   static const _labelBack = LocalizedText(de: 'Zurück', en: 'Back');
+  static const _labelEditDelete = LocalizedText(de: 'Löschen', en: 'Delete');
+  static const _labelEditCommit = LocalizedText(de: 'Übernehmen', en: 'Apply');
+  static const _labelEditCancel = LocalizedText(de: 'Verwerfen', en: 'Discard');
 
   // ===== VALUE LABELS =====
 
@@ -374,6 +387,7 @@ class SettingsTexts {
   String get soundSection => _soundSection.get(_currentLanguage);
   String get timerSection => _timerSection.get(_currentLanguage);
   String get customTimesSection => _customTimesSection.get(_currentLanguage);
+  String get clubSection => _clubSection.get(_currentLanguage);
   String get languageSection => _languageSection.get(_currentLanguage);
   String get roundSection => _roundSection.get(_currentLanguage);
   String get targetSection => _targetSection.get(_currentLanguage);
@@ -412,6 +426,9 @@ class SettingsTexts {
   String get showMilliseconds => _showMilliseconds.get(_currentLanguage);
   String get timeFormat => _timeFormat.get(_currentLanguage);
 
+  String get clubName => _clubName.get(_currentLanguage);
+  String get clubNameNote => _clubNameNote.get(_currentLanguage);
+  String get clubNameEmpty => _clubNameEmpty.get(_currentLanguage);
   String get language => _language.get(_currentLanguage);
   String get german => _german.get(_currentLanguage);
   String get english => _english.get(_currentLanguage);
@@ -450,6 +467,9 @@ class SettingsTexts {
   String get labelChange => _labelChange.get(_currentLanguage);
   String get labelConfirm => _labelConfirm.get(_currentLanguage);
   String get labelBack => _labelBack.get(_currentLanguage);
+  String get labelEditDelete => _labelEditDelete.get(_currentLanguage);
+  String get labelEditCommit => _labelEditCommit.get(_currentLanguage);
+  String get labelEditCancel => _labelEditCancel.get(_currentLanguage);
 
   String get on => _on.get(_currentLanguage);
   String get off => _off.get(_currentLanguage);

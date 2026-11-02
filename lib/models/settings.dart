@@ -95,6 +95,14 @@ class Settings {
   /// Normalfall, deshalb ist es die Voreinstellung.
   final bool competitionCountdownAutoStart;
 
+  /// Der Name des Vereins, der über der Uhrzeit steht — in der Ruheanzeige und
+  /// vor dem Turnierstart im Wettkampf, auf dem Monitor wie auf der LED-Wand.
+  ///
+  /// Leer heißt „kein Name": dann sehen alle drei Anzeigen aus wie ohne diese
+  /// Einstellung. Deshalb ist leer auch die Voreinstellung — ein fremder
+  /// Vereinsname über der Uhr wäre schlimmer als gar keiner.
+  final String clubName;
+
   const Settings({
     this.soundEnabled = true,
     this.volume = 0.8,
@@ -116,7 +124,22 @@ class Settings {
     this.competitionLedBrightness = 100,
     this.competitionCountdownTime = const Duration(minutes: 2),
     this.competitionCountdownAutoStart = false,
+    this.clubName = '',
   });
+
+  /// Längster [clubName]. Kein Platzproblem — die Anzeigen setzen den Namen
+  /// ohnehin kleiner, wenn er nicht passt —, sondern die Grenze, ab der er so
+  /// klein würde, dass er von der Schießlinie aus nicht mehr zu lesen ist.
+  static const maxClubNameLength = 32;
+
+  /// Der Name, wie er gespeichert wird: ohne Rand und höchstens
+  /// [maxClubNameLength] Zeichen lang. Gezählt wird in Runes, nicht in
+  /// UTF-16-Einheiten, damit ein Zeichen außerhalb der BMP nicht halbiert wird.
+  static String normalizeClubName(String name) {
+    final runes = name.trim().runes;
+    if (runes.length <= maxClubNameLength) return name.trim();
+    return String.fromCharCodes(runes.take(maxClubNameLength)).trimRight();
+  }
 
   /// Grenzen für [alternatingArrows]. Drei Pfeile sind der Wettkampf-Fall,
   /// alles darüber ist Training.
@@ -179,6 +202,7 @@ class Settings {
     int? competitionLedBrightness,
     Duration? competitionCountdownTime,
     bool? competitionCountdownAutoStart,
+    String? clubName,
   }) {
     return Settings(
       soundEnabled: soundEnabled ?? this.soundEnabled,
@@ -206,6 +230,7 @@ class Settings {
           competitionCountdownTime ?? this.competitionCountdownTime,
       competitionCountdownAutoStart:
           competitionCountdownAutoStart ?? this.competitionCountdownAutoStart,
+      clubName: clubName ?? this.clubName,
     );
   }
 
@@ -232,6 +257,7 @@ class Settings {
       "competitionLedBrightness": competitionLedBrightness,
       "competitionCountdownTime": competitionCountdownTime.inSeconds,
       "competitionCountdownAutoStart": competitionCountdownAutoStart,
+      "clubName": clubName,
     };
   }
 
@@ -285,7 +311,17 @@ class Settings {
       ),
       competitionCountdownAutoStart:
           json['competitionCountdownAutoStart'] as bool? ?? false,
+      clubName: _parseClubName(json['clubName']),
     );
+  }
+
+  /// Helper: keep the club name trimmed and inside its length (with fallback)
+  ///
+  /// `Object?` wie bei [_parseScale]: ein Name, der kein String ist, soll nicht
+  /// an einem Cast die ganze gespeicherte Konfiguration verwerfen.
+  static String _parseClubName(Object? name) {
+    if (name is! String) return '';
+    return normalizeClubName(name);
   }
 
   /// Helper: keep the countdown inside its range (with fallback)

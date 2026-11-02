@@ -72,24 +72,48 @@ class _WallClockState extends State<WallClock> {
   Widget build(BuildContext context) => widget.builder(context, _now);
 }
 
-/// Uhrzeit und Datum, so groß wie der Platz hergibt.
+/// Uhrzeit und Datum, so groß wie der Platz hergibt — und darüber der
+/// Vereinsname, sofern einer eingestellt ist.
 ///
 /// Dasselbe Bild in der Ruheanzeige und im Wettkampf, und deshalb an einer
 /// Stelle: es ist beide Male dieselbe Aussage — an dieser Anzeige läuft gerade
 /// nichts, hier ist die Uhrzeit. Ohne eigenen Rand, den setzt der Aufrufer: die
 /// Ruheanzeige hat den ganzen Schirm, der Wettkampf nur die Mitte zwischen
 /// seinen Leisten.
+///
+/// Der Name steht hier und nicht in den beiden Screens, weil er zur Uhr gehört:
+/// er ist das, was vor dem Turnierstart über ihr hängt, an beiden Stellen
+/// gleich. Leer heißt „kein Name", und die Anzeige ist dann genau die alte.
 class WallClockFace extends ConsumerWidget {
   const WallClockFace({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final language = ref.watch(languageProvider);
+    final clubName = ref.watch(clubNameProvider);
 
     return WallClock(
       builder: (context, now) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (clubName.isNotEmpty) ...[
+            // scaleDown, damit ein langer Name kleiner wird statt überzulaufen —
+            // die Uhr darunter behält ihre Größe.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                clubName,
+                key: const ValueKey('wall-clock-club-name'),
+                style: AppType.display.copyWith(
+                  color: AppPalette.textSecondary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2,
+                ),
+                maxLines: 1,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           // Flexible, so the FittedBox is constrained in height as well: in a
           // Column a plain child is laid out unbounded, and scaleDown would
           // then only ever react to the width.

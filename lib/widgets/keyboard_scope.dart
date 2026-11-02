@@ -74,13 +74,19 @@ class _KeyboardScopeState extends ConsumerState<KeyboardScope> {
     // KeyRepeatEvent is passed on so holding an arrow key keeps adjusting a
     // value; AppActionsNotifier decides which actions may repeat.
     if (event is KeyDownEvent) {
-      return ref.read(appActionsProvider).handleKeyPress(event.logicalKey);
+      return ref
+          .read(appActionsProvider)
+          .handleKeyPress(event.logicalKey, character: event.character);
     }
 
     if (event is KeyRepeatEvent) {
       return ref
           .read(appActionsProvider)
-          .handleKeyPress(event.logicalKey, isRepeat: true);
+          .handleKeyPress(
+            event.logicalKey,
+            isRepeat: true,
+            character: event.character,
+          );
     }
 
     return KeyEventResult.ignored;

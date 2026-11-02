@@ -578,15 +578,15 @@ void main() {
     testWidgets('arrow down and up move the selection', (tester) async {
       await pumpApp(tester, startAt: AppScreen.generalSettings);
 
-      expect(selectedItem(), SettingsItem.language);
+      expect(selectedItem(), SettingsItem.clubName);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
-      expect(selectedItem(), SettingsItem.fullscreen);
+      expect(selectedItem(), SettingsItem.language);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();
-      expect(selectedItem(), SettingsItem.language);
+      expect(selectedItem(), SettingsItem.clubName);
     });
 
     /// Jeder Screen zeigt nur seinen Bereich, also darf das Durchsteppen auch
@@ -846,6 +846,112 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pumpAndSettle();
       expect(settings().timeFormat, TimeFormat.minutesSeconds);
+
+      await flushPendingSaves(tester);
+    });
+  });
+
+  group('typing the club name', () {
+    bool editing() => container.read(isSettingsEditingProvider);
+
+    /// Tippt [text] Zeichen für Zeichen, jeweils mit der Taste, auf der das
+    /// Zeichen liegt — so kommen S und P als die Tasten an, die sie sonst
+    /// auch sind, und der Test zeigt, dass die Eingabe sie vorher abfängt.
+    Future<void> type(WidgetTester tester, String text) async {
+      for (final char in text.split('')) {
+        final key = char == ' '
+            ? LogicalKeyboardKey.space
+            : LogicalKeyboardKey(
+                LogicalKeyboardKey.keyA.keyId +
+                    char.toLowerCase().codeUnitAt(0) -
+                    'a'.codeUnitAt(0),
+              );
+        await tester.sendKeyEvent(key, character: char);
+      }
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> press(WidgetTester tester, LogicalKeyboardKey key) async {
+      await tester.sendKeyEvent(key);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Enter opens the input, typing fills it, Enter applies it', (
+      tester,
+    ) async {
+      await pumpApp(tester, startAt: AppScreen.generalSettings);
+      expect(selectedItem(), SettingsItem.clubName);
+
+      await press(tester, LogicalKeyboardKey.enter);
+      expect(editing(), isTrue);
+
+      // S, P und das Leerzeichen sind sonst Einstellungen, Start/Pause und
+      // „weiter" — hier sind sie Buchstaben.
+      await type(tester, 'TSV Dachaux');
+      await press(tester, LogicalKeyboardKey.backspace);
+      expect(container.read(settingsClubNameEditBufferProvider), 'TSV Dachau');
+      expect(currentScreen(), AppScreen.generalSettings);
+      expect(timer().isRunning, isFalse);
+      expect(
+        settings().clubName,
+        isEmpty,
+        reason: 'übernommen wird erst mit Enter',
+      );
+
+      await press(tester, LogicalKeyboardKey.enter);
+      expect(editing(), isFalse);
+      expect(settings().clubName, 'TSV Dachau');
+      expect(find.text('TSV Dachau'), findsOneWidget);
+
+      await flushPendingSaves(tester);
+    });
+
+    testWidgets('Esc discards the input and only a second Esc leaves', (
+      tester,
+    ) async {
+      container.read(settingsProvider.notifier).setClubName('TSV Dachau');
+      await pumpApp(tester, startAt: AppScreen.generalSettings);
+
+      await press(tester, LogicalKeyboardKey.enter);
+      expect(
+        container.read(settingsClubNameEditBufferProvider),
+        'TSV Dachau',
+        reason: 'die Eingabe fängt beim gespeicherten Namen an',
+      );
+
+      await type(tester, ' xyz');
+      await press(tester, LogicalKeyboardKey.escape);
+
+      expect(editing(), isFalse);
+      expect(settings().clubName, 'TSV Dachau');
+      expect(currentScreen(), AppScreen.generalSettings);
+
+      await press(tester, LogicalKeyboardKey.escape);
+      expect(currentScreen(), AppScreen.menu);
+
+      await flushPendingSaves(tester);
+    });
+
+    testWidgets('the arrows stay on the row while typing', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.generalSettings);
+
+      await press(tester, LogicalKeyboardKey.enter);
+      await press(tester, LogicalKeyboardKey.arrowDown);
+
+      expect(selectedItem(), SettingsItem.clubName);
+      expect(editing(), isTrue);
+
+      await press(tester, LogicalKeyboardKey.escape);
+    });
+
+    testWidgets('the name stops at its maximum length', (tester) async {
+      await pumpApp(tester, startAt: AppScreen.generalSettings);
+
+      await press(tester, LogicalKeyboardKey.enter);
+      await type(tester, 'a' * (Settings.maxClubNameLength + 5));
+      await press(tester, LogicalKeyboardKey.enter);
+
+      expect(settings().clubName, 'a' * Settings.maxClubNameLength);
 
       await flushPendingSaves(tester);
     });

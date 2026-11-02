@@ -268,6 +268,46 @@ void main() {
       });
     }
 
+    // Der längste Name, den die Einstellung zulässt, und aus breiten Zeichen —
+    // er muss kleiner werden, statt die Uhr oder die Leisten zu verdrängen.
+    final longestClubName = 'W' * Settings.maxClubNameLength;
+
+    for (final entry in sizes.entries) {
+      for (final screen in [AppScreen.idle, AppScreen.competition]) {
+        testWidgets(
+          'the wall clock fits a club name on ${screen.name} at ${entry.key}',
+          (tester) async {
+            container
+                .read(settingsProvider.notifier)
+                .setClubName(longestClubName);
+            if (screen == AppScreen.competition) {
+              container.read(competitionProvider.notifier).toggleClock();
+            }
+            await pumpScreen(tester, entry.value, screen);
+
+            expect(
+              find.byKey(const ValueKey('wall-clock-club-name')),
+              findsOneWidget,
+            );
+            expect(tester.takeException(), isNull);
+
+            await leaveScreen(tester);
+            await tester.pump(const Duration(milliseconds: 400));
+          },
+        );
+      }
+    }
+
+    testWidgets('without a club name the wall clock is the old one', (
+      tester,
+    ) async {
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.idle);
+
+      expect(find.byKey(const ValueKey('wall-clock-club-name')), findsNothing);
+
+      await leaveScreen(tester);
+    });
+
     for (final entry in sizes.entries) {
       testWidgets('the competition screen fits the countdown at ${entry.key}', (
         tester,
@@ -468,6 +508,43 @@ void main() {
       await leaveScreen(tester);
       // Der entprellte Schreibvorgang der Einstellungen darf den Test nicht
       // überleben.
+      await tester.pump(const Duration(milliseconds: 400));
+    });
+
+    test('the clock fits the time band, so a club name fits below it', () {
+      // Mit Vereinsname steht die Uhrzeit im Zeitband der Runde statt über der
+      // ganzen Wand — ohne eigene Geometrie, weil sie nie höher ist als die
+      // Restzeit.
+      expect(
+        LedPanelSpec.clockFontSize * LedPanelSpec.clockScaleY,
+        lessThanOrEqualTo(LedPanelSpec.timeHeight + 0.01),
+      );
+    });
+
+    testWidgets('a club name goes into the row below the clock', (
+      tester,
+    ) async {
+      container.read(settingsProvider.notifier)
+        ..setCompetitionDisplay(CompetitionDisplay.led)
+        ..setClubName('W' * Settings.maxClubNameLength);
+      container.read(competitionProvider.notifier).toggleClock();
+
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+
+      expect(find.byKey(ledClockKey), findsOneWidget);
+      expect(find.byKey(ledClubNameKey), findsOneWidget);
+      expect(find.byKey(ledTimeKey), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      final name = tester.widget<Text>(find.byKey(ledClubNameKey)).style!;
+      expect(name.inherit, isFalse, reason: 'der Name erbt vom Umfeld');
+
+      // Mit der Runde verschwindet der Name wieder — er gehört zur Uhrzeit.
+      container.read(competitionProvider.notifier).toggleClock();
+      await tester.pump();
+      expect(find.byKey(ledClubNameKey), findsNothing);
+
+      await leaveScreen(tester);
       await tester.pump(const Duration(milliseconds: 400));
     });
 

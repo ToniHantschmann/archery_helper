@@ -19,6 +19,7 @@ import 'sound_provider.dart';
 /// eigene Reset-Zeile.
 enum SettingsItem {
   // ── Allgemein ──────────────────────────────────────────
+  clubName(SettingsSection.general),
   language(SettingsSection.general),
   fullscreen(SettingsSection.general),
   soundEnabled(SettingsSection.general),
@@ -104,21 +105,44 @@ class SettingsNavState {
   /// route, no BuildContext, and the same flow for mouse and keyboard.
   final bool resetArmed;
 
+  /// Der Text, der gerade eingegeben wird, oder `null`, solange nichts
+  /// bearbeitet wird.
+  ///
+  /// Aus demselben Grund Zustand wie [resetArmed]: ein Textfeld wäre ein
+  /// fokussierbares Widget, und fokussieren lässt sich unter `KeyboardScope`
+  /// nichts. Die Tasten kommen deshalb über `ScreenActionHandler.textInput`
+  /// hierher, und übernommen wird der Puffer erst mit Enter — bis dahin steht
+  /// über der Uhr noch der alte Name.
+  final String? editBuffer;
+
   const SettingsNavState({
-    this.selected = SettingsItem.language,
+    this.selected = SettingsItem.clubName,
     this.resetArmed = false,
+    this.editBuffer,
   });
+
+  bool get isEditing => editBuffer != null;
 
   /// Welcher Bereich offen ist. Keine eigene Angabe: jede Zeile gehört zu genau
   /// einem Bereich, also sagt die ausgewählte Zeile es schon.
   SettingsSection get section => selected.section;
 
-  SettingsNavState copyWith({SettingsItem? selected, bool? resetArmed}) {
+  /// [editBuffer] bleibt erhalten, wenn er nicht übergeben wird; beendet wird
+  /// eine Eingabe mit [withoutEdit].
+  SettingsNavState copyWith({
+    SettingsItem? selected,
+    bool? resetArmed,
+    String? editBuffer,
+  }) {
     return SettingsNavState(
       selected: selected ?? this.selected,
       resetArmed: resetArmed ?? this.resetArmed,
+      editBuffer: editBuffer ?? this.editBuffer,
     );
   }
+
+  SettingsNavState withoutEdit() =>
+      SettingsNavState(selected: selected, resetArmed: resetArmed);
 }
 
 /// Owns which settings row is focused and translates the navigate* actions
@@ -170,11 +194,59 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
   void select(SettingsItem item) {
     if (item != state.selected) _endRepeatRun();
 
-    // Moving away from an armed reset cancels it.
-    state = state.copyWith(
+    // Moving away from an armed reset cancels it, and so does moving away from
+    // a half-typed name (only the mouse can do that — the keys are taken while
+    // typing).
+    final stays = item == state.selected;
+    state = SettingsNavState(
       selected: item,
-      resetArmed: item == state.selected && state.resetArmed,
+      resetArmed: stays && state.resetArmed,
+      editBuffer: stays ? state.editBuffer : null,
     );
+  }
+
+  /// Whether a text row is currently being typed into.
+  bool get isEditing => state.isEditing;
+
+  /// Appends typed text to the edit buffer — only printable characters, and
+  /// only up to [Settings.maxClubNameLength]. Control characters arrive as
+  /// `KeyEvent.character` too (Tab, for one) and have no business in a name.
+  void appendText(String text) {
+    final buffer = state.editBuffer;
+    if (buffer == null) return;
+
+    final printable = text.runes.where((c) => c >= 0x20 && c != 0x7F);
+    final room = Settings.maxClubNameLength - buffer.runes.length;
+    if (printable.isEmpty || room <= 0) return;
+
+    state = state.copyWith(
+      editBuffer: buffer + String.fromCharCodes(printable.take(room)),
+    );
+  }
+
+  /// Removes the last character — a rune, not a UTF-16 unit, so an emoji goes
+  /// in one press instead of leaving half a surrogate pair behind.
+  void deleteLastChar() {
+    final buffer = state.editBuffer;
+    if (buffer == null || buffer.isEmpty) return;
+
+    final runes = buffer.runes.toList()..removeLast();
+    state = state.copyWith(editBuffer: String.fromCharCodes(runes));
+  }
+
+  /// Takes the typed text over into the settings and ends the input.
+  void commitEdit() {
+    final buffer = state.editBuffer;
+    if (buffer == null) return;
+
+    ref.read(settingsProvider.notifier).setClubName(buffer);
+    state = state.withoutEdit();
+  }
+
+  /// Drops the typed text; the stored name stays as it was.
+  void cancelEdit() {
+    if (!state.isEditing) return;
+    state = state.withoutEdit();
   }
 
   void moveUp() => _move(-1);
@@ -191,6 +263,17 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
     final notifier = ref.read(settingsProvider.notifier);
 
     switch (state.selected) {
+      // Erst Enter öffnet die Eingabe, ein zweites übernimmt sie — so kann
+      // keine Taste, die nur durch die Zeilen läuft, den Namen verändern.
+      case SettingsItem.clubName:
+        if (state.isEditing) {
+          commitEdit();
+        } else {
+          state = state.copyWith(
+            editBuffer: ref.read(settingsProvider).clubName,
+          );
+        }
+
       case SettingsItem.fullscreen:
         notifier.toggleFullscreen();
 
@@ -411,6 +494,9 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
               delta * Settings.ledBrightnessStepPercent,
         );
 
+      // Ein Name lässt sich nicht weiterschalten — geändert wird er nur über
+      // die Eingabe.
+      case SettingsItem.clubName:
       case SettingsItem.resetGeneral:
       case SettingsItem.resetTimer:
       case SettingsItem.resetCompetition:
@@ -501,6 +587,16 @@ final isSettingsItemSelectedProvider = Provider.autoDispose
     .family<bool, SettingsItem>((ref, item) {
       return ref.watch(selectedSettingsItemProvider) == item;
     });
+
+/// The text being typed into the club name row, or `null` while not editing.
+final settingsClubNameEditBufferProvider = Provider.autoDispose<String?>((ref) {
+  return ref.watch(settingsNavigationProvider).editBuffer;
+});
+
+/// Whether a text row is being typed into — the hint rail swaps its keys then.
+final isSettingsEditingProvider = Provider.autoDispose<bool>((ref) {
+  return ref.watch(settingsNavigationProvider).isEditing;
+});
 
 /// Whether the reset row currently awaits confirmation.
 final isResetArmedProvider = Provider.autoDispose<bool>((ref) {

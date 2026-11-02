@@ -332,6 +332,7 @@ const ledTimeKey = ValueKey('led-time');
 const ledGroupKey = ValueKey('led-group');
 const ledEndKey = ValueKey('led-end');
 const ledClockKey = ValueKey('led-clock');
+const ledClubNameKey = ValueKey('led-club-name');
 const ledCountdownKey = ValueKey('led-countdown');
 
 /// Der Wettkampfstand auf 192 × 128 Pixeln: Restzeit, Gruppe, Passe,
@@ -382,17 +383,80 @@ class LedPanel extends ConsumerWidget {
   }
 }
 
-/// Die Uhrzeit über die ganze Wand.
-class _LedWallClock extends StatelessWidget {
+/// Die Uhrzeit über die ganze Wand — oder, mit Vereinsname, im Zeitband der
+/// Runde und der Name in der Zeile darunter.
+///
+/// Mit Namen gilt dieselbe Aufteilung wie während der Runde, und die Uhrzeit
+/// braucht dafür keine eigene Geometrie: sie ist in [LedPanelSpec.clockStyle]
+/// nie größer als die Restzeit (kleinere Schrift, Streckung höchstens
+/// [LedPanelSpec.timeScaleY]) und passt damit von selbst in
+/// [LedPanelSpec.timeHeight]. Nur die vertikale Mitte ist eine andere.
+class _LedWallClock extends ConsumerWidget {
   const _LedWallClock();
 
   @override
-  Widget build(BuildContext context) {
-    return WallClock(
-      builder: (context, now) => _LedFullPanelText(
-        text: ClockTexts.formatClock(now),
-        textKey: ledClockKey,
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final clubName = ref.watch(clubNameProvider);
+
+    if (clubName.isEmpty) {
+      return WallClock(
+        builder: (context, now) => _LedFullPanelText(
+          text: ClockTexts.formatClock(now),
+          textKey: ledClockKey,
+        ),
+      );
+    }
+
+    final color = ref.watch(competitionLedTextColorProvider);
+
+    return Column(
+      children: [
+        SizedBox(
+          height: LedPanelSpec.timeHeight,
+          width: double.infinity,
+          child: WallClock(
+            builder: (context, now) => Center(
+              child: Transform.translate(
+                offset: Offset(0, LedPanelSpec.clockNudgeY),
+                child: Transform.scale(
+                  scaleY: LedPanelSpec.clockScaleY,
+                  child: Text(
+                    ClockTexts.formatClock(now),
+                    key: ledClockKey,
+                    style: LedPanelSpec.clockStyle.copyWith(color: color),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: LedPanelSpec.rowGutter),
+        SizedBox(
+          height: LedPanelSpec.rowHeight,
+          width: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: LedPanelSpec.labelInset,
+            ),
+            // Eine FittedBox, anders als bei den Zahlen: der Name wechselt
+            // während der Anzeige nicht, es gibt also keine Größe, die von
+            // einem Wert zum nächsten springen könnte. Höchstens so groß wie
+            // die Beschriftungen der Runde, damit ein kurzer Name nicht größer
+            // wird als „AB".
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  clubName,
+                  key: ledClubNameKey,
+                  maxLines: 1,
+                  style: LedPanelSpec.groupStyle.copyWith(color: color),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

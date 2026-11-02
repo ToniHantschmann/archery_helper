@@ -54,6 +54,9 @@ void main() {
     competitionLedBrightness: 40,
     competitionCountdownTime: Duration(seconds: 90),
     competitionCountdownAutoStart: true,
+    // Mit Umlaut: gespeichert wird JSON, und das muss ihn unverändert
+    // zurückgeben.
+    clubName: 'SV Münchenstein',
   );
 
   test('saved settings survive a round trip unchanged', () async {
@@ -83,6 +86,7 @@ void main() {
       loaded.competitionCountdownAutoStart,
       custom.competitionCountdownAutoStart,
     );
+    expect(loaded.clubName, custom.clubName);
   });
 
   test('every field is written to the stored json', () {
@@ -109,6 +113,7 @@ void main() {
       'competitionLedBrightness',
       'competitionCountdownTime',
       'competitionCountdownAutoStart',
+      'clubName',
     });
   });
 
@@ -237,6 +242,29 @@ void main() {
       }
     });
 
+    test('a club name that is not a string, padded or too long', () async {
+      final tooLong = 'X' * (Settings.maxClubNameLength + 10);
+
+      for (final entry in <Object?, String>{
+        42: '',
+        null: '',
+        '  TSV Dachau  ': 'TSV Dachau',
+        tooLong: 'X' * Settings.maxClubNameLength,
+      }.entries) {
+        SharedPreferences.setMockInitialValues({
+          storageKey: jsonEncode({'clubName': entry.key, 'fullscreen': false}),
+        });
+
+        final loaded = await repository.loadSettings();
+        expect(loaded.clubName, entry.value);
+        expect(
+          loaded.fullscreen,
+          isFalse,
+          reason: 'ein kaputter Name kostet nicht die übrigen Einstellungen',
+        );
+      }
+    });
+
     test('an out of range mode index', () async {
       SharedPreferences.setMockInitialValues({
         storageKey: jsonEncode({'defaultMode': 99}),
@@ -338,6 +366,24 @@ void main() {
         defaults.competitionCountdownAutoStart,
       );
       expect(settings.alternatingArrows, 5, reason: 'gehört zur Ampel');
+    });
+
+    test('the general section clears the club name', () {
+      final notifier = container.read(settingsProvider.notifier);
+
+      notifier
+        ..setClubName('TSV Dachau')
+        ..setCompetitionLineup(CompetitionLineup.ab);
+
+      notifier.resetSection(SettingsSection.general);
+
+      final settings = container.read(settingsProvider);
+      expect(settings.clubName, isEmpty);
+      expect(
+        settings.competitionLineup,
+        CompetitionLineup.ab,
+        reason: 'gehört zum Wettkampf',
+      );
     });
 
     test('the timer section takes the display scale with it', () {

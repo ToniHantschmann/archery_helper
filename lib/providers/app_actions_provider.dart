@@ -41,6 +41,17 @@ abstract class ScreenActionHandler {
 
   final Ref ref;
 
+  /// Asked for **every** key before the key map is consulted — the one door
+  /// through which a screen may see a raw key, and only while it is typing.
+  ///
+  /// [character] is what the key would type (`KeyEvent.character`), or `null`.
+  /// Return `handled` to take the key: while text is being entered that means
+  /// every key, so S, P or F11 cannot fire behind a half-typed name. `ignored`
+  /// — the default, and what a screen that is not typing answers — lets the
+  /// key go through the [KeyboardConfig] as usual.
+  KeyEventResult textInput(LogicalKeyboardKey key, String? character) =>
+      KeyEventResult.ignored;
+
   /// Arrow keys — in-screen focus movement or value adjustment.
   ///
   /// [isRepeat] marks an auto-repeat event, i.e. the key was not released since
@@ -391,6 +402,36 @@ class SettingsScreenActions extends ScreenActionHandler {
     return KeyEventResult.handled;
   }
 
+  /// Während der Vereinsname eingegeben wird, gehört die Tastatur der Eingabe.
+  ///
+  /// Backspace und druckbare Zeichen schreiben, Enter übernimmt, Esc verwirft —
+  /// und alles andere wird geschluckt, auch die Pfeile: die Auswahl soll nicht
+  /// unter einer offenen Eingabe weiterwandern. Das Leerzeichen kommt als
+  /// Zeichen an, bevor die Tastenbelegung es zu `next` machen kann; Enter und
+  /// Esc haben kein druckbares Zeichen und landen deshalb bei ihrer Aktion.
+  @override
+  KeyEventResult textInput(LogicalKeyboardKey key, String? character) {
+    if (!_navigation.isEditing) return KeyEventResult.ignored;
+
+    final action = ref.read(keyboardConfigProvider).getAction(key);
+
+    if (key == LogicalKeyboardKey.backspace) {
+      _navigation.deleteLastChar();
+    } else if (character != null && _isPrintable(character)) {
+      _navigation.appendText(character);
+    } else if (action == AppAction.confirm ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
+      _navigation.commitEdit();
+    } else if (action == AppAction.back || key == LogicalKeyboardKey.escape) {
+      _navigation.cancelEdit();
+    }
+    return KeyEventResult.handled;
+  }
+
+  static bool _isPrintable(String character) =>
+      character.runes.every((c) => c >= 0x20 && c != 0x7F);
+
   @override
   KeyEventResult back() {
     // A pending reset confirmation is cancelled first — only a second Esc
@@ -576,10 +617,20 @@ class AppActionsNotifier {
   };
 
   /// [isRepeat] marks auto-repeat events; see [_repeatableActions].
+  ///
+  /// [character] is what the key types, for a screen that is taking text (see
+  /// [ScreenActionHandler.textInput]); it is asked before the key map, and
+  /// before the repeat filter, so a held Backspace keeps deleting.
   KeyEventResult handleKeyPress(
     LogicalKeyboardKey key, {
     bool isRepeat = false,
+    String? character,
   }) {
+    final typed = ref
+        .read(screenActionHandlerProvider)
+        .textInput(key, character);
+    if (typed == KeyEventResult.handled) return typed;
+
     final action = ref.read(keyboardConfigProvider).getAction(key);
 
     if (action == null) {

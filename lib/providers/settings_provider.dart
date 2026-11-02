@@ -71,6 +71,11 @@ class SettingsNotifier extends Notifier<Settings> {
     _save();
   }
 
+  void setClubName(String name) {
+    state = state.copyWith(clubName: Settings.normalizeClubName(name));
+    _save();
+  }
+
   void setSignalTone(SignalTone tone) {
     state = state.copyWith(signalTone: tone);
     _save();
@@ -228,6 +233,7 @@ class SettingsNotifier extends Notifier<Settings> {
         soundEnabled: defaults.soundEnabled,
         signalTone: defaults.signalTone,
         volume: defaults.volume,
+        clubName: defaults.clubName,
       ),
       SettingsSection.timer => state.copyWith(
         defaultMode: defaults.defaultMode,
@@ -286,6 +292,10 @@ final showMillisecondsProvider = Provider<bool>((ref) {
 
 final timeFormatProvider = Provider<TimeFormat>((ref) {
   return ref.watch(settingsProvider).timeFormat;
+});
+
+final clubNameProvider = Provider<String>((ref) {
+  return ref.watch(settingsProvider).clubName;
 });
 
 final languageProvider = Provider<AppLanguage>((ref) {
