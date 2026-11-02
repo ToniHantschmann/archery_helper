@@ -76,10 +76,10 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       expect(player.taken, [AudioSignal.warningTick, AudioSignal.warningTick]);
 
-      // Die 0 ist kein Tick, sondern der Schlusston.
+      // Die 0 ist kein Tick, sondern das Signal zum Pfeileholen.
       await tester.pump(const Duration(seconds: 1));
       expect(container.read(timerProvider).phase, TimerPhase.ended);
-      expect(player.taken, [AudioSignal.stop]);
+      expect(player.taken, [AudioSignal.collect]);
 
       await flushPendingSaves(tester);
     });
@@ -128,7 +128,7 @@ void main() {
         reason: 'nur eine Vorbereitungszeit, B steht schon am Balken',
       );
       expect(
-        player.signals.where((s) => s == AudioSignal.stop).length,
+        player.signals.where((s) => s == AudioSignal.collect).length,
         1,
         reason: 'Schluss erst am Ende der ganzen Passe, nicht bei der Übergabe',
       );
@@ -143,7 +143,7 @@ void main() {
 
       expect(player.signals, [
         AudioSignal.start,
-        AudioSignal.stop,
+        AudioSignal.collect,
         AudioSignal.start,
       ]);
 

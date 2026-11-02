@@ -20,10 +20,9 @@ enum AudioSignal {
   /// ist die Warnung im Wettkampf rein optisch.
   warningTick('warning_tick.wav'),
 
-  /// Langer Ton: Schluss. Ende einer Ampel-Passe und Rot in der Hand-Ampel.
-  stop('stop.wav'),
-
-  /// Drei Töne: Pfeile holen. Ende einer Passe im Wettkampf.
+  /// Drei Töne: Schluss, Pfeile holen. Nach WA das Ende der Schusszeit —
+  /// deshalb auch am Ende einer Ampel-Passe und bei Rot in der Hand-Ampel,
+  /// nicht nur am Ende einer Passe im Wettkampf.
   collect('collect.wav');
 
   const AudioSignal(this.fileName);

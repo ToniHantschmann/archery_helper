@@ -191,7 +191,7 @@ class TimerNotifier extends Notifier<TimerState> with PhaseClock<TimerState> {
       isRunning: false,
       remainingTime: Duration.zero,
     );
-    _playSignal(AudioSignal.stop);
+    _playSignal(AudioSignal.collect);
   }
 
   void _resumeTimer() {

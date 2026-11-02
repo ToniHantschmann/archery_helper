@@ -76,27 +76,32 @@ class _Segment {
 
 /// Die Töne, die die App kennt — dieselben Namen wie `AudioSignal`.
 ///
-/// 880 Hz (a'') ist die Ansage, 1320 Hz der spitze Tick darüber, 587 Hz (d'')
-/// der tiefere Schlussstrich: fallende Tonhöhe hört man auch ohne Hinsehen als
-/// "vorbei".
+/// 880 Hz (a'') ist die Ansage, 1320 Hz der spitze Tick darüber.
 ///
 /// Die Tabelle beschreibt Melodie und Rhythmus, nicht den Klang: sie gilt für
 /// beide Sätze, jeder [_Voice] transponiert sie geschlossen.
+///
+/// Die Anzahl ist die der WA: zwei an die Linie, einer Start, drei Pfeile
+/// holen. Mehr Töne pro Signal wären leichter zu bemerken, aber ein anderer
+/// Code als auf dem Turnier — und fünf oder mehr heißt dort Notfall. Deutlicher
+/// wird ein Signal deshalb über die Länge: bei 150 ms mit 200 ms Pause zirpte
+/// ein Doppelton nur, erst bei knapp einer halben Sekunde je Ton kann man über
+/// eine Halle hinweg mitzählen. Der Einzelton ist noch länger, weil ihm die
+/// Wiederholung fehlt, die die anderen auffällig macht.
 const _signals = <String, List<_Segment>>{
   'to_the_line': [
-    _Segment.tone(880, 150),
-    _Segment.silence(200),
-    _Segment.tone(880, 150),
+    _Segment.tone(880, 400),
+    _Segment.silence(350),
+    _Segment.tone(880, 400),
   ],
-  'start': [_Segment.tone(880, 400)],
+  'start': [_Segment.tone(880, 700)],
   'warning_tick': [_Segment.tone(1320, 80)],
-  'stop': [_Segment.tone(587, 900)],
   'collect': [
-    _Segment.tone(880, 150),
-    _Segment.silence(200),
-    _Segment.tone(880, 150),
-    _Segment.silence(200),
-    _Segment.tone(880, 150),
+    _Segment.tone(880, 400),
+    _Segment.silence(350),
+    _Segment.tone(880, 400),
+    _Segment.silence(350),
+    _Segment.tone(880, 400),
   ],
 };
 

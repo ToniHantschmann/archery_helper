@@ -28,7 +28,7 @@ class TrafficLightNotifier extends Notifier<bool> {
     // läuft, ändert nichts an der Aussage.
     ref
         .read(signalSoundsProvider)
-        .play(state ? AudioSignal.start : AudioSignal.stop);
+        .play(state ? AudioSignal.start : AudioSignal.collect);
   }
 }
 
