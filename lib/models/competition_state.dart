@@ -19,6 +19,18 @@ enum CompetitionDiscipline {
     arrowsPerEnd: 6,
     shootingTime: Duration(seconds: 240),
     defaultEnds: 12,
+  ),
+
+  /// Hallenliga: drei Schützen eines Teams schießen je zwei Pfeile pro Satz.
+  ///
+  /// Anders als die Qualifikation hat eine Ligabegegnung keine feste Länge —
+  /// es wird Satz für Satz geschossen, bis die Begegnung entschieden ist, und
+  /// das weiß der Schießleiter und nicht die Uhr. Deshalb keine Passenzahl
+  /// (siehe [isEndless]), keine Gruppen und kein Einschießen auf der Anzeige.
+  league(
+    arrowsPerEnd: 2,
+    shootingTime: Duration(seconds: 120),
+    defaultEnds: null,
   );
 
   const CompetitionDiscipline({
@@ -33,7 +45,13 @@ enum CompetitionDiscipline {
   /// Wie lange sie dafür Zeit hat.
   final Duration shootingTime;
 
-  final int defaultEnds;
+  /// Wie viele Passen die Runde ohne weitere Einstellung hat — `null`, wenn sie
+  /// gar keine feste Länge hat.
+  final int? defaultEnds;
+
+  /// Ob die Runde endlos läuft. Kein eigenes Feld: „keine feste Passenzahl"
+  /// ist genau diese Tatsache, ein Flag daneben wäre eine zweite Darstellung.
+  bool get isEndless => defaultEnds == null;
 }
 
 /// Wie die Schützen an der Scheibe aufgeteilt sind.
@@ -231,7 +249,11 @@ class CompetitionState {
   /// Ob in dieser Passe nach der laufenden Gruppe noch eine folgt.
   bool get hasNextGroup => groupIndex + 1 < groupOrder.length;
 
-  bool get hasNextEnd => currentEnd < lastEnd;
+  /// Ob die Runde ohne Passenzahl läuft (Liga). Dann gibt es weder einen
+  /// Zähler noch ein Rundenende — [totalEnds] bedeutet in dem Fall nichts.
+  bool get isEndless => discipline.isEndless;
+
+  bool get hasNextEnd => isEndless || currentEnd < lastEnd;
 
   /// Ob in dieser Passe vor der laufenden Gruppe schon eine dran war.
   bool get hasPreviousGroup => groupIndex > 0;

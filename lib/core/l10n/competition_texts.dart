@@ -157,13 +157,17 @@ class CompetitionTexts {
     }
   }
 
-  /// Der Passenzähler: „Passe 3/20", beim Einschießen „Einschießen 2/4".
+  /// Der Passenzähler: „Passe 3/20", beim Einschießen „Einschießen 2/4" —
+  /// und `null` in der Liga, die keine Länge hat, gegen die sich zählen ließe.
   ///
   /// Nimmt den ganzen Stand und nicht zwei Zahlen: welcher Block gerade läuft,
   /// gehört zur Beschriftung und nicht in den Aufrufer.
-  String endCounter(CompetitionState state) =>
-      '${(state.isPractice ? _practice : _end).get(_language)} '
-      '${state.endNumber}/${state.endsInBlock}';
+  String? endCounter(CompetitionState state) {
+    if (state.isEndless) return null;
+
+    return '${(state.isPractice ? _practice : _end).get(_language)} '
+        '${state.endNumber}/${state.endsInBlock}';
+  }
 }
 
 final competitionTextsProvider = Provider<CompetitionTexts>((ref) {

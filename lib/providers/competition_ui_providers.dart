@@ -34,8 +34,8 @@ final competitionFormattedTimeProvider = Provider.autoDispose<String>((ref) {
   );
 });
 
-/// „Passe 3/20", beim Einschießen „Einschießen 2/4".
-final competitionEndTextProvider = Provider.autoDispose<String>((ref) {
+/// „Passe 3/20", beim Einschießen „Einschießen 2/4", in der Liga `null`.
+final competitionEndTextProvider = Provider.autoDispose<String?>((ref) {
   final state = ref.watch(competitionProvider);
   return ref.watch(competitionTextsProvider).endCounter(state);
 });
@@ -232,8 +232,12 @@ final competitionLedGroupProvider = Provider.autoDispose<String?>((ref) {
 /// Hängt am ganzen [competitionProvider] und rechnet damit im Sekundentakt neu,
 /// meldet aber nur bei geändertem String: ein `Provider` benachrichtigt auf
 /// `!=`, und zwei gleiche Zähler sind gleich.
-final competitionLedEndProvider = Provider.autoDispose<String>((ref) {
+///
+/// In der Liga `null`: ohne Passenzahl gibt es nichts zu zählen, und die Zelle
+/// bleibt schwarz.
+final competitionLedEndProvider = Provider.autoDispose<String?>((ref) {
   final state = ref.watch(competitionProvider);
+  if (state.isEndless) return null;
   return state.isPractice ? 'P${state.endNumber}' : '${state.endNumber}';
 });
 

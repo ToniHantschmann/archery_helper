@@ -151,6 +151,13 @@ class SettingsTexts {
     en: 'Only when output goes to the LED panel',
   );
 
+  /// Unterzeile von Passen, Einschießen und Aufstellung in der Liga: dort gibt
+  /// es weder eine feste Länge noch Gruppen.
+  static const _notInLeagueNote = LocalizedText(
+    de: 'Nicht in der Liga',
+    en: 'Not used in league',
+  );
+
   static const _displayStandard = LocalizedText(de: 'Monitor', en: 'Monitor');
 
   static const _displayLed = LocalizedText(de: 'LED-Wand', en: 'LED panel');
@@ -168,6 +175,8 @@ class SettingsTexts {
     de: 'Freiluft',
     en: 'Outdoor',
   );
+
+  static const _leagueDiscipline = LocalizedText(de: 'Liga', en: 'League');
 
   // ===== SOUND SETTINGS =====
 
@@ -416,6 +425,7 @@ class SettingsTexts {
   String get ledBrightnessSubtitle =>
       _ledBrightnessSubtitle.get(_currentLanguage);
   String get ledOnlyNote => _ledOnlyNote.get(_currentLanguage);
+  String get notInLeagueNote => _notInLeagueNote.get(_currentLanguage);
 
   String get soundEnabled => _soundEnabled.get(_currentLanguage);
   String get signalTone => _signalTone.get(_currentLanguage);
@@ -491,6 +501,8 @@ class SettingsTexts {
         return _indoorDiscipline.get(_currentLanguage);
       case CompetitionDiscipline.outdoor:
         return _outdoorDiscipline.get(_currentLanguage);
+      case CompetitionDiscipline.league:
+        return _leagueDiscipline.get(_currentLanguage);
     }
   }
 

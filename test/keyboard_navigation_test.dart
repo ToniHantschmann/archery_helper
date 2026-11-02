@@ -651,6 +651,38 @@ void main() {
       await flushPendingSaves(tester);
     });
 
+    testWidgets('the league skips the rows that shape a fixed round', (
+      tester,
+    ) async {
+      await pumpApp(tester, startAt: AppScreen.competitionSettings);
+
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDiscipline(CompetitionDiscipline.league);
+      await tester.pumpAndSettle();
+      select(SettingsItem.competitionDiscipline);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(
+        selectedItem(),
+        SettingsItem.competitionCountdownTime,
+        reason: 'ends, practice ends and lineup mean nothing in the league',
+      );
+
+      // Und zurück in der Halle sind sie wieder erreichbar.
+      select(SettingsItem.competitionDiscipline);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(settings().competitionDiscipline, CompetitionDiscipline.indoor);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(selectedItem(), SettingsItem.competitionEnds);
+
+      await flushPendingSaves(tester);
+    });
+
     testWidgets('signal tone and volume are skipped while sound is off', (
       tester,
     ) async {

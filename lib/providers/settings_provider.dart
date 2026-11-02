@@ -153,11 +153,12 @@ class SettingsNotifier extends Notifier<Settings> {
   ///
   /// Die 20 Passen der Halle und die 12 der Freiluft gehören zur Disziplin, also
   /// kommen sie mit. Danach ist die Passenzahl wieder frei: ein Vereinsformat
-  /// schießt auch mal zehn.
+  /// schießt auch mal zehn. Die Liga hat keine Passenzahl und lässt die
+  /// gespeicherte deshalb stehen.
   void setCompetitionDiscipline(CompetitionDiscipline discipline) {
     state = state.copyWith(
       competitionDiscipline: discipline,
-      competitionEnds: discipline.defaultEnds,
+      competitionEnds: discipline.defaultEnds ?? state.competitionEnds,
     );
     _save();
   }
@@ -324,6 +325,12 @@ final timerScaleProvider = Provider<double>((ref) {
 
 final competitionDisciplineProvider = Provider<CompetitionDiscipline>((ref) {
   return ref.watch(settingsProvider).competitionDiscipline;
+});
+
+/// Ob die Runde ohne feste Länge läuft (Liga) — Passen, Einschießen und
+/// Aufstellung haben dann nichts einzustellen.
+final isCompetitionEndlessProvider = Provider<bool>((ref) {
+  return ref.watch(competitionDisciplineProvider).isEndless;
 });
 
 final competitionEndsProvider = Provider<int>((ref) {

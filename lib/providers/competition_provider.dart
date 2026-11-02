@@ -265,8 +265,14 @@ class CompetitionNotifier extends Notifier<CompetitionState>
       remainingTime: discipline.shootingTime,
       phase: TimerPhase.idle,
       totalEnds: settings.competitionEnds,
-      practiceEnds: settings.competitionPracticeEnds,
-      lineup: settings.competitionLineup,
+      // Ohne feste Länge (Liga) schießt jeder Satz alle zusammen und ohne
+      // Einschießen — damit fallen Gruppenleiste und Einschießzähler über die
+      // vorhandenen Getter von selbst weg. Die gespeicherten Werte bleiben
+      // stehen, für den Weg zurück in die Qualifikation.
+      practiceEnds: discipline.isEndless ? 0 : settings.competitionPracticeEnds,
+      lineup: discipline.isEndless
+          ? CompetitionLineup.single
+          : settings.competitionLineup,
       discipline: discipline,
       preparationTime: competitionPreparationTime,
       shootingTime: discipline.shootingTime,

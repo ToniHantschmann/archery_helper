@@ -1152,12 +1152,14 @@ class _EndsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final texts = ref.watch(settingsTextsProvider);
     final ends = ref.watch(competitionEndsProvider);
+    final enabled = !ref.watch(isCompetitionEndlessProvider);
 
     return _SettingsRow(
       item: SettingsItem.competitionEnds,
       rowKey: rowKey,
       title: texts.ends,
-      subtitle: texts.endsSubtitle,
+      subtitle: enabled ? texts.endsSubtitle : texts.notInLeagueNote,
+      enabled: enabled,
       control: _ValueStepper(
         item: SettingsItem.competitionEnds,
         value: '$ends',
@@ -1175,12 +1177,14 @@ class _PracticeEndsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final texts = ref.watch(settingsTextsProvider);
     final ends = ref.watch(competitionPracticeEndsProvider);
+    final enabled = !ref.watch(isCompetitionEndlessProvider);
 
     return _SettingsRow(
       item: SettingsItem.competitionPracticeEnds,
       rowKey: rowKey,
       title: texts.practiceEnds,
-      subtitle: texts.practiceEndsSubtitle,
+      subtitle: enabled ? texts.practiceEndsSubtitle : texts.notInLeagueNote,
+      enabled: enabled,
       control: _ValueStepper(
         item: SettingsItem.competitionPracticeEnds,
         value: '$ends',
@@ -1198,12 +1202,14 @@ class _LineupRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final texts = ref.watch(settingsTextsProvider);
     final lineup = ref.watch(competitionLineupProvider);
+    final enabled = !ref.watch(isCompetitionEndlessProvider);
 
     return _SettingsRow(
       item: SettingsItem.competitionLineup,
       rowKey: rowKey,
       title: texts.lineup,
-      subtitle: texts.lineupSubtitle,
+      subtitle: enabled ? texts.lineupSubtitle : texts.notInLeagueNote,
+      enabled: enabled,
       control: _ValueStepper(
         item: SettingsItem.competitionLineup,
         value: texts.getLineupName(lineup),

@@ -253,6 +253,26 @@ void main() {
     }
 
     for (final entry in sizes.entries) {
+      testWidgets('the league fits mid-round at ${entry.key}', (tester) async {
+        container
+            .read(settingsProvider.notifier)
+            .setCompetitionDiscipline(CompetitionDiscipline.league);
+        await pumpScreen(tester, entry.value, AppScreen.competition);
+
+        container.read(competitionProvider.notifier).start();
+        await tester.pump(const Duration(milliseconds: 600));
+
+        expect(tester.takeException(), isNull);
+        // Kein Passenzähler, keine Gruppenleiste — nur die Disziplin oben.
+        expect(find.textContaining('Passe'), findsNothing);
+        expect(find.text('AB'), findsNothing);
+
+        container.read(competitionProvider.notifier).reset();
+        await tester.pump(const Duration(milliseconds: 400));
+      });
+    }
+
+    for (final entry in sizes.entries) {
       testWidgets('the competition screen fits the wall clock at ${entry.key}', (
         tester,
       ) async {
@@ -508,6 +528,24 @@ void main() {
       await leaveScreen(tester);
       // Der entprellte Schreibvorgang der Einstellungen darf den Test nicht
       // überleben.
+      await tester.pump(const Duration(milliseconds: 400));
+    });
+
+    testWidgets('leaves group and end cell empty in the league', (
+      tester,
+    ) async {
+      container.read(settingsProvider.notifier)
+        ..setCompetitionDisplay(CompetitionDisplay.led)
+        ..setCompetitionDiscipline(CompetitionDiscipline.league);
+
+      await pumpScreen(tester, const Size(1920, 1080), AppScreen.competition);
+
+      expect(find.byKey(ledTimeKey), findsOneWidget);
+      expect(find.byKey(ledGroupKey), findsNothing);
+      expect(find.byKey(ledEndKey), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await leaveScreen(tester);
       await tester.pump(const Duration(milliseconds: 400));
     });
 

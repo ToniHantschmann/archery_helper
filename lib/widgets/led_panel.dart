@@ -566,14 +566,18 @@ class _LedInfoRow extends ConsumerWidget {
   }
 }
 
-/// Die wievielte Passe gerade läuft — „3".
+/// Die wievielte Passe gerade läuft — „3". In der Liga nichts: die Zelle
+/// bleibt frei, damit die Ampelfläche dieselbe Breite behält.
 class _LedEnd extends ConsumerWidget {
   const _LedEnd();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final end = ref.watch(competitionLedEndProvider);
+    if (end == null) return const SizedBox.shrink();
+
     return Text(
-      ref.watch(competitionLedEndProvider),
+      end,
       key: ledEndKey,
       style: LedPanelSpec.endStyle.copyWith(
         color: ref.watch(competitionLedTextColorProvider),

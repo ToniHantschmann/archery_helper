@@ -94,6 +94,15 @@ const _needsSound = {SettingsItem.signalTone, SettingsItem.volume};
 /// ein, also sind sie dort ausgegraut und beim Durchsteppen übersprungen.
 const _needsLed = {SettingsItem.competitionLedBrightness};
 
+/// Zeilen, die nur eine Runde mit fester Länge betreffen — in der Liga gibt es
+/// weder eine Passenzahl noch Einschießen noch Gruppen, also sind sie dort
+/// ausgegraut und beim Durchsteppen übersprungen.
+const _needsFixedRound = {
+  SettingsItem.competitionEnds,
+  SettingsItem.competitionPracticeEnds,
+  SettingsItem.competitionLineup,
+};
+
 class SettingsNavState {
   final SettingsItem selected;
 
@@ -346,16 +355,19 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
 
   /// Rows that can currently hold focus: the ones on the open screen, minus the
   /// ones that cannot be used. Bei ausgeschaltetem Ton sind das die beiden
-  /// Zeilen darunter, ohne LED-Ausgabe die LED-Helligkeit — sie sind
+  /// Zeilen darunter, ohne LED-Ausgabe die LED-Helligkeit, in der Liga die
+  /// Zeilen zum Aufbau der Runde — sie sind
   /// ausgegraut und wären beim Durchsteppen tote Stopps.
   List<SettingsItem> _selectableItems() {
     final settings = ref.read(settingsProvider);
     final soundEnabled = settings.soundEnabled;
     final isLed = settings.competitionDisplay.ledFit != null;
+    final isEndless = settings.competitionDiscipline.isEndless;
 
     return SettingsItem.of(state.section)
         .where((item) => soundEnabled || !_needsSound.contains(item))
         .where((item) => isLed || !_needsLed.contains(item))
+        .where((item) => !isEndless || !_needsFixedRound.contains(item))
         .toList();
   }
 
@@ -450,9 +462,11 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       // Ohne Beschleunigung: der Bereich ist klein genug, und eine wachsende
       // Schrittweite würde die 20 der Halle nur überspringen.
       case SettingsItem.competitionEnds:
+        if (settings.competitionDiscipline.isEndless) return;
         notifier.setCompetitionEnds(settings.competitionEnds + delta);
 
       case SettingsItem.competitionPracticeEnds:
+        if (settings.competitionDiscipline.isEndless) return;
         notifier.setCompetitionPracticeEnds(
           settings.competitionPracticeEnds + delta,
         );
@@ -467,6 +481,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
         );
 
       case SettingsItem.competitionLineup:
+        if (settings.competitionDiscipline.isEndless) return;
         notifier.setCompetitionLineup(
           _cycle(CompetitionLineup.values, settings.competitionLineup, delta),
         );

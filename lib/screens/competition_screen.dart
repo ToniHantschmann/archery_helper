@@ -120,7 +120,8 @@ class _CompetitionStatusRail extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          StatusChip(label: endText),
+          // In der Liga gibt es keinen Zähler; der Disziplinchip bleibt rechts.
+          if (endText != null) StatusChip(label: endText),
           const Spacer(),
           // Die Passe bleibt stehen, die Disziplin fährt mit der Tastenleiste
           // weg — sie ändert sich während der Runde nie.

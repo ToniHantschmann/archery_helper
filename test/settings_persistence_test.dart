@@ -117,6 +117,19 @@ void main() {
     });
   });
 
+  test('the league survives a restart, and the old indices stay put', () async {
+    // Die Disziplin wird als Index gespeichert: die Liga steht hinten, damit
+    // eine gespeicherte Halle oder Freiluft nach dem Update dieselbe bleibt.
+    expect(CompetitionDiscipline.indoor.index, 0);
+    expect(CompetitionDiscipline.outdoor.index, 1);
+
+    await repository.saveSettings(
+      const Settings(competitionDiscipline: CompetitionDiscipline.league),
+    );
+    final loaded = await repository.loadSettings();
+    expect(loaded.competitionDiscipline, CompetitionDiscipline.league);
+  });
+
   group('falling back to defaults', () {
     test('nothing stored yet', () async {
       final loaded = await repository.loadSettings();

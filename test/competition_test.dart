@@ -3,6 +3,7 @@ import 'package:archery_helper/core/l10n/competition_texts.dart';
 import 'package:archery_helper/core/theme/app_palette.dart';
 import 'package:archery_helper/core/theme/timer_theme.dart';
 import 'package:archery_helper/models/competition_state.dart';
+import 'package:archery_helper/models/settings.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/competition_ui_providers.dart';
@@ -649,6 +650,66 @@ void main() {
       expect(round().isRunning, isFalse);
 
       await tester.pump(const Duration(milliseconds: 400));
+    });
+  });
+
+  /// Die Liga hat keine feste Länge: ein Satz nach dem anderen, alle zusammen,
+  /// ohne Einschießen — bis der Schießleiter aufhört.
+  group('league', () {
+    const texts = CompetitionTexts(AppLanguage.german);
+
+    void league() => container
+        .read(settingsProvider.notifier)
+        .setCompetitionDiscipline(CompetitionDiscipline.league);
+
+    test('one group, no practice and no counter', () {
+      // Absichtlich Werte gesetzt, die die Liga übergehen muss.
+      setEnds(5, practice: 2);
+      league();
+
+      final state = round();
+      expect(state.isEndless, isTrue);
+      expect(state.shootingTime, const Duration(seconds: 120));
+      expect(state.hasGroups, isFalse);
+      expect(state.practiceEnds, 0);
+      expect(state.isPractice, isFalse);
+      expect(texts.endCounter(state), isNull);
+      expect(container.read(competitionLedEndProvider), isNull);
+      expect(container.read(competitionLedGroupProvider), isNull);
+    });
+
+    testWidgets('never runs out of ends', (tester) async {
+      league();
+
+      // Mehr Sätze, als eine Runde mit fester Länge überhaupt haben darf.
+      for (var end = 1; end <= Settings.maxCompetitionEnds + 1; end++) {
+        expect(round().currentEnd, end);
+        notifier().start();
+        expect(round().phase, TimerPhase.preparation);
+        await tester.pump(const Duration(seconds: 10));
+        expect(round().phase, TimerPhase.active);
+        await tester.pump(const Duration(seconds: 120));
+
+        expect(round().phase, TimerPhase.idle, reason: 'Satz $end');
+        expect(round().isWaitingBetweenEnds, isTrue);
+      }
+
+      notifier().fastForward();
+      expect(round().isFinished, isFalse);
+
+      await tester.pump(const Duration(milliseconds: 400));
+    });
+
+    test('keeps the stored end count for the way back', () {
+      setEnds(7);
+      league();
+      expect(container.read(settingsProvider).competitionEnds, 7);
+
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDiscipline(CompetitionDiscipline.indoor);
+      expect(round().totalEnds, 20);
+      expect(round().lineup, CompetitionLineup.abcd);
     });
   });
 
