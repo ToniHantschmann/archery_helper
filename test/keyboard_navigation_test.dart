@@ -697,7 +697,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         selectedItem(),
-        SettingsItem.resetGeneral,
+        SettingsItem.keyBindings,
         reason: 'both disabled sound rows would be dead stops',
       );
 

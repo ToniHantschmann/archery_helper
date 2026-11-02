@@ -14,6 +14,9 @@ enum AppScreen {
   generalSettings,
   timerSettings,
   competitionSettings,
+  // Hängt an den allgemeinen Einstellungen, nicht am Menü: Esc und S führen
+  // dorthin zurück.
+  keyboardSettings,
   idle,
 }
 

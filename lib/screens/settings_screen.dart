@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/l10n/settings_texts.dart';
 import '../core/theme/app_dimens.dart';
 import '../core/theme/app_palette.dart';
-import '../core/theme/app_theme.dart';
 import '../core/theme/app_typography.dart';
 import '../models/keyboard_config.dart';
 import '../models/settings_section.dart';
@@ -14,6 +13,7 @@ import '../providers/settings_navigation_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_providers.dart';
 import '../widgets/key_hint_rail.dart';
+import '../widgets/settings_row.dart';
 
 /// Settings screen for one [SettingsSection].
 ///
@@ -108,19 +108,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     switch (widget.section) {
       case SettingsSection.general:
         return [
-          _SectionHeader(texts.clubSection),
+          SettingsSectionHeader(texts.clubSection),
           _ClubNameRow(rowKey: _itemKeys[SettingsItem.clubName]!),
 
-          _SectionHeader(texts.languageSection),
+          SettingsSectionHeader(texts.languageSection),
           _LanguageRow(rowKey: _itemKeys[SettingsItem.language]!),
 
-          _SectionHeader(texts.displaySection),
+          SettingsSectionHeader(texts.displaySection),
           _FullscreenRow(rowKey: _itemKeys[SettingsItem.fullscreen]!),
 
-          _SectionHeader(texts.soundSection),
+          SettingsSectionHeader(texts.soundSection),
           _SoundEnabledRow(rowKey: _itemKeys[SettingsItem.soundEnabled]!),
           _SignalToneRow(rowKey: _itemKeys[SettingsItem.signalTone]!),
           _VolumeRow(rowKey: _itemKeys[SettingsItem.volume]!),
+
+          SettingsSectionHeader(texts.controlsSection),
+          _KeyBindingsRow(rowKey: _itemKeys[SettingsItem.keyBindings]!),
 
           const SizedBox(height: AppSpacing.lg),
           _ResetRow(
@@ -131,7 +134,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       case SettingsSection.timer:
         return [
-          _SectionHeader(texts.timerSection),
+          SettingsSectionHeader(texts.timerSection),
           _DefaultModeRow(rowKey: _itemKeys[SettingsItem.defaultMode]!),
           _ShowMillisecondsRow(
             rowKey: _itemKeys[SettingsItem.showMilliseconds]!,
@@ -145,7 +148,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             rowKey: _itemKeys[SettingsItem.alternatingArrows]!,
           ),
 
-          _SectionHeader(texts.customTimesSection),
+          SettingsSectionHeader(texts.customTimesSection),
           _PrepTimeRow(rowKey: _itemKeys[SettingsItem.customPrepTime]!),
           _MainTimeRow(rowKey: _itemKeys[SettingsItem.customMainTime]!),
 
@@ -158,7 +161,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       case SettingsSection.competition:
         return [
-          _SectionHeader(texts.roundSection),
+          SettingsSectionHeader(texts.roundSection),
           _DisciplineRow(
             rowKey: _itemKeys[SettingsItem.competitionDiscipline]!,
           ),
@@ -167,10 +170,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             rowKey: _itemKeys[SettingsItem.competitionPracticeEnds]!,
           ),
 
-          _SectionHeader(texts.targetSection),
+          SettingsSectionHeader(texts.targetSection),
           _LineupRow(rowKey: _itemKeys[SettingsItem.competitionLineup]!),
 
-          _SectionHeader(texts.countdownSection),
+          SettingsSectionHeader(texts.countdownSection),
           _CountdownTimeRow(
             rowKey: _itemKeys[SettingsItem.competitionCountdownTime]!,
           ),
@@ -178,7 +181,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             rowKey: _itemKeys[SettingsItem.competitionCountdownAutoStart]!,
           ),
 
-          _SectionHeader(texts.displaySection),
+          SettingsSectionHeader(texts.displaySection),
           _DisplayRow(rowKey: _itemKeys[SettingsItem.competitionDisplay]!),
           const _LedKeysNote(),
           _LedBrightnessRow(
@@ -221,7 +224,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              _SettingsHeader(title: texts.sectionTitle(widget.section)),
+              SettingsHeader(title: texts.sectionTitle(widget.section)),
 
               Expanded(
                 child: Center(
@@ -250,97 +253,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 }
 
 // ===== CHROME =====
-
-class _SettingsHeader extends ConsumerWidget {
-  final String title;
-
-  const _SettingsHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xl,
-        AppSpacing.lg,
-        AppSpacing.xl,
-        AppSpacing.md,
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () =>
-                ref.read(appActionsProvider).handleAction(AppAction.back),
-            child: Container(
-              width: 56,
-              height: 56,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppPalette.surface,
-                borderRadius: AppRadius.md,
-                border: Border.all(color: AppPalette.outline, width: 1.5),
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                size: 32,
-                color: AppPalette.textSecondary,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          // Der Titel darf schrumpfen, aber nicht umbrechen: „Wettkampf-
-          // Einstellungen" passt bei 56sp nicht in ein 1280px-Fenster, und auf
-          // den Tunnelmonitoren bleibt es bei der vollen Größe.
-          Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                title,
-                maxLines: 1,
-                style: AppType.display.copyWith(fontSize: 56),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader(this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        top: AppSpacing.lg,
-        bottom: AppSpacing.sm,
-        left: AppSpacing.xxs,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 6,
-            height: 26,
-            decoration: const BoxDecoration(
-              color: AppPalette.accent,
-              borderRadius: AppRadius.pill,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            title.toUpperCase(),
-            style: AppType.label.copyWith(color: AppPalette.accentSoft),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _SettingsHintRail extends ConsumerWidget {
   const _SettingsHintRail();
@@ -413,12 +325,9 @@ class _SettingsHintRail extends ConsumerWidget {
 
 // ===== ROW SCAFFOLDING =====
 
-/// Shell of a settings row: selection affordance, label block, control.
-///
-/// The selected row is not merely tinted — it gets a thick accent border, a
-/// coloured halo and a filled marker bar. From the shooting line a subtle
-/// highlight is simply not there, and this screen is operated by somebody
-/// standing at the display, reading it from a few steps away.
+/// A settings row bound to its [SettingsItem]: the shell from
+/// `settings_row.dart`, with selection and taps going through
+/// [settingsNavigationProvider].
 ///
 /// Watches only its own selection flag, so moving the selection rebuilds the
 /// two rows involved and nothing else.
@@ -444,76 +353,14 @@ class _SettingsRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSelected =
-        enabled && ref.watch(isSettingsItemSelectedProvider(item));
-
-    return Container(
-      key: rowKey,
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: enabled
-            ? () => ref.read(settingsNavigationProvider.notifier).select(item)
-            : null,
-        child: AnimatedContainer(
-          duration: AppMotion.fast,
-          curve: AppMotion.curve,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          decoration: AppTheme.selectablePanel(isSelected: isSelected),
-          child: Opacity(
-            opacity: enabled ? 1.0 : 0.45,
-            child: Row(
-              children: [
-                _SelectionMarker(isSelected: isSelected),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: AppType.body),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(subtitle!, style: AppType.bodySecondary),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.lg),
-                control,
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The bar in front of the selected row. Always occupies its slot so a moving
-/// selection does not shift the labels around.
-///
-/// Fixed size on purpose: animating the height would relayout the row (and the
-/// list) in every frame of the highlight, for the same reason the border width
-/// is constant — see [AppTheme.selectablePanel]. Only the colour moves.
-class _SelectionMarker extends StatelessWidget {
-  final bool isSelected;
-
-  const _SelectionMarker({required this.isSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: AppMotion.fast,
-      curve: AppMotion.curve,
-      width: 8,
-      height: 56,
-      decoration: BoxDecoration(
-        color: isSelected ? AppPalette.accent : AppPalette.outline,
-        borderRadius: AppRadius.pill,
-      ),
+    return SettingsRowShell(
+      rowKey: rowKey,
+      isSelected: enabled && ref.watch(isSettingsItemSelectedProvider(item)),
+      enabled: enabled,
+      title: title,
+      subtitle: subtitle,
+      control: control,
+      onTap: () => ref.read(settingsNavigationProvider.notifier).select(item),
     );
   }
 }
@@ -827,6 +674,42 @@ class _ClubNameRow extends ConsumerWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Der Weg zur Tastenbelegung — keine Einstellung, die sich hier ändern
+/// ließe, deshalb ein Pfeil statt eines Werts. Enter öffnet den Screen.
+class _KeyBindingsRow extends ConsumerWidget {
+  final GlobalKey rowKey;
+
+  const _KeyBindingsRow({required this.rowKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final texts = ref.watch(settingsTextsProvider);
+    final isSelected = ref.watch(
+      isSettingsItemSelectedProvider(SettingsItem.keyBindings),
+    );
+
+    return _SettingsRow(
+      item: SettingsItem.keyBindings,
+      rowKey: rowKey,
+      title: texts.keyBindings,
+      subtitle: texts.keyBindingsSubtitle,
+      control: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          final navigation = ref.read(settingsNavigationProvider.notifier);
+          navigation.select(SettingsItem.keyBindings);
+          navigation.activate();
+        },
+        child: Icon(
+          Icons.chevron_right_rounded,
+          size: 48,
+          color: isSelected ? AppPalette.accent : AppPalette.textSecondary,
         ),
       ),
     );
@@ -1364,113 +1247,22 @@ class _ResetRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final texts = ref.watch(settingsTextsProvider);
-    final armed = ref.watch(isResetArmedProvider);
-    final isSelected = ref.watch(isSettingsItemSelectedProvider(item));
     final navigation = ref.read(settingsNavigationProvider.notifier);
 
-    void activate() {
-      navigation.select(item);
-      navigation.activate();
-    }
-
-    return Container(
-      key: rowKey,
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: armed ? null : activate,
-        child: AnimatedContainer(
-          duration: AppMotion.fast,
-          curve: AppMotion.curve,
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          // Armed reads as selected in the warning colour, so the row cannot
-          // change size between its three states either.
-          decoration: AppTheme.selectablePanel(
-            isSelected: armed || isSelected,
-            color: armed ? AppPalette.caution : AppPalette.accent,
-          ),
-          child: armed
-              ? _ResetConfirmation(
-                  texts: texts,
-                  onCancel: navigation.disarmReset,
-                  onConfirm: activate,
-                )
-              : Row(
-                  children: [
-                    _SelectionMarker(isSelected: isSelected),
-                    const SizedBox(width: AppSpacing.md),
-                    const Icon(
-                      Icons.restore_rounded,
-                      size: 34,
-                      color: AppPalette.textSecondary,
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        texts.resetToDefaultsButton,
-                        style: AppType.body,
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ResetConfirmation extends StatelessWidget {
-  final SettingsTexts texts;
-  final VoidCallback onCancel;
-  final VoidCallback onConfirm;
-
-  const _ResetConfirmation({
-    required this.texts,
-    required this.onCancel,
-    required this.onConfirm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            const Icon(
-              Icons.warning_amber_rounded,
-              size: 40,
-              color: AppPalette.caution,
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                texts.resetDialogTitle,
-                style: AppType.title.copyWith(color: AppPalette.caution),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(texts.resetDialogContent, style: AppType.bodySecondary),
-        const SizedBox(height: AppSpacing.lg),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(onPressed: onCancel, child: Text(texts.cancelButton)),
-            const SizedBox(width: AppSpacing.md),
-            ElevatedButton.icon(
-              onPressed: onConfirm,
-              icon: const Icon(Icons.restore_rounded),
-              label: Text(texts.resetButton),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppPalette.caution,
-                foregroundColor: AppPalette.abyss,
-              ),
-            ),
-          ],
-        ),
-      ],
+    return SettingsResetRowShell(
+      rowKey: rowKey,
+      isSelected: ref.watch(isSettingsItemSelectedProvider(item)),
+      armed: ref.watch(isResetArmedProvider),
+      label: texts.resetToDefaultsButton,
+      confirmTitle: texts.resetDialogTitle,
+      confirmContent: texts.resetDialogContent,
+      cancelLabel: texts.cancelButton,
+      confirmLabel: texts.resetButton,
+      onActivate: () {
+        navigation.select(item);
+        navigation.activate();
+      },
+      onCancel: navigation.disarmReset,
     );
   }
 }

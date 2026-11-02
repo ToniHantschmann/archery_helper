@@ -45,6 +45,20 @@ class SettingsTexts {
   );
 
   static const _clubSection = LocalizedText(de: 'Verein', en: 'Club');
+  static const _controlsSection = LocalizedText(
+    de: 'Bedienung',
+    en: 'Controls',
+  );
+
+  static const _keyBindings = LocalizedText(
+    de: 'Tastenbelegung',
+    en: 'Key bindings',
+  );
+
+  static const _keyBindingsSubtitle = LocalizedText(
+    de: 'Zusatztasten, etwa für einen Ziffernblock',
+    en: 'Extra keys, e.g. for a numeric keypad',
+  );
   static const _languageSection = LocalizedText(de: 'Sprache', en: 'Language');
 
   static const _roundSection = LocalizedText(de: 'Runde', en: 'Round');
@@ -397,6 +411,9 @@ class SettingsTexts {
   String get timerSection => _timerSection.get(_currentLanguage);
   String get customTimesSection => _customTimesSection.get(_currentLanguage);
   String get clubSection => _clubSection.get(_currentLanguage);
+  String get controlsSection => _controlsSection.get(_currentLanguage);
+  String get keyBindings => _keyBindings.get(_currentLanguage);
+  String get keyBindingsSubtitle => _keyBindingsSubtitle.get(_currentLanguage);
   String get languageSection => _languageSection.get(_currentLanguage);
   String get roundSection => _roundSection.get(_currentLanguage);
   String get targetSection => _targetSection.get(_currentLanguage);

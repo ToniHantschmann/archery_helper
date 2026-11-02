@@ -8,6 +8,7 @@ import 'package:archery_helper/models/settings.dart';
 import 'package:archery_helper/models/settings_section.dart';
 import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/settings_provider.dart';
+import 'package:archery_helper/repositories/keyboard_config_repository.dart';
 import 'package:archery_helper/repositories/settings_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -296,38 +297,82 @@ void main() {
     expect(loaded.defaultMode, const Settings().defaultMode);
   });
 
-  group('a stored keyboard config', () {
-    /// Eine gespeicherte Belegung kennt nur, was es zur Zeit des Speicherns
-    /// gab. Eine später hinzugekommene Aktion wäre ohne Ergänzung dauerhaft
-    /// ohne Taste — erreichbar nur noch über die Maus.
-    test('gets the default key of an action it cannot know', () {
-      final old = KeyboardConfig(
-        keyBindings: {LogicalKeyboardKey.space: AppAction.next},
+  group('the stored extra keys', () {
+    test('survive a round trip in their order', () {
+      final (withFive, _) = const KeyboardConfig().withExtraKey(
+        LogicalKeyboardKey.numpad5,
+        AppAction.next,
+      );
+      final (config, _) = withFive.withExtraKey(
+        LogicalKeyboardKey.numpad0,
+        AppAction.next,
       );
 
-      final loaded = KeyboardConfig.fromJson(old.toJson());
-
-      expect(loaded.getAction(LogicalKeyboardKey.space), AppAction.next);
-      expect(
-        loaded.getAction(LogicalKeyboardKey.backspace),
-        AppAction.previous,
+      final loaded = KeyboardConfig.fromJson(
+        jsonDecode(jsonEncode(config.toJson())) as Map<String, dynamic>,
       );
-      expect(loaded.getAction(LogicalKeyboardKey.delete), AppAction.forward);
+
+      expect(loaded.extraKeysFor(AppAction.next), [
+        LogicalKeyboardKey.numpad5,
+        LogicalKeyboardKey.numpad0,
+      ]);
     });
 
-    test('keeps a remapped key instead of restoring its default', () {
-      final remapped = KeyboardConfig.defaults()
-          .removeKeyBinding(LogicalKeyboardKey.backspace)
-          .addKeyBinding(LogicalKeyboardKey.keyB, AppAction.previous);
+    /// Die Standardbelegung steht im Code. Wird eine gespeicherte Zusatztaste
+    /// später Standard, gewinnt der Standard — als Zusatz wäre sie nur noch
+    /// eine Kappe an der falschen Zeile.
+    test('drop a key that is a default key by now', () {
+      final loaded = KeyboardConfig.fromJson({
+        LogicalKeyboardKey.keyR.keyId.toString(): AppAction.next.name,
+        LogicalKeyboardKey.numpad1.keyId.toString(): 'noSuchAction',
+        LogicalKeyboardKey.numpad2.keyId.toString(): AppAction.back.name,
+      });
 
-      final loaded = KeyboardConfig.fromJson(remapped.toJson());
+      expect(loaded.extraBindings, {
+        LogicalKeyboardKey.numpad2: AppAction.back,
+      });
+      expect(loaded.getAction(LogicalKeyboardKey.keyR), AppAction.resetTimer);
+    });
 
-      expect(loaded.getAction(LogicalKeyboardKey.keyB), AppAction.previous);
-      expect(
-        loaded.getAction(LogicalKeyboardKey.backspace),
-        isNull,
-        reason: 'the action already has a key, so its default stays free',
+    test('come back from the repository', () async {
+      final keyboard = KeyboardConfigRepository();
+      final (config, _) = const KeyboardConfig().withExtraKey(
+        LogicalKeyboardKey.numpad8,
+        AppAction.navigateUp,
       );
+
+      await keyboard.saveConfig(config);
+      final loaded = await keyboard.loadConfig();
+
+      expect(
+        loaded.getAction(LogicalKeyboardKey.numpad8),
+        AppAction.navigateUp,
+      );
+    });
+
+    /// Die frühere, vollständig gespeicherte Belegung enthielt nur alte
+    /// Standardwerte. Aus ihr wird nichts übernommen.
+    test('ignore the old full config', () async {
+      SharedPreferences.setMockInitialValues({
+        'keyboard_config': jsonEncode({
+          LogicalKeyboardKey.keyB.keyId.toString(): AppAction.previous.name,
+        }),
+        'keyboard_config_version': 2,
+      });
+
+      final loaded = await KeyboardConfigRepository().loadConfig();
+
+      expect(loaded.extraBindings, isEmpty);
+    });
+
+    test('fall back to none on corrupt data', () async {
+      SharedPreferences.setMockInitialValues({
+        'keyboard_extra_keys': '{not json',
+      });
+
+      final loaded = await KeyboardConfigRepository().loadConfig();
+
+      expect(loaded.extraBindings, isEmpty);
     });
   });
 

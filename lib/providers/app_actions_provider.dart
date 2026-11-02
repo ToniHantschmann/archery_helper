@@ -10,6 +10,7 @@ import 'competition_provider.dart';
 import 'competition_ui_providers.dart';
 import 'hint_navigation_provider.dart';
 import 'keyboard_config_provider.dart';
+import 'keyboard_navigation_provider.dart';
 import 'menu_navigation_provider.dart';
 import 'settings_navigation_provider.dart';
 import 'settings_provider.dart';
@@ -49,8 +50,15 @@ abstract class ScreenActionHandler {
   /// every key, so S, P or F11 cannot fire behind a half-typed name. `ignored`
   /// — the default, and what a screen that is not typing answers — lets the
   /// key go through the [KeyboardConfig] as usual.
-  KeyEventResult textInput(LogicalKeyboardKey key, String? character) =>
-      KeyEventResult.ignored;
+  ///
+  /// [isRepeat] marks an auto-repeat event. Typing ignores it (a held
+  /// Backspace keeps deleting); capturing a new key must not, or the Enter that
+  /// started the capture would capture itself while still held.
+  KeyEventResult textInput(
+    LogicalKeyboardKey key,
+    String? character, {
+    bool isRepeat = false,
+  }) => KeyEventResult.ignored;
 
   /// Arrow keys — in-screen focus movement or value adjustment.
   ///
@@ -410,7 +418,11 @@ class SettingsScreenActions extends ScreenActionHandler {
   /// Zeichen an, bevor die Tastenbelegung es zu `next` machen kann; Enter und
   /// Esc haben kein druckbares Zeichen und landen deshalb bei ihrer Aktion.
   @override
-  KeyEventResult textInput(LogicalKeyboardKey key, String? character) {
+  KeyEventResult textInput(
+    LogicalKeyboardKey key,
+    String? character, {
+    bool isRepeat = false,
+  }) {
     if (!_navigation.isEditing) return KeyEventResult.ignored;
 
     final action = ref.read(keyboardConfigProvider).getAction(key);
@@ -441,6 +453,113 @@ class SettingsScreenActions extends ScreenActionHandler {
     }
 
     goTo(_origin);
+    return KeyEventResult.handled;
+  }
+}
+
+/// Die Tastenbelegung, erreicht aus den allgemeinen Einstellungen.
+///
+/// Hoch/runter wählen die Aktion, Enter (oder Leertaste) wartet auf die neue
+/// Taste, ⌫/⌦ nehmen die zuletzt hinzugefügte wieder weg. Esc und S führen
+/// zurück in die allgemeinen Einstellungen — dorthin, woher man kam.
+class KeyboardSettingsScreenActions extends ScreenActionHandler {
+  const KeyboardSettingsScreenActions(super.ref);
+
+  KeyboardNavigationNotifier get _navigation =>
+      ref.read(keyboardNavigationProvider.notifier);
+
+  /// Tasten, die allein nichts auslösen: wer Shift drückt, um an eine Taste zu
+  /// kommen, meint die Taste, nicht Shift. NumLock gehört dazu, weil ein
+  /// Ziffernblock ihn gern beim Aufwachen schickt.
+  static final _ignoredWhileCapturing = {
+    LogicalKeyboardKey.shiftLeft,
+    LogicalKeyboardKey.shiftRight,
+    LogicalKeyboardKey.controlLeft,
+    LogicalKeyboardKey.controlRight,
+    LogicalKeyboardKey.altLeft,
+    LogicalKeyboardKey.altRight,
+    LogicalKeyboardKey.altGraph,
+    LogicalKeyboardKey.metaLeft,
+    LogicalKeyboardKey.metaRight,
+    LogicalKeyboardKey.numLock,
+    LogicalKeyboardKey.capsLock,
+    LogicalKeyboardKey.fn,
+  };
+
+  /// Während der Aufnahme gehört die Tastatur ihr: jede Taste wird
+  /// geschluckt, bevor die Belegung sie zu einer Aktion machen kann — sonst
+  /// ließe sich nichts aufnehmen, was schon belegt ist, und die Ablehnung
+  /// einer Standardtaste wäre nie zu sehen. Esc bricht ab, fest verdrahtet
+  /// wie in der Namenseingabe; es ist ohnehin Standardtaste und damit nicht
+  /// aufnehmbar.
+  @override
+  KeyEventResult textInput(
+    LogicalKeyboardKey key,
+    String? character, {
+    bool isRepeat = false,
+  }) {
+    if (!_navigation.isCapturing) return KeyEventResult.ignored;
+
+    if (isRepeat || _ignoredWhileCapturing.contains(key)) {
+      return KeyEventResult.handled;
+    }
+
+    if (key == LogicalKeyboardKey.escape) {
+      _navigation.cancelCapture();
+    } else {
+      _navigation.capture(key);
+    }
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult navigate(
+    NavigationDirection direction, {
+    bool isRepeat = false,
+  }) {
+    switch (direction) {
+      case NavigationDirection.up:
+        _navigation.moveUp();
+      case NavigationDirection.down:
+        _navigation.moveDown();
+      case NavigationDirection.left:
+      case NavigationDirection.right:
+        return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult confirm() {
+    _navigation.activate();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult next() => confirm();
+
+  /// ⌫ und ⌦ sind hier dasselbe: die zuletzt hinzugefügte Zusatztaste
+  /// wieder weg.
+  @override
+  KeyEventResult previous() {
+    _navigation.removeLast();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult forward() => previous();
+
+  @override
+  KeyEventResult openSettings() {
+    goTo(AppScreen.generalSettings);
+    return KeyEventResult.handled;
+  }
+
+  @override
+  KeyEventResult back() {
+    if (_navigation.disarmReset()) return KeyEventResult.handled;
+
+    goTo(AppScreen.generalSettings);
     return KeyEventResult.handled;
   }
 }
@@ -591,6 +710,8 @@ final screenActionHandlerProvider = Provider<ScreenActionHandler>((ref) {
       // Alle drei Einstellungs-Screens verhalten sich gleich; welcher Bereich
       // offen ist, weiß der Navigations-Notifier.
       return SettingsScreenActions(ref);
+    case AppScreen.keyboardSettings:
+      return KeyboardSettingsScreenActions(ref);
     case AppScreen.menu:
       return MenuScreenActions(ref);
     case AppScreen.idle:
@@ -628,7 +749,7 @@ class AppActionsNotifier {
   }) {
     final typed = ref
         .read(screenActionHandlerProvider)
-        .textInput(key, character);
+        .textInput(key, character, isRepeat: isRepeat);
     if (typed == KeyEventResult.handled) return typed;
 
     final action = ref.read(keyboardConfigProvider).getAction(key);

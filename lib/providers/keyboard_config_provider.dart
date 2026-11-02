@@ -27,18 +27,26 @@ class KeyboardConfigNotifier extends Notifier<KeyboardConfig> {
     await _repository.saveConfig(state);
   }
 
-  void setKeyBinding(LogicalKeyboardKey key, AppAction action) {
-    state = state.addKeyBinding(key, action);
+  /// Hängt [key] als Zusatztaste an [action] und sagt, was passiert ist —
+  /// gespeichert wird nur, wenn sich wirklich etwas geändert hat.
+  KeyAssignment addExtraKey(LogicalKeyboardKey key, AppAction action) {
+    final (config, assignment) = state.withExtraKey(key, action);
+    if (!identical(config, state)) {
+      state = config;
+      _save();
+    }
+    return assignment;
+  }
+
+  void removeLastExtraKey(AppAction action) {
+    final config = state.withoutLastExtraKey(action);
+    if (identical(config, state)) return;
+    state = config;
     _save();
   }
 
-  void removeKeyBinding(LogicalKeyboardKey key) {
-    state = state.removeKeyBinding(key);
-    _save();
-  }
-
-  void resetToDefaults() {
-    state = KeyboardConfig.defaults();
+  void clearExtraKeys() {
+    state = state.withoutExtraKeys();
     _save();
   }
 }

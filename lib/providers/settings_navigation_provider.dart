@@ -25,6 +25,9 @@ enum SettingsItem {
   soundEnabled(SettingsSection.general),
   signalTone(SettingsSection.general),
   volume(SettingsSection.general),
+  // Keine Einstellung, sondern der Weg zur Tastenbelegung — ein eigener
+  // Screen, weil achtzehn Aktionen hier die Liste sprengen würden.
+  keyBindings(SettingsSection.general),
   resetGeneral(SettingsSection.general),
   // ── Ampel ──────────────────────────────────────────────
   defaultMode(SettingsSection.timer),
@@ -283,6 +286,11 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
           );
         }
 
+      case SettingsItem.keyBindings:
+        ref
+            .read(appStateProvider.notifier)
+            .navigateToScreen(AppScreen.keyboardSettings);
+
       case SettingsItem.fullscreen:
         notifier.toggleFullscreen();
 
@@ -512,6 +520,7 @@ class SettingsNavigationNotifier extends Notifier<SettingsNavState> {
       // Ein Name lässt sich nicht weiterschalten — geändert wird er nur über
       // die Eingabe.
       case SettingsItem.clubName:
+      case SettingsItem.keyBindings:
       case SettingsItem.resetGeneral:
       case SettingsItem.resetTimer:
       case SettingsItem.resetCompetition:

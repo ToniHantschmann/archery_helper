@@ -7,6 +7,7 @@ import '../providers/app_state_provider.dart';
 import '../providers/pointer_hidden_provider.dart';
 import '../screens/competition_screen.dart';
 import '../screens/idle_screen.dart';
+import '../screens/keyboard_settings_screen.dart';
 import '../screens/menu_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/timer_screen.dart';
@@ -77,6 +78,8 @@ class AppNavigator extends ConsumerWidget {
         return const SettingsScreen(section: SettingsSection.timer);
       case AppScreen.competitionSettings:
         return const SettingsScreen(section: SettingsSection.competition);
+      case AppScreen.keyboardSettings:
+        return const KeyboardSettingsScreen();
       case AppScreen.idle:
         return const IdleScreen();
     }

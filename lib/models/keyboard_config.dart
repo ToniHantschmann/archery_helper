@@ -26,15 +26,50 @@ enum AppAction {
   navigateRight, // move focus right / increase value
 }
 
+/// Was beim Hinzufügen einer Zusatztaste herausgekommen ist.
+enum KeyAssignmentOutcome {
+  /// Die Taste war frei und gehört jetzt zur Aktion.
+  added,
+
+  /// Die Taste war Zusatztaste einer anderen Aktion ([KeyAssignment.other])
+  /// und ist umgehängt worden.
+  moved,
+
+  /// Die Taste ist Standardtaste von [KeyAssignment.other] — fest, abgelehnt.
+  fixed,
+
+  /// Die Taste gehört schon zu dieser Aktion; es hat sich nichts geändert.
+  unchanged,
+}
+
+/// Ergebnis von [KeyboardConfig.withExtraKey]: was passiert ist, mit welcher
+/// Taste, und bei [KeyAssignmentOutcome.moved]/[KeyAssignmentOutcome.fixed]
+/// die Aktion, der die Taste vorher gehörte.
+typedef KeyAssignment = ({
+  KeyAssignmentOutcome outcome,
+  LogicalKeyboardKey key,
+  AppAction? other,
+});
+
+/// Die Tastenbelegung: eine feste Standardbelegung plus Zusatztasten.
+///
+/// Die Standardtasten lassen sich nicht wegnehmen oder umlegen, nur ergänzen.
+/// Das ist Absicht: auf einer Anzeige ohne Maus kann sich so niemand aussperren
+/// (ohne Esc käme man aus keinem Werkzeug mehr heraus), und weil die
+/// Standards im Code stehen und nicht im Speicher, gilt eine geänderte
+/// Standardbelegung beim nächsten Start ohne Migration. Gespeichert werden
+/// nur die [extraBindings] — gedacht für einen Ziffernblock neben der
+/// Tastatur.
 class KeyboardConfig {
-  final Map<LogicalKeyboardKey, AppAction> keyBindings;
+  /// Die Zusatztasten, in der Reihenfolge, in der sie hinzugefügt wurden.
+  /// Enthält nie eine Standardtaste.
+  final Map<LogicalKeyboardKey, AppAction> extraBindings;
 
-  const KeyboardConfig({required this.keyBindings});
+  const KeyboardConfig({this.extraBindings = const {}});
 
-  /// default keys
-  factory KeyboardConfig.defaults() {
-    return KeyboardConfig(
-      keyBindings: {
+  /// Die feste Standardbelegung.
+  static final Map<LogicalKeyboardKey, AppAction> defaultBindings =
+      Map.unmodifiable(<LogicalKeyboardKey, AppAction>{
         // Timer controls
         LogicalKeyboardKey.space: AppAction.next,
         // Das Spiegelbild der Leertaste: sie geht vor, Backspace zurück.
@@ -69,79 +104,121 @@ class KeyboardConfig {
         LogicalKeyboardKey.arrowDown: AppAction.navigateDown,
         LogicalKeyboardKey.arrowLeft: AppAction.navigateLeft,
         LogicalKeyboardKey.arrowRight: AppAction.navigateRight,
-      },
+      });
+
+  /// Nur die Standardbelegung, ohne Zusatztasten.
+  factory KeyboardConfig.defaults() => const KeyboardConfig();
+
+  /// gets action for pressed key — the default binding wins over an extra key
+  AppAction? getAction(LogicalKeyboardKey key) {
+    return defaultBindings[key] ?? extraBindings[key];
+  }
+
+  /// returns all keys for specific action: default keys first, so the hint
+  /// rails (which show the first one) keep showing the familiar key
+  List<LogicalKeyboardKey> getKeysForAction(AppAction action) {
+    return [...defaultKeysFor(action), ...extraKeysFor(action)];
+  }
+
+  List<LogicalKeyboardKey> defaultKeysFor(AppAction action) =>
+      _keysOf(defaultBindings, action);
+
+  List<LogicalKeyboardKey> extraKeysFor(AppAction action) =>
+      _keysOf(extraBindings, action);
+
+  bool isDefaultKey(LogicalKeyboardKey key) => defaultBindings.containsKey(key);
+
+  static List<LogicalKeyboardKey> _keysOf(
+    Map<LogicalKeyboardKey, AppAction> bindings,
+    AppAction action,
+  ) => [
+    for (final entry in bindings.entries)
+      if (entry.value == action) entry.key,
+  ];
+
+  /// Hängt [key] als Zusatztaste an [action].
+  ///
+  /// Eine Standardtaste wird abgelehnt, eine Zusatztaste einer anderen Aktion
+  /// umgehängt — eine Taste löst immer genau eine Aktion aus.
+  (KeyboardConfig, KeyAssignment) withExtraKey(
+    LogicalKeyboardKey key,
+    AppAction action,
+  ) {
+    final owner = defaultBindings[key];
+    if (owner != null) {
+      return (
+        this,
+        (
+          outcome: owner == action
+              ? KeyAssignmentOutcome.unchanged
+              : KeyAssignmentOutcome.fixed,
+          key: key,
+          other: owner,
+        ),
+      );
+    }
+
+    final previous = extraBindings[key];
+    if (previous == action) {
+      return (
+        this,
+        (outcome: KeyAssignmentOutcome.unchanged, key: key, other: action),
+      );
+    }
+
+    // Entfernen und neu einfügen, damit eine umgehängte Taste bei ihrer neuen
+    // Aktion hinten steht — dort, wo „zuletzt hinzugefügt" sie erwartet.
+    final bindings = Map<LogicalKeyboardKey, AppAction>.from(extraBindings)
+      ..remove(key)
+      ..[key] = action;
+
+    return (
+      KeyboardConfig(extraBindings: bindings),
+      (
+        outcome: previous == null
+            ? KeyAssignmentOutcome.added
+            : KeyAssignmentOutcome.moved,
+        key: key,
+        other: previous,
+      ),
     );
   }
 
-  /// gets action for pressed key
-  AppAction? getAction(LogicalKeyboardKey key) {
-    return keyBindings[key];
+  /// Entfernt die zuletzt hinzugefügte Zusatztaste von [action] — die
+  /// Standardtasten bleiben, sie sind fest.
+  KeyboardConfig withoutLastExtraKey(AppAction action) {
+    final keys = extraKeysFor(action);
+    if (keys.isEmpty) return this;
+
+    final bindings = Map<LogicalKeyboardKey, AppAction>.from(extraBindings)
+      ..remove(keys.last);
+    return KeyboardConfig(extraBindings: bindings);
   }
 
-  /// change/add key binding for key
-  KeyboardConfig addKeyBinding(LogicalKeyboardKey key, AppAction action) {
-    final newBindings = Map<LogicalKeyboardKey, AppAction>.from(keyBindings);
-    newBindings[key] = action;
-    return KeyboardConfig(keyBindings: newBindings);
-  }
+  KeyboardConfig withoutExtraKeys() => const KeyboardConfig();
 
-  /// removes key binding
-  KeyboardConfig removeKeyBinding(LogicalKeyboardKey key) {
-    final newBindings = Map<LogicalKeyboardKey, AppAction>.from(keyBindings);
-    newBindings.remove(key);
-    return KeyboardConfig(keyBindings: newBindings);
-  }
-
-  /// returns all keys for specific action
-  List<LogicalKeyboardKey> getKeysForAction(AppAction action) {
-    return keyBindings.entries
-        .where((entry) => entry.value == action)
-        .map((entry) => entry.key)
-        .toList();
-  }
-
-  /// returns localized display name for an action
-  /// TODO: move to l10n
-  static String getActionName(AppAction action) {
-    switch (action) {
-      case AppAction.toggleTimer:
-        return 'Timer pausieren/starten';
-      case AppAction.resetTimer:
-        return 'Timer zurücksetzen';
-      case AppAction.skipTimer:
-        return 'Timer überspringen';
-      case AppAction.next:
-        return 'Timer weiter';
-      case AppAction.previous:
-        return 'Eine Position zurück';
-      case AppAction.forward:
-        return 'Eine Position vor';
-      case AppAction.toggleClock:
-        return 'Uhrzeit anzeigen';
-      case AppAction.toggleCountdown:
-        return 'Countdown bis zum Start';
-      case AppAction.nextMode:
-        return 'Nächster Modus';
-      case AppAction.previousMode:
-        return 'Vorheriger Modus';
-      case AppAction.toggleSettings:
-        return 'Einstellungen öffnen';
-      case AppAction.back:
-        return 'Zurück';
-      case AppAction.confirm:
-        return 'Bestätigen';
-      case AppAction.toggleFullscreen:
-        return 'Vollbild umschalten';
-      case AppAction.navigateUp:
-        return 'Navigation: Hoch';
-      case AppAction.navigateDown:
-        return 'Navigation: Runter';
-      case AppAction.navigateLeft:
-        return 'Navigation: Links / Wert verringern';
-      case AppAction.navigateRight:
-        return 'Navigation: Rechts / Wert erhöhen';
-    }
-  }
+  /// Kurze Beschriftungen für den Ziffernblock: `keyLabel` hieße dort
+  /// „Numpad Add", und das passt auf keine Tastenkappe.
+  static final Map<LogicalKeyboardKey, String> _numpadNames = {
+    LogicalKeyboardKey.numpadAdd: 'Num +',
+    LogicalKeyboardKey.numpadSubtract: 'Num −',
+    LogicalKeyboardKey.numpadMultiply: 'Num ×',
+    LogicalKeyboardKey.numpadDivide: 'Num ÷',
+    LogicalKeyboardKey.numpadDecimal: 'Num ,',
+    LogicalKeyboardKey.numpadComma: 'Num ,',
+    LogicalKeyboardKey.numpadEnter: 'Num ↵',
+    LogicalKeyboardKey.numpadEqual: 'Num =',
+    LogicalKeyboardKey.numpad0: 'Num 0',
+    LogicalKeyboardKey.numpad1: 'Num 1',
+    LogicalKeyboardKey.numpad2: 'Num 2',
+    LogicalKeyboardKey.numpad3: 'Num 3',
+    LogicalKeyboardKey.numpad4: 'Num 4',
+    LogicalKeyboardKey.numpad5: 'Num 5',
+    LogicalKeyboardKey.numpad6: 'Num 6',
+    LogicalKeyboardKey.numpad7: 'Num 7',
+    LogicalKeyboardKey.numpad8: 'Num 8',
+    LogicalKeyboardKey.numpad9: 'Num 9',
+  };
 
   /// returns display name for a key
   static String getKeyName(LogicalKeyboardKey key) {
@@ -156,11 +233,20 @@ class KeyboardConfig {
     if (key == LogicalKeyboardKey.arrowLeft) return '←';
     if (key == LogicalKeyboardKey.arrowRight) return '→';
 
+    final numpad = _numpadNames[key];
+    if (numpad != null) return numpad;
+
     // for character keys (N, P, etc.) return in UpperCase
     final label = key.keyLabel;
 
     if (label.length == 1 && _isLetter(label)) {
       return label.toUpperCase();
+    }
+
+    // Eine Taste ohne Beschriftung (manche Sondertasten eines Ziffernblocks)
+    // braucht trotzdem eine Kappe, sonst stünde dort ein leeres Kästchen.
+    if (label.trim().isEmpty) {
+      return key.debugName ?? '#${key.keyId.toRadixString(16)}';
     }
 
     return label;
@@ -171,65 +257,41 @@ class KeyboardConfig {
     return char.toUpperCase() != char.toLowerCase();
   }
 
-  /// convert keyboard config to json
+  /// Nur die Zusatztasten — die Standardbelegung steht im Code.
   Map<String, dynamic> toJson() {
-    final Map<String, String> serializable = {};
-    keyBindings.forEach((key, action) {
-      serializable[key.keyId.toString()] = action.name;
-    });
-    return serializable;
+    return {
+      for (final entry in extraBindings.entries)
+        entry.key.keyId.toString(): entry.value.name,
+    };
   }
 
   /// create keyboard config from json
+  ///
+  /// Fällt weg, was sich nicht mehr zuordnen lässt: eine unbekannte Aktion,
+  /// und eine Taste, die inzwischen zur Standardbelegung gehört — der Standard
+  /// gewinnt ohnehin, als Zusatztaste wäre sie nur noch eine falsche Kappe.
   factory KeyboardConfig.fromJson(Map<String, dynamic> json) {
     final Map<LogicalKeyboardKey, AppAction> bindings = {};
 
     json.forEach((keyIdString, actionName) {
       final keyId = int.tryParse(keyIdString);
-      final action = _parseAction(actionName as String);
+      final action = actionName is String ? _parseAction(actionName) : null;
+      if (keyId == null || action == null) return;
 
-      if (keyId != null && action != null) {
-        bindings[LogicalKeyboardKey(keyId)] = action;
-      }
+      final key = LogicalKeyboardKey(keyId);
+      if (defaultBindings.containsKey(key)) return;
+
+      bindings[key] = action;
     });
 
-    // Falls keine gültigen Bindings gefunden wurden, nutze Defaults
-    if (bindings.isEmpty) {
-      return KeyboardConfig.defaults();
-    }
-
-    return KeyboardConfig(keyBindings: _withMissingDefaults(bindings));
-  }
-
-  /// Ergänzt Standardbelegungen, die in einer gespeicherten Konfiguration noch
-  /// gar nicht vorkommen konnten.
-  ///
-  /// Eine vor einer neuen [AppAction] gespeicherte Konfiguration kennt deren
-  /// Taste nicht, und ohne diesen Schritt bliebe die Aktion für den Nutzer für
-  /// immer unerreichbar. Ergänzt wird nur, wo weder die Taste noch die Aktion
-  /// belegt ist — eine bewusst umgelegte oder entfernte Belegung bleibt damit,
-  /// wie sie ist.
-  static Map<LogicalKeyboardKey, AppAction> _withMissingDefaults(
-    Map<LogicalKeyboardKey, AppAction> stored,
-  ) {
-    final merged = Map<LogicalKeyboardKey, AppAction>.from(stored);
-    final boundActions = stored.values.toSet();
-
-    KeyboardConfig.defaults().keyBindings.forEach((key, action) {
-      if (!merged.containsKey(key) && !boundActions.contains(action)) {
-        merged[key] = action;
-      }
-    });
-
-    return merged;
+    return KeyboardConfig(extraBindings: bindings);
   }
 
   /// helper method to convert strings to appActions
   static AppAction? _parseAction(String actionName) {
-    try {
-      return AppAction.values.firstWhere((action) => action.name == actionName);
-    } catch (e) {
-      return null;
+    for (final action in AppAction.values) {
+      if (action.name == actionName) return action;
     }
+    return null;
   }
 }
