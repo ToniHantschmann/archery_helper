@@ -4,6 +4,7 @@ import 'package:archery_helper/models/timer_state.dart';
 import 'package:archery_helper/providers/app_state_provider.dart';
 import 'package:archery_helper/providers/competition_provider.dart';
 import 'package:archery_helper/providers/hint_navigation_provider.dart';
+import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/providers/timer_provider.dart';
 import 'package:archery_helper/widgets/key_hint_rail.dart';
 import 'package:archery_helper/widgets/status_chip.dart';
@@ -196,6 +197,35 @@ void main() {
       await press(tester, LogicalKeyboardKey.keyR);
       await press(tester, LogicalKeyboardKey.escape);
       expect(screen(), AppScreen.menu);
+    });
+
+    /// Mit LED-Ausgabe sehen die Schützen das LED-Fenster; dieser Schirm
+    /// gehört dem Schießleiter, also bleibt die Leiste samt ihren Tasten —
+    /// Esc bleibt trotzdem gesperrt, die Uhr liefe sonst ungesehen weiter.
+    testWidgets('competition on the LED output: rail stays, Esc stays locked', (
+      tester,
+    ) async {
+      container
+          .read(settingsProvider.notifier)
+          .setCompetitionDisplay(CompetitionDisplay.led);
+      await pumpApp(tester, AppScreen.competition);
+      await press(tester, LogicalKeyboardKey.space);
+      expect(container.read(competitionProvider).isRunning, isTrue);
+
+      final rail = tester.widget<KeyHintRail>(find.byType(KeyHintRail));
+      expect(rail.hidden, isFalse);
+
+      final focused = container.read(competitionHintNavigationProvider);
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      expect(container.read(competitionHintNavigationProvider), isNot(focused));
+
+      await press(tester, LogicalKeyboardKey.escape);
+      expect(screen(), AppScreen.competition);
+
+      await press(tester, LogicalKeyboardKey.keyR);
+      // Der entprellte Schreibvorgang der Einstellung darf den Test nicht
+      // überleben.
+      await tester.pump(const Duration(milliseconds: 400));
     });
 
     testWidgets('competition: Esc cannot leave a running countdown', (

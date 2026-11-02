@@ -105,15 +105,28 @@ final competitionCountdownLabelProvider = Provider.autoDispose<String>((ref) {
       .countdownLabel(isCountingDown: isCountingDown);
 });
 
-/// Ob die Hinweisleiste (und oben der Disziplinchip) weggefahren ist —
-/// solange eine Uhr läuft, also auch der Countdown bis zum Turnierstart. Pause,
-/// Rundenende und das Warten aufs Pfeileholen holen sie zurück.
-final competitionHintRailHiddenProvider = Provider.autoDispose<bool>((ref) {
+/// Ob eine Uhr der Runde läuft — die Runde selbst oder der Countdown bis zum
+/// Turnierstart. Solange das so ist, führt Esc nicht aus dem Wettkampf.
+final competitionClockRunningProvider = Provider.autoDispose<bool>((ref) {
   return ref.watch(
     competitionProvider.select(
       (state) => state.isRunning || state.isCountingDown,
     ),
   );
+});
+
+/// Ob die Hinweisleiste (und oben der Disziplinchip) weggefahren ist —
+/// solange eine Uhr läuft. Pause, Rundenende und das Warten aufs Pfeileholen
+/// holen sie zurück.
+///
+/// Auf dem Monitor über der Schießlinie, weil dort nichts mitlaufen soll,
+/// während ein Schütze im Vollauszug ist. Steht die Ausgabe auf LED-Wand,
+/// sehen die Schützen das LED-Fenster und dieser Schirm gehört allein dem
+/// Schießleiter — dann bleibt die Leiste stehen, damit er sieht, was er
+/// steuern kann.
+final competitionHintRailHiddenProvider = Provider.autoDispose<bool>((ref) {
+  if (ref.watch(competitionDisplayProvider).ledFit != null) return false;
+  return ref.watch(competitionClockRunningProvider);
 });
 
 /// Die Einträge der unteren Hinweisleiste, in der Reihenfolge, in der

@@ -216,7 +216,10 @@ class CompetitionScreenActions extends ScreenActionHandler {
 
   /// Wie beim Timer: Pfeile und Enter wirken nur auf eine Leiste, die man
   /// sieht — und Esc ist gesperrt, solange eine Uhr läuft (siehe [back]).
+  /// Das sind zwei Bedingungen: mit LED-Ausgabe bleibt die Leiste bei
+  /// laufender Uhr stehen, Esc bleibt trotzdem gesperrt.
   bool get _railHidden => ref.read(competitionHintRailHiddenProvider);
+  bool get _clockRunning => ref.read(competitionClockRunningProvider);
 
   @override
   KeyEventResult navigate(
@@ -310,11 +313,11 @@ class CompetitionScreenActions extends ScreenActionHandler {
 
   /// Wie beim Timer: solange Runde oder Countdown laufen, führt Esc nicht ins
   /// Menü — die Uhr liefe dort ungesehen weiter, und daneben ließe sich die
-  /// Ampel starten. Erst pausieren (P) oder zurücksetzen (R). Gilt geerbt auch
-  /// auf der LED-Wand.
+  /// Ampel starten. Erst pausieren (P) oder zurücksetzen (R). Gilt auch mit
+  /// LED-Ausgabe, obwohl die Leiste dort stehen bleibt.
   @override
   KeyEventResult back() {
-    if (_railHidden) return KeyEventResult.ignored;
+    if (_clockRunning) return KeyEventResult.ignored;
     goTo(AppScreen.menu);
     return KeyEventResult.handled;
   }
