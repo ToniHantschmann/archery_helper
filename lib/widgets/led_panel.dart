@@ -525,11 +525,18 @@ class _LedInfoRow extends ConsumerWidget {
     final group = ref.watch(competitionLedGroupProvider);
     final textColor = ref.watch(competitionLedTextColorProvider);
 
+    // In der Liga gibt es keinen Passenzähler — dann bleiben beide Seitenzellen
+    // leer und die Farbfläche steht in derselben Breite wie sonst in der Mitte.
+    final hasEnd = ref.watch(
+      competitionLedEndProvider.select((end) => end != null),
+    );
+
     // Schießen alle zusammen, gibt es keine Gruppe anzuzeigen — dann fällt ihre
     // Zelle an die Farbfläche, statt leer freigehalten zu werden. Sie reicht
     // dann bis an den linken Rand; der Passenzähler steht in beiden Fällen an
     // derselben Stelle.
-    final signalWidth = group == null
+    final widenSignal = group == null && hasEnd;
+    final signalWidth = widenSignal
         ? 2 * LedPanelSpec.cellWidth
         : LedPanelSpec.cellWidth;
 
@@ -538,17 +545,21 @@ class _LedInfoRow extends ConsumerWidget {
       height: LedPanelSpec.rowHeight,
       child: Row(
         children: [
-          if (group != null)
+          if (!widenSignal)
             SizedBox(
               width: LedPanelSpec.cellWidth,
               height: double.infinity,
-              child: Center(
-                child: Text(
-                  group,
-                  key: ledGroupKey,
-                  style: LedPanelSpec.groupStyle.copyWith(color: textColor),
-                ),
-              ),
+              child: group == null
+                  ? null
+                  : Center(
+                      child: Text(
+                        group,
+                        key: ledGroupKey,
+                        style: LedPanelSpec.groupStyle.copyWith(
+                          color: textColor,
+                        ),
+                      ),
+                    ),
             ),
           SizedBox(
             width: signalWidth,
@@ -567,7 +578,7 @@ class _LedInfoRow extends ConsumerWidget {
 }
 
 /// Die wievielte Passe gerade läuft — „3". In der Liga nichts: die Zelle
-/// bleibt frei, damit die Ampelfläche dieselbe Breite behält.
+/// bleibt frei, und die Ampelfläche steht mittig (siehe [_LedInfoRow]).
 class _LedEnd extends ConsumerWidget {
   const _LedEnd();
 

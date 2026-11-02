@@ -545,6 +545,19 @@ void main() {
       expect(find.byKey(ledEndKey), findsNothing);
       expect(tester.takeException(), isNull);
 
+      // Die Farbfläche ist so breit wie mit Gruppen und steht mittig im Panel.
+      final panel = tester.getRect(find.byType(LedPanel));
+      final signal = tester.getRect(
+        find
+            .descendant(
+              of: find.byType(LedPanel),
+              matching: find.byType(ColoredBox),
+            )
+            .last,
+      );
+      expect(signal.width, closeTo(panel.width / 3, 0.5));
+      expect(signal.center.dx, closeTo(panel.center.dx, 0.5));
+
       await leaveScreen(tester);
       await tester.pump(const Duration(milliseconds: 400));
     });
