@@ -183,7 +183,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           SettingsSectionHeader(texts.displaySection),
           _DisplayRow(rowKey: _itemKeys[SettingsItem.competitionDisplay]!),
-          const _LedKeysNote(),
+          const _LedWindowNote(),
           _LedBrightnessRow(
             rowKey: _itemKeys[SettingsItem.competitionLedBrightness]!,
           ),
@@ -1175,14 +1175,13 @@ class _DisplayRow extends ConsumerWidget {
   }
 }
 
-/// Der Hinweis, dass die Pfeiltasten auf der LED-Wand etwas anderes tun.
+/// Der Hinweis, wie das LED-Fenster auf die Wand kommt.
 ///
 /// Steht unter der Ausgabe-Zeile und nur, solange eine LED-Variante gewählt
-/// ist: dort fehlt die Tastenleiste, die es sonst selbst zeigen würde, also
-/// muss die Einstellung es sagen, die den Schirm umschaltet. Keine eigene
+/// ist — dann ist das Fenster gerade aufgegangen. Keine eigene
 /// [SettingsItem] — es ist nichts zum Auswählen, nur ein Satz.
-class _LedKeysNote extends ConsumerWidget {
-  const _LedKeysNote();
+class _LedWindowNote extends ConsumerWidget {
+  const _LedWindowNote();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1198,7 +1197,7 @@ class _LedKeysNote extends ConsumerWidget {
         right: AppSpacing.lg,
       ),
       child: Text(
-        texts.ledKeysNote,
+        texts.ledWindowNote,
         style: AppType.bodySecondary.copyWith(color: AppPalette.accentSoft),
       ),
     );

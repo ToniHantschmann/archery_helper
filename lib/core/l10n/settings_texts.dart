@@ -143,11 +143,11 @@ class SettingsTexts {
         'if the wall squeezes the image',
   );
 
-  /// Auf der Wand gibt es keine Tastenleiste, die das zeigen könnte — also
-  /// steht es hier, an der Einstellung, die den Schirm umschaltet.
-  static const _ledKeysNote = LocalizedText(
-    de: 'Auf der LED-Wand: ← und → spulen still zurück und vor',
-    en: 'On the LED panel: ← and → step silently back and ahead',
+  /// Das LED-Fenster wird nicht positioniert — wie es auf die Wand kommt,
+  /// steht hier, an der Einstellung, die es öffnet.
+  static const _ledWindowNote = LocalizedText(
+    de: 'Öffnet ein eigenes Fenster: auf den LED-Monitor ziehen, Doppelklick schaltet Vollbild',
+    en: 'Opens a separate window: drag it onto the LED monitor, double-click for fullscreen',
   );
 
   static const _ledBrightness = LocalizedText(
@@ -437,7 +437,7 @@ class SettingsTexts {
       _countdownAutoStartSubtitle.get(_currentLanguage);
   String get display => _display.get(_currentLanguage);
   String get displaySubtitle => _displaySubtitle.get(_currentLanguage);
-  String get ledKeysNote => _ledKeysNote.get(_currentLanguage);
+  String get ledWindowNote => _ledWindowNote.get(_currentLanguage);
   String get ledBrightness => _ledBrightness.get(_currentLanguage);
   String get ledBrightnessSubtitle =>
       _ledBrightnessSubtitle.get(_currentLanguage);

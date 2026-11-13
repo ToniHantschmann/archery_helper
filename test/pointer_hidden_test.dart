@@ -1,18 +1,16 @@
 import 'package:archery_helper/app/app.dart';
-import 'package:archery_helper/models/competition_state.dart';
 import 'package:archery_helper/providers/app_state_provider.dart';
 import 'package:archery_helper/providers/pointer_hidden_provider.dart';
-import 'package:archery_helper/providers/settings_provider.dart';
 import 'package:archery_helper/screens/competition_led_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Der Mauszeiger an einem Kiosk-Display: weg beim Tippen, zurück beim
-/// Bewegen — und auf der LED-Wand grundsätzlich weg.
+/// Bewegen — und auf der LED-Wand im Vollbild grundsätzlich weg.
 void main() {
   late ProviderContainer container;
 
@@ -89,28 +87,36 @@ void main() {
     expect(container.read(pointerHiddenProvider), isFalse);
   });
 
-  testWidgets('LED-Wand zeigt nie einen Zeiger', (tester) async {
-    container
-        .read(settingsProvider.notifier)
-        .setCompetitionDisplay(CompetitionDisplay.led);
+  /// Im Vollbild auf der Wand nie ein Zeiger; davor muss der Bediener das
+  /// Fenster noch mit der Maus auf den Monitor der Wand ziehen können.
+  for (final hideCursor in [true, false]) {
+    testWidgets('LED-Fenster: Zeiger ${hideCursor ? 'weg' : 'da'}', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: CompetitionLedScreen(
+              fit: BoxFit.contain,
+              hideCursor: hideCursor,
+            ),
+          ),
+        ),
+      );
 
-    await pumpApp(tester, startAt: AppScreen.competition);
-    // Das Speichern der Einstellung ist entprellt — abwarten, sonst bleibt
-    // sein Timer als vermeintliches Leck stehen.
-    await tester.pump(const Duration(milliseconds: 500));
-
-    expect(find.byType(CompetitionLedScreen), findsOneWidget);
-
-    // Ohne jeden Tastendruck: der Schirm bringt sein eigenes Verstecken mit.
-    expect(container.read(pointerHiddenProvider), isFalse);
-    final region = tester.widget<MouseRegion>(
-      find
-          .descendant(
-            of: find.byType(CompetitionLedScreen),
-            matching: find.byType(MouseRegion),
-          )
-          .first,
-    );
-    expect(region.cursor, SystemMouseCursors.none);
-  });
+      final region = tester.widget<MouseRegion>(
+        find
+            .descendant(
+              of: find.byType(CompetitionLedScreen),
+              matching: find.byType(MouseRegion),
+            )
+            .first,
+      );
+      expect(
+        region.cursor,
+        hideCursor ? SystemMouseCursors.none : MouseCursor.defer,
+      );
+    });
+  }
 }

@@ -344,4 +344,51 @@ class CompetitionState {
       isCountingDown: isCountingDown ?? this.isCountingDown,
     );
   }
+
+  /// Der Stand als Nachricht ans LED-Fenster — kein Speicherformat.
+  ///
+  /// Beide Seiten sind derselbe Build, deshalb Enums per Name und keine
+  /// Rückfallwerte wie in `Settings.fromJson`: ein Feld, das hier fehlt, ist
+  /// ein Programmierfehler und kein alter Stand von der Platte.
+  Map<String, dynamic> toJson() => {
+    'remainingTime': remainingTime.inMicroseconds,
+    'phase': phase.name,
+    'currentEnd': currentEnd,
+    'totalEnds': totalEnds,
+    'practiceEnds': practiceEnds,
+    'groupIndex': groupIndex,
+    'lineup': lineup.name,
+    'discipline': discipline.name,
+    'preparationTime': preparationTime.inMicroseconds,
+    'shootingTime': shootingTime.inMicroseconds,
+    'warningThreshold': warningThreshold.inMicroseconds,
+    'isRunning': isRunning,
+    'isPaused': isPaused,
+    'showClock': showClock,
+    'isCountingDown': isCountingDown,
+  };
+
+  factory CompetitionState.fromJson(Map<String, dynamic> json) {
+    Duration duration(String key) => Duration(microseconds: json[key] as int);
+
+    return CompetitionState(
+      remainingTime: duration('remainingTime'),
+      phase: TimerPhase.values.byName(json['phase'] as String),
+      currentEnd: json['currentEnd'] as int,
+      totalEnds: json['totalEnds'] as int,
+      practiceEnds: json['practiceEnds'] as int,
+      groupIndex: json['groupIndex'] as int,
+      lineup: CompetitionLineup.values.byName(json['lineup'] as String),
+      discipline: CompetitionDiscipline.values.byName(
+        json['discipline'] as String,
+      ),
+      preparationTime: duration('preparationTime'),
+      shootingTime: duration('shootingTime'),
+      warningThreshold: duration('warningThreshold'),
+      isRunning: json['isRunning'] as bool,
+      isPaused: json['isPaused'] as bool,
+      showClock: json['showClock'] as bool,
+      isCountingDown: json['isCountingDown'] as bool,
+    );
+  }
 }

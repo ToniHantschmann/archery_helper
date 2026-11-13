@@ -216,7 +216,10 @@ class CompetitionScreenActions extends ScreenActionHandler {
 
   /// Wie beim Timer: Pfeile und Enter wirken nur auf eine Leiste, die man
   /// sieht — und Esc ist gesperrt, solange eine Uhr läuft (siehe [back]).
+  /// Das sind zwei Bedingungen: mit LED-Ausgabe bleibt die Leiste bei
+  /// laufender Uhr stehen, Esc bleibt trotzdem gesperrt.
   bool get _railHidden => ref.read(competitionHintRailHiddenProvider);
+  bool get _clockRunning => ref.read(competitionClockRunningProvider);
 
   @override
   KeyEventResult navigate(
@@ -310,46 +313,14 @@ class CompetitionScreenActions extends ScreenActionHandler {
 
   /// Wie beim Timer: solange Runde oder Countdown laufen, führt Esc nicht ins
   /// Menü — die Uhr liefe dort ungesehen weiter, und daneben ließe sich die
-  /// Ampel starten. Erst pausieren (P) oder zurücksetzen (R). Gilt geerbt auch
-  /// auf der LED-Wand.
+  /// Ampel starten. Erst pausieren (P) oder zurücksetzen (R). Gilt auch mit
+  /// LED-Ausgabe, obwohl die Leiste dort stehen bleibt.
   @override
   KeyEventResult back() {
-    if (_railHidden) return KeyEventResult.ignored;
+    if (_clockRunning) return KeyEventResult.ignored;
     goTo(AppScreen.menu);
     return KeyEventResult.handled;
   }
-}
-
-/// Derselbe Wettkampf, aber auf der LED-Wand.
-///
-/// Der Schirm zeigt dort nur das Panel — die Tastenleiste, durch die links und
-/// rechts sonst laufen, ist gar nicht da. Statt eine unsichtbare Auswahl zu
-/// bewegen, spulen die Pfeiltasten hier selbst: dieselben zwei stillen
-/// Korrekturen wie Rücktaste und Entf, nur auf den Tasten, die unter der Hand
-/// liegen. Alles andere — Space, P, R, S, Esc — erbt unverändert.
-class CompetitionLedScreenActions extends CompetitionScreenActions {
-  const CompetitionLedScreenActions(super.ref);
-
-  @override
-  KeyEventResult navigate(
-    NavigationDirection direction, {
-    bool isRepeat = false,
-  }) {
-    switch (direction) {
-      case NavigationDirection.left:
-        return previous();
-      case NavigationDirection.right:
-        return forward();
-      case NavigationDirection.up:
-      case NavigationDirection.down:
-        return KeyEventResult.ignored;
-    }
-  }
-
-  /// Ohne Leiste gibt es nichts zu bestätigen — und ein Enter, das einen
-  /// ungesehenen Eintrag auslöst, wäre schlimmer als eines, das nichts tut.
-  @override
-  KeyEventResult confirm() => KeyEventResult.ignored;
 }
 
 class SettingsScreenActions extends ScreenActionHandler {
@@ -695,13 +666,7 @@ final screenActionHandlerProvider = Provider<ScreenActionHandler>((ref) {
     case AppScreen.timer:
       return TimerScreenActions(ref);
     case AppScreen.competition:
-      // Die Ausgabeart tauscht den Schirm (siehe `CompetitionScreen.build`)
-      // und damit auch seine Tasten: ohne Tastenleiste bedeuten die
-      // Pfeiltasten etwas anderes. `watch`, damit ein Umschalten in den
-      // Einstellungen sofort gilt und nicht erst beim nächsten Screenwechsel.
-      return ref.watch(competitionDisplayProvider).ledFit == null
-          ? CompetitionScreenActions(ref)
-          : CompetitionLedScreenActions(ref);
+      return CompetitionScreenActions(ref);
     case AppScreen.trafficLight:
       return TrafficLightScreenActions(ref);
     case AppScreen.generalSettings:
