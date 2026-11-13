@@ -7,6 +7,8 @@
 
 #include "flutter/generated_plugin_registrant.h"
 #include "desktop_multi_window/desktop_multi_window_plugin.h"
+#include <screen_retriever_linux/screen_retriever_linux_plugin.h>
+#include <window_manager/window_manager_plugin.h>
 
 struct _MyApplication {
   GtkApplication parent_instance;
@@ -62,8 +64,20 @@ static void my_application_activate(GApplication* application) {
 
   // Das LED-Fenster ist eine eigene Engine; ohne diesen Callback hätte es
   // keine Plugins (vor allem kein window_manager für sein Vollbild).
+  // Bewusst nicht `fl_register_plugins`: audioplayers_linux hält seinen
+  // Messenger in einer statischen Variable, und die zweite Registrierung
+  // überschriebe den des Hauptfensters — die Signaltöne bekämen dort ihre
+  // Event-Kanäle auf der Engine des LED-Fensters (MissingPluginException).
+  // Das LED-Fenster spielt keinen Ton und braucht das Plugin nicht.
   desktop_multi_window_plugin_set_window_created_callback(
-      [](FlPluginRegistry* registry) { fl_register_plugins(registry); });
+      [](FlPluginRegistry* registry) {
+        g_autoptr(FlPluginRegistrar) screen_retriever_registrar =
+            fl_plugin_registry_get_registrar_for_plugin(registry, "ScreenRetrieverLinuxPlugin");
+        screen_retriever_linux_plugin_register_with_registrar(screen_retriever_registrar);
+        g_autoptr(FlPluginRegistrar) window_manager_registrar =
+            fl_plugin_registry_get_registrar_for_plugin(registry, "WindowManagerPlugin");
+        window_manager_plugin_register_with_registrar(window_manager_registrar);
+      });
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }
